@@ -122,14 +122,19 @@ export async function eliminarAlumno(alumnoId: string): Promise<ResultadoBorrado
 
   const adminClient = createAdminClient()
 
-  // Quitar referencias que podrían bloquear el borrado en cascada
-  // (mensajes que escribió; a partir de la migración 010 ya cascadean,
-  // pero lo dejamos por si la migración no se ha aplicado aún).
+  // Quitar referencias que bloquean el borrado (claves foráneas sin
+  // cascade). Las migraciones 010 y 011 lo arreglan a nivel de BBDD,
+  // pero lo hacemos también aquí por si no se han aplicado todavía.
   await adminClient.from('mensajes').delete().eq('autor_id', alumnoId)
+  await adminClient
+    .from('solicitudes_alta')
+    .update({ profile_creado: null })
+    .eq('profile_creado', alumnoId)
 
   const { error } = await adminClient.auth.admin.deleteUser(alumnoId)
   if (error) {
-    return { ok: false, error: 'No se pudo eliminar: ' + error.message }
+    const detalle = error.message || (error as { code?: string }).code || 'error desconocido'
+    return { ok: false, error: 'No se pudo eliminar: ' + detalle }
   }
 
   revalidatePath('/admin/alumnos')
@@ -144,42 +149,50 @@ export async function eliminarAlumno(alumnoId: string): Promise<ResultadoBorrado
  */
 export async function renovarSuscripcion(
   alumnoId: string,
-  meses: number
+  fechaFin: string // 'YYYY-MM-DD', el día exacto hasta el que tendrá acceso
 ): Promise<ResultadoEdicion> {
   const { supabase, user: admin } = await exigirAdmin()
   if (!alumnoId) return { error: 'Falta el alumno' }
 
-  const m = Math.min(24, Math.max(1, Math.floor(meses) || 1))
   const hoy = hoyMadrid()
+  // Validar la fecha
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaFin)) return { error: 'Fecha no válida' }
+  if (fechaFin < hoy) return { error: 'La fecha debe ser hoy o posterior' }
 
-  // ¿Tiene una suscripción activa aún vigente? Entonces extendemos desde ahí.
+  // ¿Tiene ya una suscripción activa y vigente? La extendemos (una sola
+  // fila por alumno). Si no, creamos una nueva.
   const { data: actual } = await supabase
     .from('suscripciones')
-    .select('fecha_fin')
+    .select('id, fecha_fin')
     .eq('user_id', alumnoId)
     .eq('estado', 'activa')
+    .gte('fecha_fin', hoy)
     .order('fecha_fin', { ascending: false })
     .limit(1)
     .maybeSingle()
 
-  const base = actual?.fecha_fin && actual.fecha_fin >= hoy ? actual.fecha_fin : hoy
-  const inicio = base
-  const fin = sumarMeses(base, m)
-
-  const { error } = await supabase.from('suscripciones').insert({
-    user_id: alumnoId,
-    metodo: 'efectivo',
-    meses: m,
-    fecha_inicio: inicio,
-    fecha_fin: fin,
-    estado: 'activa',
-    marcado_por: admin.id,
-    notas: 'Renovación/activación manual desde ficha',
-  })
-
-  if (error) return { error: 'No se pudo renovar la suscripción' }
+  if (actual) {
+    const { error } = await supabase
+      .from('suscripciones')
+      .update({ fecha_fin: fechaFin, marcado_por: admin.id })
+      .eq('id', actual.id)
+    if (error) return { error: 'No se pudo actualizar la suscripción' }
+  } else {
+    const { error } = await supabase.from('suscripciones').insert({
+      user_id: alumnoId,
+      metodo: 'efectivo',
+      meses: 1,
+      fecha_inicio: hoy,
+      fecha_fin: fechaFin,
+      estado: 'activa',
+      marcado_por: admin.id,
+      notas: 'Activación/ajuste manual desde ficha',
+    })
+    if (error) return { error: 'No se pudo activar la suscripción' }
+  }
 
   revalidatePath(`/admin/alumnos/${alumnoId}`)
   revalidatePath('/admin/alumnos')
+  revalidatePath('/admin')
   return { ok: true }
 }

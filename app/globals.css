@@ -2571,3 +2571,118 @@ img {
 @media (max-width: 640px) {
   .precios-grid { grid-template-columns: 1fr; }
 }
+
+/* ============================================
+   PIEZA 11 · Suscripción del alumno (renovación online)
+   ============================================ */
+
+.aviso-ok {
+  background: #DCFCE7;
+  color: #15803D;
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+
+.susc-estado-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  max-width: 520px;
+}
+.susc-estado-icono {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.susc-estado-titulo {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+}
+.susc-estado-sub {
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin-top: 3px;
+}
+
+.renovar-caja { margin-top: 4px; }
+.renovar-meses {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.renovar-chip {
+  padding: 10px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--card);
+  transition: all 0.15s;
+}
+.renovar-chip:hover { border-color: var(--ink); }
+.renovar-chip.activo {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.renovar-nota {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  text-align: center;
+  margin-top: 12px;
+}
+
+/* ============================================
+   PIEZA 12 · Referencia de pago + meses exactos
+   ============================================ */
+
+.ficha-ref-pago {
+  font-family: var(--font-display), monospace;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+}
+
+.renovar-exacto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.renovar-exacto label {
+  font-weight: 500;
+}
+.renovar-exacto input {
+  width: 80px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--card);
+  text-align: center;
+}
+.renovar-exacto input:focus {
+  outline: none;
+  border-color: var(--accent);
+}

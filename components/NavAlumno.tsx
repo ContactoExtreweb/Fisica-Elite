@@ -30,6 +30,14 @@ export default function NavAlumno({ noLeidos = 0 }: { noLeidos?: number }) {
         </span>
         Chat
       </Link>
+      <Link href="/suscripcion" className={activo('/suscripcion')}>
+        <span className="nav-icono-wrap">
+          <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path d="M3 10h18M7 15h4M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+        Suscripción
+      </Link>
     </nav>
   )
 }

@@ -31,17 +31,22 @@ export default async function AdminDashboardPage() {
   const hoy = new Date().toISOString().slice(0, 10)
 
   // Contadores reales (head: true → solo el count, sin filas)
-  const [{ count: totalAlumnos }, { count: suscActivas }] = await Promise.all([
+  const [{ count: totalAlumnos }, { data: filasActivas }] = await Promise.all([
     supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
       .eq('rol', 'alumno'),
+    // Alumnos DISTINTOS con acceso activo (no filas: un alumno que ha
+    // renovado varias veces tiene varias filas activas, y contaríamos de
+    // más). Traemos los user_id activos vigentes y contamos únicos.
     supabase
       .from('suscripciones')
-      .select('id', { count: 'exact', head: true })
+      .select('user_id')
       .eq('estado', 'activa')
       .gte('fecha_fin', hoy),
   ])
+
+  const suscActivas = new Set((filasActivas ?? []).map((f) => f.user_id)).size
 
   return (
     <>

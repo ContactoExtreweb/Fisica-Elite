@@ -4,6 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { renovarSuscripcion } from '@/app/admin/alumnos/actions'
 
+// Suma meses a una fecha ISO y devuelve ISO (para los atajos rápidos)
+function sumarMesesISO(fechaISO: string, meses: number): string {
+  const [y, m, d] = fechaISO.split('-').map(Number)
+  const base = new Date(Date.UTC(y, m - 1 + meses, d))
+  return base.toISOString().slice(0, 10)
+}
+
 export default function AlumnoSuscripcion({
   alumnoId,
   accesoActivo,
@@ -13,23 +20,29 @@ export default function AlumnoSuscripcion({
   accesoActivo: boolean
   fechaFin: string | null
 }) {
-  const [meses, setMeses] = useState(1)
+  const hoy = new Date().toISOString().slice(0, 10)
+  // Punto de partida para los atajos: su fecha de fin si tiene, si no hoy
+  const desde = accesoActivo && fechaFin ? fechaFin : hoy
+
+  const [fecha, setFecha] = useState<string>(fechaFin ?? sumarMesesISO(hoy, 1))
   const [cargando, setCargando] = useState(false)
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
   const router = useRouter()
 
-  const renovar = async () => {
+  const aplicar = async () => {
     setCargando(true)
     setMsg(null)
-    const res = await renovarSuscripcion(alumnoId, meses)
+    const res = await renovarSuscripcion(alumnoId, fecha)
     setCargando(false)
     if (res.ok) {
       setMsg({ tipo: 'ok', texto: 'Suscripción actualizada' })
       router.refresh()
     } else {
-      setMsg({ tipo: 'error', texto: res.error ?? 'Error al renovar' })
+      setMsg({ tipo: 'error', texto: res.error ?? 'Error' })
     }
   }
+
+  const atajo = (meses: number) => setFecha(sumarMesesISO(desde, meses))
 
   return (
     <div className="admin-section" style={{ padding: 28 }}>
@@ -37,31 +50,38 @@ export default function AlumnoSuscripcion({
 
       <p className="ficha-accion-desc" style={{ maxWidth: '100%', marginBottom: 16 }}>
         {accesoActivo
-          ? 'Añade meses y se sumarán a su fecha de fin actual.'
-          : 'Sin acceso activo. Activa una suscripción para darle acceso al contenido.'}
+          ? 'Ajusta hasta qué día tiene acceso. Los atajos suman desde su fecha actual.'
+          : 'Sin acceso activo. Elige hasta qué día le das acceso.'}
       </p>
 
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-        <div className="field" style={{ maxWidth: 160 }}>
-          <label>Meses a añadir</label>
-          <select
-            value={meses}
-            onChange={(e) => setMeses(Number(e.target.value))}
+      {/* Atajos rápidos: rellenan la fecha, no envían */}
+      <div className="renovar-meses" style={{ marginBottom: 16 }}>
+        {[1, 3, 6, 12].map((n) => (
+          <button
+            key={n}
+            type="button"
+            className="renovar-chip"
+            onClick={() => atajo(n)}
             disabled={cargando}
           >
-            <option value={1}>1 mes</option>
-            <option value={3}>3 meses</option>
-            <option value={6}>6 meses</option>
-            <option value={12}>12 meses</option>
-          </select>
+            +{n} {n === 1 ? 'mes' : 'meses'}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <div className="field" style={{ maxWidth: 220 }}>
+          <label>Acceso hasta el día</label>
+          <input
+            type="date"
+            value={fecha}
+            min={hoy}
+            onChange={(e) => setFecha(e.target.value)}
+            disabled={cargando}
+          />
         </div>
-        <button
-          type="button"
-          className="admin-topbar-cta"
-          onClick={renovar}
-          disabled={cargando}
-        >
-          {cargando ? 'Aplicando…' : accesoActivo ? 'Añadir meses' : 'Activar acceso'}
+        <button type="button" className="admin-topbar-cta" onClick={aplicar} disabled={cargando}>
+          {cargando ? 'Aplicando…' : accesoActivo ? 'Actualizar fecha' : 'Activar acceso'}
         </button>
       </div>
 

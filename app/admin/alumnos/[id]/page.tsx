@@ -35,17 +35,52 @@ export default async function FichaAlumnoPage({
 
   if (!alumno) notFound()
 
-  // Suscripción más reciente para mostrar estado
+  // Acceso = existe una suscripción ACTIVA y aún vigente (misma regla que
+  // la lista y que tiene_acceso_activo). Cogemos la de fecha_fin más lejana
+  // para mostrar hasta cuándo llega. Una suscripción cancelada con fecha
+  // futura NO cuenta (por eso filtramos estado='activa').
+  const hoy = new Date().toISOString().slice(0, 10)
   const { data: sub } = await supabase
     .from('suscripciones')
     .select('estado, fecha_fin, metodo, meses')
     .eq('user_id', id)
+    .eq('estado', 'activa')
+    .gte('fecha_fin', hoy)
     .order('fecha_fin', { ascending: false })
     .limit(1)
     .maybeSingle()
 
-  const hoy = new Date().toISOString().slice(0, 10)
-  const accesoActivo = !!sub && sub.estado === 'activa' && (sub.fecha_fin ?? '') >= hoy
+  const accesoActivo = !!sub
+
+  // ¿Vino de un pago online? Buscamos su solicitud (enlazada al crear la
+  // cuenta) para mostrar la referencia de forma permanente.
+  // Buscamos por profile_creado (enlace directo) O por email (robusto:
+  // el alumno pagó con su email y su cuenta lo comparte). Con .or no se
+  // puede mezclar bien null-checks, así que probamos email, que es el más
+  // fiable, y si no, el enlace.
+  let solicitud: { referencia: string | null } | null = null
+  if (alumno.email) {
+    const { data } = await supabase
+      .from('solicitudes_alta')
+      .select('referencia, created_at')
+      .eq('email', alumno.email.toLowerCase())
+      .not('referencia', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    solicitud = data
+  }
+  if (!solicitud) {
+    const { data } = await supabase
+      .from('solicitudes_alta')
+      .select('referencia, created_at')
+      .eq('profile_creado', id)
+      .not('referencia', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    solicitud = data
+  }
 
   const nombre = [alumno.nombre, alumno.apellidos].filter(Boolean).join(' ') || 'Sin nombre'
   const esAdmin = alumno.rol === 'admin'
@@ -77,6 +112,12 @@ export default async function FichaAlumnoPage({
           <span className="ficha-chip-label">Nivel</span>
           <span className={`tag ${alumno.nivel}`}>{alumno.nivel}</span>
         </div>
+        {solicitud?.referencia && (
+          <div className="ficha-chip">
+            <span className="ficha-chip-label">Pago online · Nº solicitud</span>
+            <span className="ficha-ref-pago">{solicitud.referencia}</span>
+          </div>
+        )}
         <div className="ficha-chip">
           <span className="ficha-chip-label">Acceso</span>
           {accesoActivo ? (

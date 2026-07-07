@@ -43,13 +43,13 @@ export default function LoginPage() {
         </p>
 
         <div className="field">
-          <label htmlFor="email">Correo electrónico</label>
+          <label htmlFor="identificador">Correo, usuario o teléfono</label>
           <input
-            type="email"
-            id="email"
-            name="email"
-            placeholder="tu@correo.com"
-            autoComplete="email"
+            type="text"
+            id="identificador"
+            name="identificador"
+            placeholder="tu@correo.com · tu_usuario · 600 000 000"
+            autoComplete="username"
             required
           />
         </div>
