@@ -19,7 +19,7 @@ export default function NavAlumno({ noLeidos = 0 }: { noLeidos?: number }) {
             <path d="M3 12L12 4l9 8M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </span>
-        Hoy
+        Inicio
       </Link>
       <Link href="/chat" className={activo('/chat')}>
         <span className="nav-icono-wrap">
@@ -38,6 +38,7 @@ export default function NavAlumno({ noLeidos = 0 }: { noLeidos?: number }) {
         </span>
         Suscripción
       </Link>
+
     </nav>
   )
 }

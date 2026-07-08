@@ -2686,3 +2686,563 @@ img {
   outline: none;
   border-color: var(--accent);
 }
+
+/* ============================================
+   PIEZA 14 · Progreso y subida de nivel
+   ============================================ */
+
+/* Barra de progreso del nivel */
+.progreso-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.progreso-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+.progreso-titulo {
+  font-weight: 600;
+  font-size: 15px;
+  text-transform: capitalize;
+}
+.progreso-cifra {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.progreso-barra {
+  height: 10px;
+  background: var(--bg-alt);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.progreso-relleno {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 100px;
+  transition: width 0.4s ease;
+}
+
+/* Aviso de subir de nivel (en /inicio) */
+.subir-aviso {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #FFF4E8, #FFE8D6);
+  border: 1px solid #FFD4A8;
+  border-radius: 16px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.subir-aviso:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(224, 67, 29, 0.12);
+}
+.subir-aviso-emoji { font-size: 32px; }
+.subir-aviso-texto { flex: 1; }
+.subir-aviso-titulo {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--ink);
+}
+.subir-aviso-sub {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+.subir-aviso-flecha {
+  font-size: 22px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Miniatura del ejercicio cuando está completado */
+.ex-thumb.hecho {
+  background: #DCFCE7;
+  color: #16A34A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ex-list-row.completado .ex-list-name::after {
+  content: ' ✓';
+  color: #16A34A;
+  font-weight: 700;
+}
+
+/* Botón de completar en la ficha */
+.ejercicio-completar-zona {
+  margin: 20px 0;
+}
+.btn-completar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  border-radius: 100px;
+  border: 2px solid var(--border-strong);
+  background: var(--card);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-completar:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+.btn-completar.hecho {
+  background: #DCFCE7;
+  border-color: #86EFAC;
+  color: #15803D;
+}
+.btn-completar:disabled { opacity: 0.6; cursor: default; }
+.btn-completar-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+/* Página / hero de subir de nivel */
+.subir-hero {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px 40px;
+  text-align: center;
+}
+.subir-hero-emoji { font-size: 56px; margin-bottom: 16px; }
+.subir-hero h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+.subir-hero p {
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+/* Éxito tras subir */
+.subir-exito { text-align: center; }
+.subir-exito-emoji { font-size: 48px; }
+.subir-exito-titulo {
+  font-family: var(--font-display);
+  font-size: 24px;
+  margin: 12px 0 6px;
+}
+.subir-exito-sub {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+/* ============================================
+   PIEZA 15 · Pestañas, logout móvil, subir nivel
+   ============================================ */
+
+/* Pestañas por nivel en la lista de ejercicios */
+.ej-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.ej-tab {
+  padding: 8px 18px;
+  border-radius: 100px;
+  border: 1px solid var(--border-strong);
+  background: var(--card);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ej-tab:hover { border-color: var(--ink); }
+.ej-tab.activo {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper, #fff);
+}
+
+/* Botón "Salir" del nav: oculto en escritorio, visible en móvil */
+.nav-logout-movil { display: none; }
+
+@media (max-width: 900px) {
+  /* Se comporta EXACTAMENTE como un enlace .nav a de la barra inferior */
+  .nav-logout-movil {
+    display: flex;
+    flex: 1;
+    align-items: stretch;
+    margin: 0;
+  }
+  .nav-logout-movil button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    padding: 6px 10px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    line-height: 1.2;
+  }
+  .nav-logout-movil button:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .nav-logout-movil .nav-icono-wrap svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Página de subir de nivel (independiente, sin sidebar) */
+.subir-pagina {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+.subir-pagina-inner {
+  width: 100%;
+  max-width: 560px;
+}
+
+/* ============================================
+   PIEZA 16 · Buscador + navegación de lecciones
+   ============================================ */
+
+/* Buscador de ejercicios */
+.ej-buscador {
+  position: relative;
+  margin-bottom: 16px;
+}
+.ej-buscador-lupa {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+.ej-buscador input {
+  width: 100%;
+  padding: 13px 44px 13px 46px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--card);
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.ej-buscador input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.ej-buscador-limpiar {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-alt);
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Navegación entre lecciones */
+.leccion-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.leccion-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--card);
+  transition: all 0.15s;
+  min-width: 0;
+}
+.leccion-nav-btn:hover {
+  border-color: var(--ink);
+  transform: translateY(-1px);
+}
+.leccion-nav-btn.next { justify-content: flex-end; text-align: right; }
+.leccion-nav-flecha {
+  font-size: 20px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.leccion-nav-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.leccion-nav-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+.leccion-nav-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .leccion-nav-titulo { max-width: 120px; }
+}
+
+/* ============================================
+   PIEZA 17 · Modal de logout + cabecera móvil
+   ============================================ */
+
+/* Cabecera móvil (marca + icono salir). Oculta en escritorio. */
+.topbar-movil { display: none; }
+
+@media (max-width: 900px) {
+  .topbar-movil {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 4px 18px;
+    margin-bottom: 4px;
+  }
+  .topbar-movil-marca {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+  }
+  .topbar-movil-marca .accent { color: var(--accent); }
+}
+
+/* Icono de cerrar sesión en la cabecera móvil */
+.logout-icono-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--card);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.logout-icono-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.logout-icono-btn svg { width: 20px; height: 20px; }
+
+/* Overlay + modal de confirmación */
+.logout-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 16, 12, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 99999;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.logout-modal {
+  position: relative;
+  z-index: 1;
+  background: #FFFFFF; /* blanco sólido opaco */
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 32px 28px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+.logout-modal-marca {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  margin-bottom: 20px;
+}
+.logout-modal-marca span,
+.logout-modal-marca .accent { color: var(--accent); }
+.logout-modal-titulo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin-bottom: 10px;
+  color: var(--ink);
+}
+.logout-modal-texto {
+  font-size: 14px;
+  color: var(--ink-muted);
+  line-height: 1.55;
+  margin-bottom: 26px;
+}
+.logout-modal-acciones {
+  display: flex;
+  gap: 12px;
+}
+.logout-btn-cancelar,
+.logout-btn-confirmar {
+  flex: 1;
+  padding: 13px 20px;
+  border-radius: 100px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.logout-btn-cancelar {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-strong);
+  color: var(--ink-2);
+}
+.logout-btn-cancelar:hover { border-color: var(--ink); }
+.logout-btn-confirmar {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+}
+.logout-btn-confirmar:hover { filter: brightness(1.05); }
+.logout-btn-cancelar:disabled,
+.logout-btn-confirmar:disabled { opacity: 0.6; cursor: default; }
+
+/* Retirar el antiguo item "Salir" de la barra inferior (ya no se usa;
+   el logout móvil ahora vive en la cabecera). */
+.nav-logout-movil { display: none !important; }
+
+/* ============================================
+   PIEZA 21 · Filtros de la lista de alumnos
+   ============================================ */
+
+.alumnos-filtros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.alumnos-buscador {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+}
+.alumnos-buscador svg {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+.alumnos-buscador input {
+  width: 100%;
+  padding: 11px 40px 11px 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  color: var(--ink);
+  background: var(--card);
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.alumnos-buscador input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.alumnos-buscador-limpiar {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-alt);
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alumnos-select {
+  padding: 11px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.alumnos-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.alumnos-contador {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .alumnos-filtros { flex-direction: column; }
+  .alumnos-select { width: 100%; }
+}

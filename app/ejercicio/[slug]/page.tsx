@@ -6,10 +6,14 @@
 // devolvió la fila. Un alumno sin acceso recibe notFound() y jamás se
 // llega a firmar ningún token: no hay forma de sacar el vídeo.
 import Link from 'next/link'
+import NavAlumno from '@/components/NavAlumno'
+import BotonLogout from '@/components/BotonLogout'
+import { contarNoLeidos } from '@/lib/no-leidos'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { bunnyConfigurado, urlEmbedFirmada } from '@/lib/bunny'
 import TabsEjercicio from '@/components/TabsEjercicio'
+import BotonCompletar from '@/components/BotonCompletar'
 
 const NOMBRE_ESPECIALIDAD: Record<string, string> = {
   policia_local: 'Policía Local',
@@ -20,10 +24,13 @@ const NOMBRE_ESPECIALIDAD: Record<string, string> = {
 
 export default async function FichaEjercicioAlumno({
   params,
+  searchParams,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ nivel?: string }>
 }) {
-  const { id } = await params
+  const { slug } = await params
+  const { nivel: nivelTab } = await searchParams
   const supabase = await createClient()
 
   // La RLS filtra: si el alumno no tiene acceso a este ejercicio,
@@ -31,10 +38,49 @@ export default async function FichaEjercicioAlumno({
   const { data: ejercicio } = await supabase
     .from('ejercicios')
     .select('*')
-    .eq('id', id)
+    .eq('slug', slug)
     .single()
 
   if (!ejercicio) notFound()
+
+  const id = ejercicio.id // el resto del código usa el id real de la fila
+
+  // ¿Lo tiene marcado como completado?
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Datos para el sidebar completo (mismo shell que el resto del área)
+  const [{ data: perfilSidebar }, noLeidos] = await Promise.all([
+    supabase.from('profiles').select('nombre, apellidos').eq('id', user!.id).single(),
+    contarNoLeidos(),
+  ])
+  const inicialesSidebar =
+    ((perfilSidebar?.nombre ?? '').charAt(0) + (perfilSidebar?.apellidos ?? '').charAt(0)).toUpperCase() || 'FE'
+
+  const { data: prog } = await supabase
+    .from('progreso')
+    .select('id')
+    .eq('user_id', user!.id)
+    .eq('ejercicio_id', id)
+    .maybeSingle()
+  const completado = !!prog
+
+  // Lecciones del MISMO nivel y especialidad, en orden, para navegar
+  // anterior/siguiente. La RLS solo devuelve las accesibles al alumno.
+  const { data: hermanos } = await supabase
+    .from('ejercicios')
+    .select('id, titulo, slug')
+    .eq('especialidad', ejercicio.especialidad)
+    .eq('nivel', ejercicio.nivel)
+    .order('orden')
+    .order('titulo')
+
+  const listaHermanos = hermanos ?? []
+  const idx = listaHermanos.findIndex((h) => h.id === id)
+  const anterior = idx > 0 ? listaHermanos[idx - 1] : null
+  const siguiente = idx >= 0 && idx < listaHermanos.length - 1 ? listaHermanos[idx + 1] : null
+  const sufijoTab = nivelTab ? `?nivel=${nivelTab}` : ''
 
   const { data: faqs } = await supabase
     .from('ejercicio_faqs')
@@ -66,19 +112,28 @@ export default async function FichaEjercicioAlumno({
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <nav className="nav">
-          <Link href="/inicio">
-            <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-              <path d="M3 12L12 4l9 8M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Hoy
-          </Link>
-        </nav>
+
+        <NavAlumno noLeidos={noLeidos} />
+
+        <div className="sidebar-foot">
+          <div className="avatar">{inicialesSidebar}</div>
+          <div>
+            <div className="who">
+              {[perfilSidebar?.nombre, perfilSidebar?.apellidos].filter(Boolean).join(' ') || 'Alumno'}
+            </div>
+            <BotonLogout variante="texto" />
+          </div>
+        </div>
       </aside>
 
       <main className="main">
+        <div className="topbar-movil">
+          <div className="topbar-movil-marca">FÍSICA<span className="accent">.</span>ELITE</div>
+          <BotonLogout variante="icono" />
+        </div>
+
         <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginBottom: 24 }}>
-          <Link href="/inicio" style={{ color: 'var(--ink-muted)', fontWeight: 500 }}>
+          <Link href={`/inicio${sufijoTab}`} style={{ color: 'var(--ink-muted)', fontWeight: 500 }}>
             ← Volver a mis ejercicios
           </Link>
         </div>
@@ -114,7 +169,39 @@ export default async function FichaEjercicioAlumno({
               <span className={`tag ${ejercicio.nivel}`}>{ejercicio.nivel}</span>
             </div>
 
+            <div className="ejercicio-completar-zona">
+              <BotonCompletar ejercicioId={id} completadoInicial={completado} />
+            </div>
+
             <TabsEjercicio tabs={tabs} />
+
+            {/* Navegación entre lecciones del mismo nivel */}
+            {(anterior || siguiente) && (
+              <div className="leccion-nav">
+                {anterior ? (
+                  <Link href={`/ejercicio/${anterior.slug}${sufijoTab}`} className="leccion-nav-btn prev">
+                    <span className="leccion-nav-flecha">←</span>
+                    <span className="leccion-nav-txt">
+                      <span className="leccion-nav-label">Anterior</span>
+                      <span className="leccion-nav-titulo">{anterior.titulo}</span>
+                    </span>
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                {siguiente ? (
+                  <Link href={`/ejercicio/${siguiente.slug}${sufijoTab}`} className="leccion-nav-btn next">
+                    <span className="leccion-nav-txt">
+                      <span className="leccion-nav-label">Siguiente</span>
+                      <span className="leccion-nav-titulo">{siguiente.titulo}</span>
+                    </span>
+                    <span className="leccion-nav-flecha">→</span>
+                  </Link>
+                ) : (
+                  <span />
+                )}
+              </div>
+            )}
           </div>
 
           {/* Columna lateral: FAQ */}

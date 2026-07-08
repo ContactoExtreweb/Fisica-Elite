@@ -1,9 +1,11 @@
+import { Suspense } from 'react'
 // Área del alumno: primera versión REAL.
 // La query de ejercicios no filtra nada a propósito: es la RLS de la
 // BBDD quien decide qué ve el alumno (especialidad + nivel + suscripción
 // activa). Si esta página muestra lo correcto, la seguridad de contenido
 // funciona de verdad.
 import Link from 'next/link'
+import ListaEjerciciosTabs from '@/components/ListaEjerciciosTabs'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/login/actions'
@@ -33,7 +35,7 @@ export default async function InicioPage() {
   const hoy = new Date().toISOString().slice(0, 10)
   const noLeidos = await contarNoLeidos()
 
-  const [{ data: perfil }, { data: susc }, { data: ejercicios }] =
+  const [{ data: perfil }, { data: susc }, { data: ejercicios }, { data: progreso }, { data: puedeSubir }] =
     await Promise.all([
       supabase
         .from('profiles')
@@ -51,13 +53,34 @@ export default async function InicioPage() {
       // Sin filtros: la RLS decide qué ejercicios existen para este alumno
       supabase
         .from('ejercicios')
-        .select('id, titulo, descripcion, nivel, ejercicio_faqs(count)')
+        .select('id, slug, titulo, descripcion, nivel, orden, ejercicio_faqs(count)')
         .order('orden')
         .order('titulo'),
+      // Progreso del alumno (ids de ejercicios completados)
+      supabase.from('progreso').select('ejercicio_id').eq('user_id', user.id).eq('completado', true),
+      // ¿Puede subir de nivel? (función de BBDD que valida el 100%)
+      supabase.rpc('puedo_subir_de_nivel'),
     ])
 
   const vigente = susc?.[0]
-  const lista = ejercicios ?? []
+
+  // Orden correcto: primero por NIVEL (iniciado < avanzado < profesional),
+  // luego por el 'orden' que puso el preparador. El enum no se puede ordenar
+  // alfabéticamente (saldría avanzado, iniciado, profesional), así que
+  // usamos un rango explícito.
+  const RANGO_NIVEL: Record<string, number> = { iniciado: 0, avanzado: 1, profesional: 2 }
+  const lista = [...(ejercicios ?? [])].sort((a, b) => {
+    const rn = (RANGO_NIVEL[a.nivel] ?? 9) - (RANGO_NIVEL[b.nivel] ?? 9)
+    if (rn !== 0) return rn
+    return (a.orden ?? 0) - (b.orden ?? 0)
+  })
+
+  // Progreso: cuántos de los ejercicios visibles ha completado
+  const completados = new Set((progreso ?? []).map((p) => p.ejercicio_id))
+  const totalEj = lista.length
+  const hechos = lista.filter((e) => completados.has(e.id)).length
+  const porcentaje = totalEj > 0 ? Math.round((hechos / totalEj) * 100) : 0
+  const listoParaSubir = puedeSubir === true
   const nombrePila = perfil?.nombre?.split(' ')[0] || 'alumno'
 
   const iniciales =
@@ -117,6 +140,31 @@ export default async function InicioPage() {
           </div>
         </div>
 
+        {/* Progreso del nivel actual */}
+        {vigente && totalEj > 0 && (
+          <div className="progreso-card">
+            <div className="progreso-cab">
+              <span className="progreso-titulo">Tu progreso en nivel {perfil?.nivel}</span>
+              <span className="progreso-cifra">{hechos}/{totalEj} · {porcentaje}%</span>
+            </div>
+            <div className="progreso-barra">
+              <div className="progreso-relleno" style={{ width: `${porcentaje}%` }} />
+            </div>
+          </div>
+        )}
+
+        {/* Aviso: listo para subir de nivel */}
+        {listoParaSubir && (
+          <Link href="/subir-nivel" className="subir-aviso">
+            <div className="subir-aviso-emoji">🏅</div>
+            <div className="subir-aviso-texto">
+              <div className="subir-aviso-titulo">¡Has completado tu nivel!</div>
+              <div className="subir-aviso-sub">Estás listo para pasar al siguiente. Pulsa aquí para subir.</div>
+            </div>
+            <span className="subir-aviso-flecha">→</span>
+          </Link>
+        )}
+
         <div className="section-label">Tus ejercicios</div>
 
         {lista.length === 0 ? (
@@ -128,33 +176,20 @@ export default async function InicioPage() {
             </div>
           </div>
         ) : (
-          <div className="ex-list">
-            {lista.map((e) => {
-              const nFaqs = e.ejercicio_faqs?.[0]?.count ?? 0
-              return (
-                <Link
-                  key={e.id}
-                  href={`/ejercicio/${e.id}`}
-                  className="ex-list-row"
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="ex-thumb"></div>
-                  <div>
-                    <div className="ex-list-name">{e.titulo}</div>
-                    <div className="ex-list-meta">
-                      {e.descripcion
-                        ? e.descripcion.length > 90
-                          ? e.descripcion.slice(0, 90) + '…'
-                          : e.descripcion
-                        : 'Sin descripción'}
-                      {nFaqs > 0 && ` · ${nFaqs} pregunta${nFaqs === 1 ? '' : 's'} frecuente${nFaqs === 1 ? '' : 's'}`}
-                    </div>
-                  </div>
-                  <span className={`tag ${e.nivel}`}>{e.nivel}</span>
-                </Link>
-              )
-            })}
-          </div>
+          <Suspense fallback={<div className="ex-list"><div className="admin-tabla-vacia">Cargando…</div></div>}>
+          <ListaEjerciciosTabs
+            nivelAlumno={perfil?.nivel ?? 'iniciado'}
+            ejercicios={lista.map((e) => ({
+              id: e.id,
+              slug: e.slug,
+              titulo: e.titulo,
+              descripcion: e.descripcion,
+              nivel: e.nivel,
+              nFaqs: e.ejercicio_faqs?.[0]?.count ?? 0,
+              completado: completados.has(e.id),
+            }))}
+          />
+          </Suspense>
         )}
 
         <p style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 16 }}>

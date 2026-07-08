@@ -2,8 +2,8 @@
 // Tercera capa de defensa (middleware → layout → cada action).
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { logout } from '@/app/login/actions'
 import AdminNav from '@/components/AdminNav'
+import BotonLogout from '@/components/BotonLogout'
 import { contarNoLeidos } from '@/lib/no-leidos'
 
 export default async function AdminLayout({
@@ -47,16 +47,18 @@ export default async function AdminLayout({
           <div className="avatar">FE</div>
           <div>
             <div className="who">{perfil?.nombre ?? 'Física Élite'}</div>
-            <form action={logout}>
-              <button type="submit" className="sidebar-logout">
-                Cerrar sesión
-              </button>
-            </form>
+            <BotonLogout variante="texto" />
           </div>
         </div>
       </aside>
 
-      <main className="main">{children}</main>
+      <main className="main">
+        <div className="topbar-movil">
+          <div className="topbar-movil-marca">FÍSICA<span className="accent">.</span>ELITE</div>
+          <BotonLogout variante="icono" />
+        </div>
+        {children}
+      </main>
     </div>
   )
 }

@@ -1,24 +1,9 @@
-// CRM: listado de alumnos con su estado de suscripción real.
+// CRM: listado de alumnos con buscador y filtros (especialidad, estado).
+// La página calcula el estado de acceso de cada uno y delega el render
+// y el filtrado al componente cliente (instantáneo, sin recargar).
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-
-const NOMBRE_ESPECIALIDAD: Record<string, string> = {
-  policia_local: 'Policía Local',
-  policia_nacional: 'Policía Nacional',
-  guardia_civil: 'Guardia Civil',
-  fuerzas_armadas: 'Fuerzas Armadas',
-}
-
-function iniciales(nombre?: string | null, apellidos?: string | null) {
-  const n = (nombre ?? '').trim().charAt(0)
-  const a = (apellidos ?? '').trim().charAt(0)
-  return (n + a).toUpperCase() || '??'
-}
-
-function formatoFecha(iso: string) {
-  const [y, m, d] = iso.split('-')
-  return `${d}/${m}/${y}`
-}
+import TablaAlumnos, { type AlumnoFila } from '@/components/TablaAlumnos'
 
 export default async function AdminAlumnosPage() {
   const supabase = await createClient()
@@ -27,7 +12,7 @@ export default async function AdminAlumnosPage() {
   const { data: alumnos, error } = await supabase
     .from('profiles')
     .select(
-      'id, nombre, apellidos, email, username, especialidad, nivel, suscripciones(estado, fecha_fin)'
+      'id, nombre, apellidos, email, username, telefono, especialidad, nivel, suscripciones(estado, fecha_fin)'
     )
     .eq('rol', 'alumno')
     .order('created_at', { ascending: false })
@@ -36,12 +21,22 @@ export default async function AdminAlumnosPage() {
     return <p className="form-error">Error cargando alumnos: {error.message}</p>
   }
 
-  const filas = (alumnos ?? []).map((a) => {
-    // Acceso vigente: alguna suscripción activa cuya fecha_fin llegue a hoy
+  // Calculamos el acceso vigente de cada alumno y preparamos filas planas
+  const filas: AlumnoFila[] = (alumnos ?? []).map((a) => {
     const vigente = (a.suscripciones ?? [])
       .filter((s) => s.estado === 'activa' && s.fecha_fin >= hoy)
       .sort((x, y) => (x.fecha_fin < y.fecha_fin ? 1 : -1))[0]
-    return { ...a, vigente }
+    return {
+      id: a.id,
+      nombre: a.nombre,
+      apellidos: a.apellidos,
+      email: a.email,
+      username: a.username,
+      telefono: a.telefono,
+      especialidad: a.especialidad,
+      nivel: a.nivel,
+      fechaFinVigente: vigente?.fecha_fin ?? null,
+    }
   })
 
   return (
@@ -63,67 +58,7 @@ export default async function AdminAlumnosPage() {
         </div>
       </div>
 
-      <div className="admin-section">
-        {filas.length === 0 ? (
-          <div className="admin-tabla-vacia">
-            Aún no hay alumnos. Crea el primero con «Añadir alumno».
-          </div>
-        ) : (
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Alumno</th>
-                <th>Especialidad</th>
-                <th>Nivel</th>
-                <th>Suscripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filas.map((a) => (
-                <tr key={a.id}>
-                  <td>
-                    <div className="alumno-cell">
-                      <div className="avatar-small">
-                        {iniciales(a.nombre, a.apellidos)}
-                      </div>
-                      <div>
-                        <Link href={`/admin/alumnos/${a.id}`} className="name name-link">
-                          {[a.nombre, a.apellidos].filter(Boolean).join(' ') ||
-                            a.username ||
-                            'Sin nombre'}
-                        </Link>
-                        <div className="sub">{a.email ?? '—'}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    {a.especialidad ? (
-                      <span className="plan-tag oposicion">
-                        {NOMBRE_ESPECIALIDAD[a.especialidad] ?? a.especialidad}
-                      </span>
-                    ) : (
-                      <span className="plan-tag">Sin asignar</span>
-                    )}
-                  </td>
-                  <td style={{ textTransform: 'capitalize' }}>{a.nivel}</td>
-                  <td>
-                    {a.vigente ? (
-                      <span className="status-pill">
-                        <span className="dot"></span> Al día · hasta{' '}
-                        {formatoFecha(a.vigente.fecha_fin)}
-                      </span>
-                    ) : (
-                      <span className="status-pill bad">
-                        <span className="dot"></span> Sin acceso
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <TablaAlumnos alumnos={filas} />
     </>
   )
 }

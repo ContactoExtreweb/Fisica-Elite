@@ -1,11 +1,10 @@
 // Chat del ALUMNO con su preparador. Una sola conversación.
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { logout } from '@/app/login/actions'
+import BotonLogout from '@/components/BotonLogout'
 import { obtenerOCrearConversacion } from '@/app/chat/actions'
 import VentanaChat, { type Mensaje } from '@/components/VentanaChat'
-import NavAlumno from '@/components/NavAlumno'
-import { contarNoLeidos } from '@/lib/no-leidos'
 
 export default async function ChatAlumnoPage() {
   const supabase = await createClient()
@@ -19,8 +18,6 @@ export default async function ChatAlumnoPage() {
     .select('nombre, apellidos')
     .eq('id', user.id)
     .single()
-
-  const noLeidos = await contarNoLeidos()
 
   // Abre (o recupera) la conversación del alumno
   const conversacionId = await obtenerOCrearConversacion()
@@ -44,21 +41,36 @@ export default async function ChatAlumnoPage() {
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <NavAlumno noLeidos={noLeidos} />
+        <nav className="nav">
+          <Link href="/inicio">
+            <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path d="M3 12L12 4l9 8M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Hoy
+          </Link>
+          <Link href="/chat" className="active">
+            <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Chat
+          </Link>
+        </nav>
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>
             <div className="who">
               {[perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ') || 'Alumno'}
             </div>
-            <form action={logout}>
-              <button type="submit" className="sidebar-logout">Cerrar sesión</button>
-            </form>
+            <BotonLogout variante="texto" />
           </div>
         </div>
       </aside>
 
       <main className="main chat-main">
+        <div className="topbar-movil">
+          <div className="topbar-movil-marca">FÍSICA<span className="accent">.</span>ELITE</div>
+          <BotonLogout variante="icono" />
+        </div>
         <div className="topbar">
           <div>
             <div className="greeting">Chat con tu preparador</div>

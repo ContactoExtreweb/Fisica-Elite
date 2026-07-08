@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { logout } from '@/app/login/actions'
+import BotonLogout from '@/components/BotonLogout'
 import NavAlumno from '@/components/NavAlumno'
 import RenovarOnline from '@/components/RenovarOnline'
 
@@ -61,14 +61,16 @@ export default async function SuscripcionPage({
             <div className="who">
               {[perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ') || 'Alumno'}
             </div>
-            <form action={logout}>
-              <button type="submit" className="sidebar-logout">Cerrar sesión</button>
-            </form>
+            <BotonLogout variante="texto" />
           </div>
         </div>
       </aside>
 
       <main className="main">
+        <div className="topbar-movil">
+          <div className="topbar-movil-marca">FÍSICA<span className="accent">.</span>ELITE</div>
+          <BotonLogout variante="icono" />
+        </div>
         <div className="topbar">
           <div>
             <div className="greeting">Tu suscripción</div>

@@ -44,10 +44,15 @@ export async function guardarEjercicio(
     return { error: 'Nivel no válido' }
   }
 
+  const slug = texto('slug')
+
   const datos = {
     titulo,
     especialidad,
     nivel,
+    // Si va vacío, el trigger de la BBDD lo genera desde el título.
+    // Si va con valor, el trigger lo normaliza y asegura que sea único.
+    slug: slug || null,
     descripcion: texto('descripcion') || null,
     tecnica: texto('tecnica') || null,
     variantes: texto('variantes') || null,

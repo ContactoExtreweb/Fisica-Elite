@@ -5,6 +5,7 @@ import { guardarEjercicio, type EstadoEjercicio } from '@/app/admin/ejercicios/a
 
 type Ejercicio = {
   id: string
+  slug: string | null
   titulo: string
   especialidad: string
   nivel: string
@@ -36,6 +37,22 @@ export default function EjercicioForm({ ejercicio }: { ejercicio?: Ejercicio }) 
           defaultValue={ejercicio?.titulo ?? ''}
           required
         />
+      </div>
+
+      <div className="field-group">
+        <label htmlFor="slug">Enlace (slug)</label>
+        <input
+          type="text"
+          id="slug"
+          name="slug"
+          placeholder="Se genera solo desde el título"
+          defaultValue={ejercicio?.slug ?? ''}
+        />
+        <span className="field-ayuda">
+          Es la parte final de la URL: /ejercicio/<strong>lo-que-pongas</strong>.
+          Déjalo vacío para generarlo automáticamente desde el título. Si lo
+          borras al editar, se regenerará.
+        </span>
       </div>
 
       <div className="field-group">
