@@ -3410,23 +3410,41 @@ img {
 .dash-desglose {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+  width: 100%;
+}
+.dash-desglose-fila {
+  width: 100%;
+  min-width: 0;
 }
 .dash-desglose-cab {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
   font-size: 14px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
-.dash-desglose-n { font-weight: 700; }
+.dash-desglose-cab > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-desglose-n {
+  font-weight: 700;
+  flex-shrink: 0;
+}
 .dash-desglose-barra {
   height: 8px;
+  width: 100%;
   background: var(--bg-alt);
   border-radius: 100px;
   overflow: hidden;
+  box-sizing: border-box;
 }
 .dash-desglose-relleno {
   height: 100%;
   background: var(--accent);
   border-radius: 100px;
+  max-width: 100%;
 }
