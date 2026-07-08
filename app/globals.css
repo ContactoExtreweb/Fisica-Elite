@@ -3246,3 +3246,187 @@ img {
   .alumnos-filtros { flex-direction: column; }
   .alumnos-select { width: 100%; }
 }
+
+/* ============================================
+   PIEZA 22 · Tarjetas de alumno en móvil
+   ============================================ */
+
+/* Por defecto (escritorio): tabla visible, tarjetas ocultas */
+.alumnos-tarjetas { display: none; }
+
+@media (max-width: 760px) {
+  /* En móvil: ocultar la tabla, mostrar las tarjetas */
+  .alumnos-tabla-desktop { display: none; }
+  .alumnos-tarjetas {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.alumno-tarjeta {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.alumno-tarjeta:active {
+  border-color: var(--accent);
+  transform: scale(0.99);
+}
+
+.alumno-tarjeta-cab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.alumno-tarjeta-id { min-width: 0; }
+.alumno-tarjeta-nombre {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.alumno-tarjeta-email {
+  font-size: 13px;
+  color: var(--accent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alumno-tarjeta-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+}
+.alumno-tarjeta-dato {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.alumno-tarjeta-dato .k {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+.alumno-tarjeta-dato .v {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* ============================================
+   PIEZA 25 · Dashboard admin enriquecido
+   ============================================ */
+
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.dash-stats-sec {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 900px) {
+  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+  .dash-stats-sec { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 560px) {
+  .dash-stats, .dash-stats-sec { grid-template-columns: 1fr 1fr; }
+}
+
+.admin-stat-card.clicable {
+  display: block;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.admin-stat-card.clicable:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.admin-stat-card.mini .num { font-size: 28px; }
+
+.dash-badge {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--accent);
+  padding: 3px 9px;
+  border-radius: 100px;
+}
+
+.dash-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 900px) {
+  .dash-cols { grid-template-columns: 1fr; }
+}
+
+.dash-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-lista-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.dash-lista-item:last-child { border-bottom: none; }
+.dash-lista-nombre {
+  flex: 1;
+  font-weight: 500;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.dash-lista-fecha {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.dash-desglose {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dash-desglose-cab {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.dash-desglose-n { font-weight: 700; }
+.dash-desglose-barra {
+  height: 8px;
+  background: var(--bg-alt);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.dash-desglose-relleno {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 100px;
+}

@@ -16,7 +16,10 @@ export default async function AdminChatPage() {
   const { data: convs } = await supabase
     .from('conversaciones')
     .select('id, estado, last_message_at, user_id, profiles!inner(nombre, apellidos, username)')
-    .order('last_message_at', { ascending: false, nullsFirst: false })
+    // Solo conversaciones con al menos un mensaje: las vacías (creadas pero
+    // sin escribir nada) no aportan nada a la bandeja y la ensucian.
+    .not('last_message_at', 'is', null)
+    .order('last_message_at', { ascending: false })
 
   // Para cada conversación, último mensaje y nº sin leer por el admin.
   // (Volumen bajo: bastan consultas simples por conversación.)

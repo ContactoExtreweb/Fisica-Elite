@@ -146,7 +146,7 @@ export default async function FichaEjercicioAlumno({
                 <iframe
                   src={embedUrl}
                   loading="lazy"
-                  allow="accelerometer; gyroscope; encrypted-media; picture-in-picture"
+                  allow="accelerometer; gyroscope; encrypted-media"
                   allowFullScreen
                   title={ejercicio.titulo}
                 />

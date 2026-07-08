@@ -42,7 +42,7 @@ export function firmaSubidaTus(videoGuid: string) {
 }
 
 /** URL del reproductor con token de acceso temporal (embed firmado). */
-export function urlEmbedFirmada(videoGuid: string, segundosValida = 60 * 60 * 6): string {
+export function urlEmbedFirmada(videoGuid: string, segundosValida = 60 * 60 * 3): string {
   const expires = Math.floor(Date.now() / 1000) + segundosValida
   const token = sha256hex(tokenKey() + videoGuid + expires)
   return `https://iframe.mediadelivery.net/embed/${libraryId()}/${videoGuid}?token=${token}&expires=${expires}&autoplay=false&preload=false`

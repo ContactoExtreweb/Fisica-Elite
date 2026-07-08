@@ -110,54 +110,98 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
               : 'Aún no hay alumnos. Crea el primero con «Añadir alumno».'}
           </div>
         ) : (
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Alumno</th>
-                <th>Especialidad</th>
-                <th>Nivel</th>
-                <th>Suscripción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.map((a) => (
-                <tr key={a.id}>
-                  <td>
-                    <div className="alumno-cell">
-                      <div className="avatar-small">{iniciales(a.nombre, a.apellidos)}</div>
-                      <div>
-                        <Link href={`/admin/alumnos/${a.id}`} className="name name-link">
-                          {[a.nombre, a.apellidos].filter(Boolean).join(' ') || a.username || 'Sin nombre'}
-                        </Link>
-                        <div className="sub">{a.email ?? '—'}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    {a.especialidad ? (
-                      <span className="plan-tag oposicion">
-                        {NOMBRE_ESPECIALIDAD[a.especialidad] ?? a.especialidad}
-                      </span>
-                    ) : (
-                      <span className="plan-tag">Sin asignar</span>
-                    )}
-                  </td>
-                  <td style={{ textTransform: 'capitalize' }}>{a.nivel}</td>
-                  <td>
-                    {a.fechaFinVigente ? (
-                      <span className="status-pill">
-                        <span className="dot"></span> Al día · hasta {formatoFecha(a.fechaFinVigente)}
-                      </span>
-                    ) : (
-                      <span className="status-pill bad">
-                        <span className="dot"></span> Sin acceso
-                      </span>
-                    )}
-                  </td>
+          <>
+            {/* ESCRITORIO: tabla */}
+            <table className="admin-table alumnos-tabla-desktop">
+              <thead>
+                <tr>
+                  <th>Alumno</th>
+                  <th>Especialidad</th>
+                  <th>Nivel</th>
+                  <th>Suscripción</th>
                 </tr>
+              </thead>
+              <tbody>
+                {filtrados.map((a) => (
+                  <tr key={a.id}>
+                    <td>
+                      <div className="alumno-cell">
+                        <div className="avatar-small">{iniciales(a.nombre, a.apellidos)}</div>
+                        <div>
+                          <Link href={`/admin/alumnos/${a.id}`} className="name name-link">
+                            {[a.nombre, a.apellidos].filter(Boolean).join(' ') || a.username || 'Sin nombre'}
+                          </Link>
+                          <div className="sub">{a.email ?? '—'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      {a.especialidad ? (
+                        <span className="plan-tag oposicion">
+                          {NOMBRE_ESPECIALIDAD[a.especialidad] ?? a.especialidad}
+                        </span>
+                      ) : (
+                        <span className="plan-tag">Sin asignar</span>
+                      )}
+                    </td>
+                    <td style={{ textTransform: 'capitalize' }}>{a.nivel}</td>
+                    <td>
+                      {a.fechaFinVigente ? (
+                        <span className="status-pill">
+                          <span className="dot"></span> Al día · hasta {formatoFecha(a.fechaFinVigente)}
+                        </span>
+                      ) : (
+                        <span className="status-pill bad">
+                          <span className="dot"></span> Sin acceso
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* MÓVIL: tarjetas */}
+            <div className="alumnos-tarjetas">
+              {filtrados.map((a) => (
+                <Link key={a.id} href={`/admin/alumnos/${a.id}`} className="alumno-tarjeta">
+                  <div className="alumno-tarjeta-cab">
+                    <div className="avatar-small">{iniciales(a.nombre, a.apellidos)}</div>
+                    <div className="alumno-tarjeta-id">
+                      <div className="alumno-tarjeta-nombre">
+                        {[a.nombre, a.apellidos].filter(Boolean).join(' ') || a.username || 'Sin nombre'}
+                      </div>
+                      <div className="alumno-tarjeta-email">{a.email ?? '—'}</div>
+                    </div>
+                  </div>
+                  <div className="alumno-tarjeta-datos">
+                    <div className="alumno-tarjeta-dato">
+                      <span className="k">Oposición</span>
+                      <span className="v">
+                        {a.especialidad ? NOMBRE_ESPECIALIDAD[a.especialidad] ?? a.especialidad : 'Sin asignar'}
+                      </span>
+                    </div>
+                    <div className="alumno-tarjeta-dato">
+                      <span className="k">Nivel</span>
+                      <span className="v" style={{ textTransform: 'capitalize' }}>{a.nivel}</span>
+                    </div>
+                    <div className="alumno-tarjeta-dato">
+                      <span className="k">Suscripción</span>
+                      {a.fechaFinVigente ? (
+                        <span className="status-pill">
+                          <span className="dot"></span> hasta {formatoFecha(a.fechaFinVigente)}
+                        </span>
+                      ) : (
+                        <span className="status-pill bad">
+                          <span className="dot"></span> Sin acceso
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
     </>
