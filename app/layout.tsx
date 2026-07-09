@@ -24,9 +24,25 @@ const instrument = Instrument_Serif({
 })
 
 export const metadata: Metadata = {
-  title: 'Física Élite',
+  metadataBase: new URL('https://fisicaelite.vercel.app'),
+  title: {
+    default: 'Física Élite · Preparación física para oposiciones en Cáceres',
+    template: '%s · Física Élite',
+  },
   description:
-    'Preparación física para oposiciones: Policía Local, Policía Nacional, Guardia Civil y Fuerzas Armadas.',
+    'Preparación física para oposiciones: Policía Local, Policía Nacional, Guardia Civil y Fuerzas Armadas. Presencial en Cáceres y online.',
+  keywords: [
+    'preparación física oposiciones',
+    'oposiciones Cáceres',
+    'pruebas físicas policía',
+    'preparador físico guardia civil',
+    'oposición policía nacional físicas',
+  ],
+  openGraph: {
+    siteName: 'Física Élite',
+    locale: 'es_ES',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({
