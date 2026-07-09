@@ -30,37 +30,39 @@ export default function NavPublica() {
   }, [pathname])
 
   return (
-    <header className="nav-pub">
-      <div className="nav-pub-inner">
-        <Link href="/" className="nav-pub-marca">
-          FÍSICA<span>.</span>ÉLITE
-        </Link>
+    <>
+      <header className={`nav-pub ${abierto ? 'abierto' : ''}`}>
+        <div className="nav-pub-inner">
+          <Link href="/" className="nav-pub-marca" onClick={() => setAbierto(false)}>
+            FÍSICA<span>.</span>ÉLITE
+          </Link>
 
-        <nav className="nav-pub-links">
-          {ENLACES.map((e) => (
-            <Link key={e.href} href={e.href} className={pathname === e.href ? 'activo' : ''}>
-              {e.txt}
-            </Link>
-          ))}
-        </nav>
+          <nav className="nav-pub-links">
+            {ENLACES.map((e) => (
+              <Link key={e.href} href={e.href} className={pathname === e.href ? 'activo' : ''}>
+                {e.txt}
+              </Link>
+            ))}
+          </nav>
 
-        <Link href="/login" className="nav-pub-cta">
-          Acceder
-        </Link>
+          <Link href="/login" className="nav-pub-cta">
+            Acceder
+          </Link>
 
-        {/* Botón hamburguesa (móvil) */}
-        <button
-          type="button"
-          className={`nav-pub-burger ${abierto ? 'abierto' : ''}`}
-          onClick={() => setAbierto((v) => !v)}
-          aria-label={abierto ? 'Cerrar menú' : 'Abrir menú'}
-          aria-expanded={abierto}
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-      </div>
+          {/* Botón hamburguesa (móvil) */}
+          <button
+            type="button"
+            className={`nav-pub-burger ${abierto ? 'abierto' : ''}`}
+            onClick={() => setAbierto((v) => !v)}
+            aria-label={abierto ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={abierto}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
+      </header>
 
       {/* Overlay a pantalla completa. SIEMPRE en el DOM; se muestra con la
           clase .abierto. Esto es más fiable en móviles reales que montar/
@@ -89,6 +91,6 @@ export default function NavPublica() {
           <a href="mailto:info@fisicaelite.es">info@fisicaelite.es</a>
         </div>
       </div>
-    </header>
+    </>
   )
 }
