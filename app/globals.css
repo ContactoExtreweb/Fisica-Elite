@@ -5741,3 +5741,235 @@ section:has(> .ff-form),
   justify-content: flex-end;
   margin-bottom: 2px;
 }
+
+/* ============================================
+   V2 · Fase 3d — Completar ejercicio + registro
+   ⚠️ PEGAR AL FINAL de app/globals.css
+   (después de estilos-fase3c.css)
+   ============================================ */
+
+.completar-zona {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.completar-acciones {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Botón secundario para volver a abrir el registro */
+.btn-apuntar {
+  padding: 12px 22px;
+  background: none;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 100px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-apuntar:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- El registro que se despliega al completar ---- */
+.completar-registro {
+  margin-top: 18px;
+  background: var(--card);
+  border: 1.5px solid var(--accent);
+  border-radius: 18px;
+  padding: 22px 24px;
+  animation: completarAbre 0.22s ease-out;
+}
+@keyframes completarAbre {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.completar-registro-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.completar-registro-cab > span {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.completar-cerrar {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: none;
+  color: var(--ink-muted);
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.completar-cerrar:hover { background: var(--bg-alt); color: var(--ink); }
+
+.completar-saltar {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  margin: 12px 0 0;
+  text-align: center;
+}
+
+/* ---- Formulario embebido: sin caja propia ---- */
+.marca-caja.embebida {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+.marca-cab.sin-titulo {
+  justify-content: flex-end;
+  margin-bottom: 2px;
+}
+
+
+/* ============================================
+   V2 · Gestor de suscripciones (ficha del alumno)
+   ⚠️ PEGAR AL FINAL de app/globals.css
+   ============================================ */
+
+.susc-gestor-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* ---- Formulario de añadir plan ---- */
+.susc-anadir {
+  background: var(--bg-alt, #EDEAE1);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+.susc-anadir-tit {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+.susc-anadir-pie {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.susc-anadir-botones {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.susc-meses { max-width: 110px; }
+.susc-meses label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+.susc-meses input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: var(--card);
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.susc-meses input:focus { outline: none; border-color: var(--accent); }
+
+/* ---- Lista de suscripciones ---- */
+.susc-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.susc-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 15px 18px;
+}
+.susc-item.viva { border-color: var(--border-strong); }
+
+.susc-item-info { min-width: 0; }
+.susc-item-nombre {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.susc-item-datos {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.susc-item-estado { flex-shrink: 0; }
+
+.susc-item-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.susc-renovar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.susc-renovar input {
+  width: 58px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 9px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  text-align: center;
+  background: var(--card);
+  color: var(--ink);
+  box-sizing: border-box;
+}
+.susc-renovar input:focus { outline: none; border-color: var(--accent); }
+
+.susc-baja {
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+}
+
+@media (max-width: 860px) {
+  .susc-item {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .susc-item-acciones { justify-content: space-between; }
+  .susc-anadir-pie { flex-direction: column; align-items: stretch; }
+  .susc-meses { max-width: none; }
+  .susc-anadir-botones { justify-content: stretch; }
+  .susc-anadir-botones > button { flex: 1; }
+}

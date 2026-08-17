@@ -1,7 +1,7 @@
 // Ficha de ejercicio del ALUMNO — con vídeo protegido.
 //
 // SEGURIDAD (clave): pedimos el ejercicio con el cliente normal, así que
-// la RLS decide si este alumno puede verlo (especialidad + nivel +
+// la RLS decide si este alumno puede verlo (plan contratado + tramo +
 // suscripción activa). La URL de vídeo FIRMADA solo se genera si la RLS
 // devolvió la fila. Un alumno sin acceso recibe notFound() y jamás se
 // llega a firmar ningún token: no hay forma de sacar el vídeo.
@@ -15,35 +15,37 @@ import { bunnyConfigurado, urlEmbedFirmada } from '@/lib/bunny'
 import TabsEjercicio from '@/components/TabsEjercicio'
 import BotonCompletar from '@/components/BotonCompletar'
 
-const NOMBRE_ESPECIALIDAD: Record<string, string> = {
-  policia_local: 'Policía Local',
-  policia_nacional: 'Policía Nacional',
-  guardia_civil: 'Guardia Civil',
-  fuerzas_armadas: 'Fuerzas Armadas',
+// PostgREST devuelve las relaciones a-uno como objeto o como array según
+// la versión; esto normaliza ambos casos.
+function rel<T>(x: T | T[] | null | undefined): T | undefined {
+  if (!x) return undefined
+  return Array.isArray(x) ? x[0] : x
 }
 
 export default async function FichaEjercicioAlumno({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ nivel?: string }>
 }) {
   const { slug } = await params
-  const { nivel: nivelTab } = await searchParams
   const supabase = await createClient()
 
   // La RLS filtra: si el alumno no tiene acceso a este ejercicio,
   // simplemente no existe para él → notFound().
+  // Traemos también su categoría (para el registro de marca) y su tramo.
   const { data: ejercicio } = await supabase
     .from('ejercicios')
-    .select('*')
+    .select('*, categorias_ejercicio(id, nombre, metrica, unidad), tramos(nombre)')
     .eq('slug', slug)
     .single()
 
   if (!ejercicio) notFound()
 
   const id = ejercicio.id // el resto del código usa el id real de la fila
+  const categoria = rel(ejercicio.categorias_ejercicio) as
+    | { id: string; nombre: string; metrica: string; unidad: string }
+    | undefined
+  const tramo = rel(ejercicio.tramos) as { nombre: string } | undefined
 
   // ¿Lo tiene marcado como completado?
   const {
@@ -66,13 +68,14 @@ export default async function FichaEjercicioAlumno({
     .maybeSingle()
   const completado = !!prog
 
-  // Lecciones del MISMO nivel y especialidad, en orden, para navegar
-  // anterior/siguiente. La RLS solo devuelve las accesibles al alumno.
+  // Ejercicios hermanos: los de la MISMA CATEGORÍA, en orden, para navegar
+  // anterior/siguiente. La RLS ya se encarga de devolver solo los del
+  // tramo del alumno (o todos, si se le desbloquearon).
   const { data: hermanos } = await supabase
     .from('ejercicios')
     .select('id, titulo, slug')
-    .eq('especialidad', ejercicio.especialidad)
-    .eq('nivel', ejercicio.nivel)
+    .eq('categoria_id', ejercicio.categoria_id)
+    .eq('publicado', true)
     .order('orden')
     .order('titulo')
 
@@ -80,7 +83,6 @@ export default async function FichaEjercicioAlumno({
   const idx = listaHermanos.findIndex((h) => h.id === id)
   const anterior = idx > 0 ? listaHermanos[idx - 1] : null
   const siguiente = idx >= 0 && idx < listaHermanos.length - 1 ? listaHermanos[idx + 1] : null
-  const sufijoTab = nivelTab ? `?nivel=${nivelTab}` : ''
 
   const { data: faqs } = await supabase
     .from('ejercicio_faqs')
@@ -133,7 +135,7 @@ export default async function FichaEjercicioAlumno({
         </div>
 
         <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginBottom: 24 }}>
-          <Link href={`/inicio${sufijoTab}`} style={{ color: 'var(--ink-muted)', fontWeight: 500 }}>
+          <Link href="/inicio" style={{ color: 'var(--ink-muted)', fontWeight: 500 }}>
             ← Volver a mis ejercicios
           </Link>
         </div>
@@ -163,23 +165,28 @@ export default async function FichaEjercicioAlumno({
             )}
 
             <div className="exercise-tags">
-              <span className="plan-tag oposicion">
-                {NOMBRE_ESPECIALIDAD[ejercicio.especialidad] ?? ejercicio.especialidad}
+              {categoria?.nombre && (
+                <span className="plan-tag oposicion">{categoria.nombre}</span>
+              )}
+              <span className="tag">
+                {tramo?.nombre ? `Tramo ${tramo.nombre}` : 'Todos los tramos'}
               </span>
-              <span className={`tag ${ejercicio.nivel}`}>{ejercicio.nivel}</span>
             </div>
 
-            <div className="ejercicio-completar-zona">
-              <BotonCompletar ejercicioId={id} completadoInicial={completado} />
-            </div>
+            {/* Completar + registro de la marca (se despliega al completar) */}
+            <BotonCompletar
+              ejercicioId={id}
+              completadoInicial={completado}
+              categoria={categoria ?? null}
+            />
 
             <TabsEjercicio tabs={tabs} />
 
-            {/* Navegación entre lecciones del mismo nivel */}
+            {/* Navegación entre ejercicios de la misma categoría */}
             {(anterior || siguiente) && (
               <div className="leccion-nav">
                 {anterior ? (
-                  <Link href={`/ejercicio/${anterior.slug}${sufijoTab}`} className="leccion-nav-btn prev">
+                  <Link href={`/ejercicio/${anterior.slug}`} className="leccion-nav-btn prev">
                     <span className="leccion-nav-flecha">←</span>
                     <span className="leccion-nav-txt">
                       <span className="leccion-nav-label">Anterior</span>
@@ -190,7 +197,7 @@ export default async function FichaEjercicioAlumno({
                   <span />
                 )}
                 {siguiente ? (
-                  <Link href={`/ejercicio/${siguiente.slug}${sufijoTab}`} className="leccion-nav-btn next">
+                  <Link href={`/ejercicio/${siguiente.slug}`} className="leccion-nav-btn next">
                     <span className="leccion-nav-txt">
                       <span className="leccion-nav-label">Siguiente</span>
                       <span className="leccion-nav-titulo">{siguiente.titulo}</span>

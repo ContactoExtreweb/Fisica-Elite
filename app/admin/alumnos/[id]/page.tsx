@@ -7,6 +7,10 @@ import HistorialMarcas from '@/components/HistorialMarcas'
 import type { RegistroFila } from '@/lib/marcas'
 import AlumnoEditor from '@/components/AlumnoEditor'
 import AlumnoAcciones from '@/components/AlumnoAcciones'
+import GestorSuscripciones, {
+  type SuscripcionFila,
+  type PlanOpcion,
+} from '@/components/GestorSuscripciones'
 
 const NOMBRE_ESP: Record<string, string> = {
   policia_local: 'Policía Local',
@@ -37,17 +41,43 @@ export default async function FichaAlumnoPage({
 
   if (!alumno) notFound()
 
-  // Suscripción más reciente para mostrar estado
-  const { data: sub } = await supabase
-    .from('suscripciones')
-    .select('estado, fecha_fin, metodo, meses')
-    .eq('user_id', id)
-    .order('fecha_fin', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  // TODAS sus suscripciones (una por plan contratado) + los planes a la venta
+  const [{ data: subsRaw }, { data: planesRaw }] = await Promise.all([
+    supabase
+      .from('suscripciones')
+      .select('id, plan_id, estado, metodo, meses, fecha_inicio, fecha_fin, planes(nombre)')
+      .eq('user_id', id)
+      .order('fecha_fin', { ascending: false }),
+    supabase
+      .from('planes')
+      .select('id, nombre, tipo, precio_centimos')
+      .eq('activo', true)
+      .order('orden')
+      .order('nombre'),
+  ])
 
   const hoy = new Date().toISOString().slice(0, 10)
-  const accesoActivo = !!sub && sub.estado === 'activa' && (sub.fecha_fin ?? '') >= hoy
+
+  const suscripciones: SuscripcionFila[] = (subsRaw ?? []).map((s) => {
+    const plan = Array.isArray(s.planes) ? s.planes[0] : s.planes
+    return {
+      id: s.id,
+      plan_id: s.plan_id,
+      plan_nombre: plan?.nombre ?? null,
+      estado: s.estado,
+      metodo: s.metodo,
+      meses: s.meses,
+      fecha_inicio: s.fecha_inicio,
+      fecha_fin: s.fecha_fin,
+    }
+  })
+
+  // El acceso vigente es el de la suscripción activa que dura más
+  const vigentes = suscripciones
+    .filter((s) => s.estado === 'activa' && s.fecha_fin >= hoy)
+    .sort((a, b) => (a.fecha_fin < b.fecha_fin ? 1 : -1))
+  const accesoActivo = vigentes.length > 0
+  const finAcceso = vigentes[0]?.fecha_fin ?? null
 
   // Marcas que ha ido apuntando el alumno (las lee el admin por RLS)
   const [{ data: registros }, { data: cats }] = await Promise.all([
@@ -89,7 +119,7 @@ export default async function FichaAlumnoPage({
         <div className="ficha-chip">
           <span className="ficha-chip-label">Acceso</span>
           {accesoActivo ? (
-            <span className="susc-pill activa">● Al día · hasta {fmtFecha(sub!.fecha_fin)}</span>
+            <span className="susc-pill activa">● Al día · hasta {fmtFecha(finAcceso)}</span>
           ) : (
             <span className="susc-pill inactiva">● Sin acceso</span>
           )}
@@ -108,6 +138,15 @@ export default async function FichaAlumnoPage({
         <div className="ficha-columnas">
           <AlumnoEditor alumno={alumno} />
           <AlumnoAcciones alumnoId={alumno.id} nombre={nombre} tieneAccesoActivo={accesoActivo} />
+        </div>
+
+        {/* Gestión de sus accesos: añadir plan, renovar, baja individual */}
+        <div className="admin-section" style={{ marginTop: 24 }}>
+          <GestorSuscripciones
+            alumnoId={alumno.id}
+            suscripciones={suscripciones}
+            planes={(planesRaw ?? []) as PlanOpcion[]}
+          />
         </div>
 
         {/* Marcas del alumno: lo que va apuntando en su entrenamiento */}
