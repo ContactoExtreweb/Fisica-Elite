@@ -8,6 +8,7 @@ const NOMBRE_ESPECIALIDAD: Record<string, string> = {
   policia_nacional: 'Policía Nacional',
   guardia_civil: 'Guardia Civil',
   fuerzas_armadas: 'Fuerzas Armadas',
+  aduanas: 'Aduanas',
 }
 
 function iniciales(nombre?: string | null, apellidos?: string | null) {
@@ -29,7 +30,6 @@ export type AlumnoFila = {
   username: string | null
   telefono: string | null
   especialidad: string | null
-  nivel: string
   fechaFinVigente: string | null // null = sin acceso
 }
 
@@ -41,7 +41,6 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
   const filtrados = useMemo(() => {
     const t = busqueda.trim().toLowerCase()
     return alumnos.filter((a) => {
-      // Texto: nombre, apellidos, email, usuario o teléfono
       if (t) {
         const campos = [a.nombre, a.apellidos, a.email, a.username, a.telefono]
           .filter(Boolean)
@@ -49,9 +48,7 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
           .toLowerCase()
         if (!campos.includes(t)) return false
       }
-      // Especialidad
       if (especialidad !== 'todas' && a.especialidad !== especialidad) return false
-      // Estado de acceso
       if (estado === 'activo' && !a.fechaFinVigente) return false
       if (estado === 'sin' && a.fechaFinVigente) return false
       return true
@@ -76,7 +73,12 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
             placeholder="Buscar por nombre, email, usuario o teléfono…"
           />
           {busqueda && (
-            <button type="button" className="alumnos-buscador-limpiar" onClick={() => setBusqueda('')} aria-label="Limpiar">
+            <button
+              type="button"
+              className="alumnos-buscador-limpiar"
+              onClick={() => setBusqueda('')}
+              aria-label="Limpiar"
+            >
               ✕
             </button>
           )}
@@ -88,6 +90,7 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
           <option value="policia_nacional">Policía Nacional</option>
           <option value="guardia_civil">Guardia Civil</option>
           <option value="fuerzas_armadas">Fuerzas Armadas</option>
+          <option value="aduanas">Aduanas</option>
         </select>
 
         <select value={estado} onChange={(e) => setEstado(e.target.value)} className="alumnos-select">
@@ -117,7 +120,6 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
                 <tr>
                   <th>Alumno</th>
                   <th>Especialidad</th>
-                  <th>Nivel</th>
                   <th>Suscripción</th>
                 </tr>
               </thead>
@@ -144,7 +146,6 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
                         <span className="plan-tag">Sin asignar</span>
                       )}
                     </td>
-                    <td style={{ textTransform: 'capitalize' }}>{a.nivel}</td>
                     <td>
                       {a.fechaFinVigente ? (
                         <span className="status-pill">
@@ -178,12 +179,10 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
                     <div className="alumno-tarjeta-dato">
                       <span className="k">Oposición</span>
                       <span className="v">
-                        {a.especialidad ? NOMBRE_ESPECIALIDAD[a.especialidad] ?? a.especialidad : 'Sin asignar'}
+                        {a.especialidad
+                          ? NOMBRE_ESPECIALIDAD[a.especialidad] ?? a.especialidad
+                          : 'Sin asignar'}
                       </span>
-                    </div>
-                    <div className="alumno-tarjeta-dato">
-                      <span className="k">Nivel</span>
-                      <span className="v" style={{ textTransform: 'capitalize' }}>{a.nivel}</span>
                     </div>
                     <div className="alumno-tarjeta-dato">
                       <span className="k">Suscripción</span>

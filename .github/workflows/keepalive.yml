@@ -1,0 +1,40 @@
+name: Mantener Supabase despierto
+
+# Supabase pausa los proyectos del plan gratuito tras unos días sin
+# actividad. Esto hace una consulta pequeña cada día para que cuente
+# como tráfico y no se duerma mientras el proyecto está en desarrollo.
+#
+# OJO: esto es un apaño para la fase de desarrollo. Cuando el proyecto
+# esté en producción con alumnos de pago hace falta el plan Pro igual
+# (backups diarios, sin pausas, mejor rendimiento).
+
+on:
+  schedule:
+    # Todos los días a las 06:30 UTC (08:30 en España en horario de verano)
+    - cron: '30 6 * * *'
+  # También se puede lanzar a mano desde la pestaña Actions
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar la API de Supabase
+        run: |
+          echo "Haciendo ping a Supabase..."
+          CODIGO=$(curl -s -o /tmp/respuesta.txt -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/categorias_ejercicio?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+
+          echo "Respuesta HTTP: $CODIGO"
+
+          # 200 (datos) y 401/403 (RLS bloqueando) valen igual: la petición
+          # ha llegado a la base de datos, que es lo que cuenta como actividad.
+          if [ "$CODIGO" = "200" ] || [ "$CODIGO" = "401" ] || [ "$CODIGO" = "403" ]; then
+            echo "✓ Supabase responde, sigue despierto."
+          else
+            echo "✗ Algo va mal. Respuesta:"
+            cat /tmp/respuesta.txt
+            exit 1
+          fi

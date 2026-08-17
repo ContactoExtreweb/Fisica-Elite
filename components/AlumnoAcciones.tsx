@@ -61,11 +61,7 @@ export default function AlumnoAcciones({
     )
       return
     setCargando('del')
-    setError(null)
-    // En éxito redirige (no vuelve). Si vuelve con {ok:false}, hubo error.
-    const res = await eliminarAlumno(alumnoId)
-    setCargando(null)
-    if (res && res.ok === false) setError(res.error)
+    await eliminarAlumno(alumnoId) // redirige a la lista al terminar
   }
 
   return (

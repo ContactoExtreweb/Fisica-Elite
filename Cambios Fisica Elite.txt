@@ -1,0 +1,29 @@
+Colores: Negro - Dorado - Azul Oscuro.
+
+Idea: seguir con la base de ahora, cuando entres vista de su logo, y una imagen de fondo de las instalaciones. (En la parte de web pública)
+
+
+- Implementar aduanas para un futuro.
+- Cambiar Fisica Elite por Fisicas Elite
+- En el inicio les gusta como está. (cambios para añadir más abajo)
+
+	- ¡Importante!: 
+		
+		- Colocar en los precios : Ver Planes - contratar paquetes solo, por carrera, por fuerza, preparación completa donde estén todos. O solo por pruebas. Y cada uno irá desglosado con su precio. 
+		  Esto irá sin relación a oposición. Sería algo como alumno sin tener una categoría.
+
+- Al inicio linkear a las cards del inicio enlaces en planes de precios.
+- Hacer mas visibles, apartados de cada categoria Policia Local, etc en el inicio.
+- paginas en detalle en la parte publica para Policia Local, Nacional con estilos remarcados y fotos que se sepa que está viendo
+- Añadir emblemas visibles, cuándo este dentro de la plataforma (quizás hacer diferentes estilos en base a la categoría para diferenciarlos).
+- Dentro de la plataforma, quitar los niveles.
+- Diferenciar las tablas de ejercicios por Categtía de Ejercicio (por ejemplo dominadas) y dentro del ejercicio categorizar por el nivel de 0-9 | 9 - 12 | 12 -17 
+  y un apartado donde el usuario pueda marcar las exactas las repaeticiones peso, km y demas.
+- Entrenamiento Pista: el tiempo que tardó en correr cada 100m | marcar tiempos.
+- Questionario previo de usuario cuando esté dado de alta para saber el nivel que hay que mostrarle, y no mostrarle entrenamientos en los que se estanqué. 
+  Registrar su peso, altura, y que los pueda actualizar para que lo vean los entrenadores. Facilidades que tiene para entrenar desde su casa para conocer mejor al usuario.
+- Al usuario terminar el ejercicio, o terminar de ver el vídeo automaticamente preguntar y registrar datos.
+- Pruebas reales, cada 6 semanas, es decir, el usuario manda vídeos donde el usuario muestra de verdad que hace las pruebas al nivel que tiene marcado en la plataforma.
+- Incluir capturas, para que puedan subir los resultados de sus entrenamientos. 
+- En /login poner algo para volver al inicio.
+- Apartado de reseñas en la web pública

@@ -11,7 +11,6 @@ type Alumno = {
   telefono: string | null
   edad: number | null
   especialidad: string | null
-  nivel: string
 }
 
 export default function AlumnoEditor({ alumno }: { alumno: Alumno }) {
@@ -21,7 +20,6 @@ export default function AlumnoEditor({ alumno }: { alumno: Alumno }) {
     telefono: alumno.telefono ?? '',
     edad: alumno.edad?.toString() ?? '',
     especialidad: alumno.especialidad ?? '',
-    nivel: alumno.nivel ?? 'iniciado',
   })
   const [guardando, setGuardando] = useState(false)
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
@@ -78,14 +76,7 @@ export default function AlumnoEditor({ alumno }: { alumno: Alumno }) {
             <option value="policia_nacional">Policía Nacional</option>
             <option value="guardia_civil">Guardia Civil</option>
             <option value="fuerzas_armadas">Fuerzas Armadas</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>Nivel</label>
-          <select value={form.nivel} onChange={set('nivel')} disabled={guardando}>
-            <option value="iniciado">Iniciado</option>
-            <option value="avanzado">Avanzado</option>
-            <option value="profesional">Profesional</option>
+            <option value="aduanas">Aduanas</option>
           </select>
         </div>
       </div>

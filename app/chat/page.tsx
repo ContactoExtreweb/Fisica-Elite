@@ -1,8 +1,8 @@
 // Chat del ALUMNO con su preparador. Una sola conversación.
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import BotonLogout from '@/components/BotonLogout'
+import NavAlumno from '@/components/NavAlumno'
 import { obtenerOCrearConversacion } from '@/app/chat/actions'
 import VentanaChat, { type Mensaje } from '@/components/VentanaChat'
 
@@ -41,20 +41,7 @@ export default async function ChatAlumnoPage() {
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <nav className="nav">
-          <Link href="/inicio">
-            <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-              <path d="M3 12L12 4l9 8M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Hoy
-          </Link>
-          <Link href="/chat" className="active">
-            <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Chat
-          </Link>
-        </nav>
+        <NavAlumno />
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>

@@ -1,16 +1,18 @@
 // Conversación individual en el panel del preparador.
+// v2: fuera 'nivel' del select (pedirlo rompía la consulta y disparaba
+// notFound() -> 404 al abrir cualquier conversación).
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { cerrarConversacion } from '@/app/chat/actions'
 import VentanaChat, { type Mensaje } from '@/components/VentanaChat'
-import BorrarConversacion from '@/components/BorrarConversacion'
 
 const NOMBRE_ESPECIALIDAD: Record<string, string> = {
   policia_local: 'Policía Local',
   policia_nacional: 'Policía Nacional',
   guardia_civil: 'Guardia Civil',
   fuerzas_armadas: 'Fuerzas Armadas',
+  aduanas: 'Aduanas',
 }
 
 export default async function AdminConversacionPage({
@@ -26,7 +28,7 @@ export default async function AdminConversacionPage({
 
   const { data: conv } = await supabase
     .from('conversaciones')
-    .select('id, estado, user_id, profiles!inner(nombre, apellidos, especialidad, nivel)')
+    .select('id, estado, user_id, profiles!inner(nombre, apellidos, especialidad)')
     .eq('id', id)
     .single()
 
@@ -43,7 +45,7 @@ export default async function AdminConversacionPage({
   const nombre =
     [p?.nombre, p?.apellidos].filter(Boolean).join(' ') || 'Alumno'
   const sub = p?.especialidad
-    ? `${NOMBRE_ESPECIALIDAD[p.especialidad] ?? p.especialidad} · Nivel ${p.nivel}`
+    ? (NOMBRE_ESPECIALIDAD[p.especialidad] ?? p.especialidad)
     : undefined
 
   return (
@@ -68,7 +70,6 @@ export default async function AdminConversacionPage({
               </button>
             </form>
           )}
-          <BorrarConversacion id={id} />
         </div>
       </div>
 

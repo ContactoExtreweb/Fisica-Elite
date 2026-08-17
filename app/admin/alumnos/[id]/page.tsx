@@ -3,15 +3,17 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import HistorialMarcas from '@/components/HistorialMarcas'
+import type { RegistroFila } from '@/lib/marcas'
 import AlumnoEditor from '@/components/AlumnoEditor'
 import AlumnoAcciones from '@/components/AlumnoAcciones'
-import AlumnoSuscripcion from '@/components/AlumnoSuscripcion'
 
 const NOMBRE_ESP: Record<string, string> = {
   policia_local: 'Policía Local',
   policia_nacional: 'Policía Nacional',
   guardia_civil: 'Guardia Civil',
   fuerzas_armadas: 'Fuerzas Armadas',
+  aduanas: 'Aduanas',
 }
 
 function fmtFecha(iso: string | null) {
@@ -29,58 +31,34 @@ export default async function FichaAlumnoPage({
 
   const { data: alumno } = await supabase
     .from('profiles')
-    .select('id, nombre, apellidos, email, telefono, edad, especialidad, nivel, rol, username, created_at')
+    .select('id, nombre, apellidos, email, telefono, edad, especialidad, rol, username, created_at')
     .eq('id', id)
     .single()
 
   if (!alumno) notFound()
 
-  // Acceso = existe una suscripción ACTIVA y aún vigente (misma regla que
-  // la lista y que tiene_acceso_activo). Cogemos la de fecha_fin más lejana
-  // para mostrar hasta cuándo llega. Una suscripción cancelada con fecha
-  // futura NO cuenta (por eso filtramos estado='activa').
-  const hoy = new Date().toISOString().slice(0, 10)
+  // Suscripción más reciente para mostrar estado
   const { data: sub } = await supabase
     .from('suscripciones')
     .select('estado, fecha_fin, metodo, meses')
     .eq('user_id', id)
-    .eq('estado', 'activa')
-    .gte('fecha_fin', hoy)
     .order('fecha_fin', { ascending: false })
     .limit(1)
     .maybeSingle()
 
-  const accesoActivo = !!sub
+  const hoy = new Date().toISOString().slice(0, 10)
+  const accesoActivo = !!sub && sub.estado === 'activa' && (sub.fecha_fin ?? '') >= hoy
 
-  // ¿Vino de un pago online? Buscamos su solicitud (enlazada al crear la
-  // cuenta) para mostrar la referencia de forma permanente.
-  // Buscamos por profile_creado (enlace directo) O por email (robusto:
-  // el alumno pagó con su email y su cuenta lo comparte). Con .or no se
-  // puede mezclar bien null-checks, así que probamos email, que es el más
-  // fiable, y si no, el enlace.
-  let solicitud: { referencia: string | null } | null = null
-  if (alumno.email) {
-    const { data } = await supabase
-      .from('solicitudes_alta')
-      .select('referencia, created_at')
-      .eq('email', alumno.email.toLowerCase())
-      .not('referencia', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    solicitud = data
-  }
-  if (!solicitud) {
-    const { data } = await supabase
-      .from('solicitudes_alta')
-      .select('referencia, created_at')
-      .eq('profile_creado', id)
-      .not('referencia', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    solicitud = data
-  }
+  // Marcas que ha ido apuntando el alumno (las lee el admin por RLS)
+  const [{ data: registros }, { data: cats }] = await Promise.all([
+    supabase
+      .from('registros_entrenamiento')
+      .select('id, fecha, repeticiones, peso_kg, distancia_km, tiempo_seg, series, notas, categoria_id')
+      .eq('user_id', id)
+      .order('fecha', { ascending: false })
+      .limit(40),
+    supabase.from('categorias_ejercicio').select('id, nombre, metrica, unidad'),
+  ])
 
   const nombre = [alumno.nombre, alumno.apellidos].filter(Boolean).join(' ') || 'Sin nombre'
   const esAdmin = alumno.rol === 'admin'
@@ -109,16 +87,6 @@ export default async function FichaAlumnoPage({
           </span>
         </div>
         <div className="ficha-chip">
-          <span className="ficha-chip-label">Nivel</span>
-          <span className={`tag ${alumno.nivel}`}>{alumno.nivel}</span>
-        </div>
-        {solicitud?.referencia && (
-          <div className="ficha-chip">
-            <span className="ficha-chip-label">Pago online · Nº solicitud</span>
-            <span className="ficha-ref-pago">{solicitud.referencia}</span>
-          </div>
-        )}
-        <div className="ficha-chip">
           <span className="ficha-chip-label">Acceso</span>
           {accesoActivo ? (
             <span className="susc-pill activa">● Al día · hasta {fmtFecha(sub!.fecha_fin)}</span>
@@ -137,17 +105,23 @@ export default async function FichaAlumnoPage({
         </div>
       ) : (
         <>
-          <div className="ficha-columnas">
-            <AlumnoEditor alumno={alumno} />
-            <AlumnoAcciones alumnoId={alumno.id} nombre={nombre} tieneAccesoActivo={accesoActivo} />
-          </div>
-          <div style={{ marginTop: 24 }}>
-            <AlumnoSuscripcion
-              alumnoId={alumno.id}
-              accesoActivo={accesoActivo}
-              fechaFin={sub?.fecha_fin ?? null}
-            />
-          </div>
+        <div className="ficha-columnas">
+          <AlumnoEditor alumno={alumno} />
+          <AlumnoAcciones alumnoId={alumno.id} nombre={nombre} tieneAccesoActivo={accesoActivo} />
+        </div>
+
+        {/* Marcas del alumno: lo que va apuntando en su entrenamiento */}
+        <div className="admin-section" style={{ marginTop: 24 }}>
+          <h2 className="prog-sub" style={{ marginTop: 0 }}>
+            Marcas de {nombre.split(' ')[0]}
+          </h2>
+          <HistorialMarcas
+            registros={(registros ?? []) as RegistroFila[]}
+            categorias={cats ?? []}
+            soloLectura
+            vacioTexto="Este alumno todavía no ha apuntado ninguna marca."
+          />
+        </div>
         </>
       )}
     </>

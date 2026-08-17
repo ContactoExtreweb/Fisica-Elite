@@ -1,5 +1,8 @@
 'use server'
 
+// v2: fuera 'nivel'. El alta crea el alumno con su especialidad; el tramo
+// por categoría se asigna luego con la autoevaluación del alumno.
+
 import { revalidatePath } from 'next/cache'
 import { exigirAdmin } from '@/lib/autorizacion'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -18,8 +21,6 @@ const ESPECIALIDADES = [
   'guardia_civil',
   'fuerzas_armadas',
 ] as const
-
-const NIVELES = ['iniciado', 'avanzado', 'profesional'] as const
 
 // Fechas en zona España (evita el desfase de toISOString en UTC)
 function hoyMadrid(): string {
@@ -52,7 +53,6 @@ export async function crearAlumno(
   const username = texto('username')
   const telefono = texto('telefono')
   const especialidad = texto('especialidad')
-  const nivel = texto('nivel') || 'iniciado'
   const edadRaw = texto('edad')
 
   if (!nombre || !apellidos || !email || !username || !especialidad) {
@@ -66,9 +66,6 @@ export async function crearAlumno(
   }
   if (!(ESPECIALIDADES as readonly string[]).includes(especialidad)) {
     return { error: 'Especialidad no válida' }
-  }
-  if (!(NIVELES as readonly string[]).includes(nivel)) {
-    return { error: 'Nivel no válido' }
   }
 
   let edad: number | null = null
@@ -122,7 +119,6 @@ export async function crearAlumno(
       genero: genero || null,
       edad,
       especialidad,
-      nivel,
       username,
       telefono: telefono || null,
       email,
@@ -144,16 +140,25 @@ export async function crearAlumno(
   if (formData.get('pagado') === 'on') {
     const meses = Math.min(24, Math.max(1, Number(formData.get('meses')) || 1))
     const inicio = hoyMadrid()
+    const fin = sumarMeses(inicio, meses)
 
-    const { error: errSusc } = await supabase.from('suscripciones').insert({
+    // Planes seleccionados en el alta (uno o varios). Cada uno -> una
+    // suscripción con su plan_id. Si no viene ninguno (compatibilidad),
+    // se crea una suscripción de acceso completo (plan_id null).
+    const planesIds = formData.getAll('planes_ids').map(String).filter(Boolean)
+
+    const filas = (planesIds.length > 0 ? planesIds : [null]).map((planId) => ({
       user_id: nuevoId,
-      metodo: 'efectivo',
+      plan_id: planId,
+      metodo: 'efectivo' as const,
       meses,
       fecha_inicio: inicio,
-      fecha_fin: sumarMeses(inicio, meses),
-      estado: 'activa',
+      fecha_fin: fin,
+      estado: 'activa' as const,
       marcado_por: admin.id,
-    })
+    }))
+
+    const { error: errSusc } = await supabase.from('suscripciones').insert(filas)
 
     if (errSusc) {
       // El alumno YA existe: no hacemos rollback, avisamos al admin
@@ -162,7 +167,7 @@ export async function crearAlumno(
         ok: true,
         credenciales: { email, username, password },
         error:
-          'Alumno creado, pero el pago no se pudo registrar. Anótalo y márcalo más tarde.',
+          'Alumno creado, pero el acceso no se pudo registrar. Anótalo y asígnalo desde su ficha.',
       }
     }
   }

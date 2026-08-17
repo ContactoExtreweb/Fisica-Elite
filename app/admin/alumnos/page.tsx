@@ -1,6 +1,6 @@
 // CRM: listado de alumnos con buscador y filtros (especialidad, estado).
-// La página calcula el estado de acceso de cada uno y delega el render
-// y el filtrado al componente cliente (instantáneo, sin recargar).
+// v2: fuera la columna 'nivel' (el modelo nuevo usa tramos por categoría,
+// que se gestionan con la autoevaluación del alumno).
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import TablaAlumnos, { type AlumnoFila } from '@/components/TablaAlumnos'
@@ -12,7 +12,7 @@ export default async function AdminAlumnosPage() {
   const { data: alumnos, error } = await supabase
     .from('profiles')
     .select(
-      'id, nombre, apellidos, email, username, telefono, especialidad, nivel, suscripciones(estado, fecha_fin)'
+      'id, nombre, apellidos, email, username, telefono, especialidad, suscripciones(estado, fecha_fin)'
     )
     .eq('rol', 'alumno')
     .order('created_at', { ascending: false })
@@ -34,7 +34,6 @@ export default async function AdminAlumnosPage() {
       username: a.username,
       telefono: a.telefono,
       especialidad: a.especialidad,
-      nivel: a.nivel,
       fechaFinVigente: vigente?.fecha_fin ?? null,
     }
   })

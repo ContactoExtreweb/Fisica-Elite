@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { useActionState } from 'react'
 import Link from 'next/link'
 import { crearAlumno, type EstadoAlta } from './actions'
+import SelectorAccesoAlta from '@/components/SelectorAccesoAlta'
 
 const estadoInicial: EstadoAlta = {}
 
 export default function NuevoAlumnoPage() {
   const [estado, accion, pendiente] = useActionState(crearAlumno, estadoInicial)
   const [modoPassword, setModoPassword] = useState<'aleatoria' | 'manual'>('aleatoria')
-  const [pagado, setPagado] = useState(false)
   const [copiado, setCopiado] = useState(false)
 
   // --- Pantalla de éxito: credenciales visibles UNA sola vez ---
@@ -122,25 +122,16 @@ export default function NuevoAlumnoPage() {
           </div>
 
           <div className="field-group">
-            <div className="field-grid">
-              <div>
-                <label htmlFor="especialidad">Especialidad *</label>
-                <select id="especialidad" name="especialidad" required defaultValue="">
-                  <option value="" disabled>Seleccionar…</option>
-                  <option value="policia_local">Policía Local</option>
-                  <option value="policia_nacional">Policía Nacional</option>
-                  <option value="guardia_civil">Guardia Civil</option>
-                  <option value="fuerzas_armadas">Fuerzas Armadas</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="nivel">Nivel inicial *</label>
-                <select id="nivel" name="nivel" defaultValue="iniciado">
-                  <option value="iniciado">Iniciado</option>
-                  <option value="avanzado">Avanzado</option>
-                  <option value="profesional">Profesional</option>
-                </select>
-              </div>
+            <div>
+              <label htmlFor="especialidad">Especialidad *</label>
+              <select id="especialidad" name="especialidad" required defaultValue="">
+                <option value="" disabled>Seleccionar…</option>
+                <option value="policia_local">Policía Local</option>
+                <option value="policia_nacional">Policía Nacional</option>
+                <option value="guardia_civil">Guardia Civil</option>
+                <option value="fuerzas_armadas">Fuerzas Armadas</option>
+                <option value="aduanas">Aduanas</option>
+              </select>
             </div>
           </div>
 
@@ -207,34 +198,8 @@ export default function NuevoAlumnoPage() {
             </p>
           </div>
 
-          {/* Pago en efectivo */}
-          <div className="field-group bloque-opcion">
-            <label className="radio-opcion" style={{ fontSize: 14 }}>
-              <input
-                type="checkbox"
-                name="pagado"
-                checked={pagado}
-                onChange={(e) => setPagado(e.target.checked)}
-              />
-              Ha pagado en efectivo (presencial)
-            </label>
-            {pagado && (
-              <div style={{ marginTop: 10, maxWidth: 200 }}>
-                <label htmlFor="meses">Meses pagados</label>
-                <input
-                  type="number"
-                  id="meses"
-                  name="meses"
-                  min={1}
-                  max={24}
-                  defaultValue={1}
-                />
-                <p className="nota-campo">
-                  La cuenta tendrá acceso ese tiempo desde hoy.
-                </p>
-              </div>
-            )}
-          </div>
+          {/* Pago en efectivo + selector de acceso por planes */}
+          <SelectorAccesoAlta />
 
           {estado.error && <p className="form-error">{estado.error}</p>}
 

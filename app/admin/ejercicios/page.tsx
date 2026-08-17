@@ -1,75 +1,58 @@
-// Biblioteca de ejercicios del panel, con DOBLE filtro combinable:
-// especialidad + nivel (los chips preservan el otro filtro activo).
+// Lista de ejercicios v2: filtrable por categoría, muestra tramo,
+// oposiciones marcadas, vídeo y estado de publicación.
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import AdminSubNav from '@/components/AdminSubNav'
 
-const NOMBRE_ESPECIALIDAD: Record<string, string> = {
-  policia_local: 'Policía Local',
-  policia_nacional: 'Policía Nacional',
-  guardia_civil: 'Guardia Civil',
-  fuerzas_armadas: 'Fuerzas Armadas',
+const ETIQ_CORTA: Record<string, string> = {
+  policia_local: 'P. Local',
+  policia_nacional: 'P. Nacional',
+  guardia_civil: 'G. Civil',
+  fuerzas_armadas: 'FF.AA.',
+  aduanas: 'Aduanas',
 }
 
-const NIVELES = ['iniciado', 'avanzado', 'profesional'] as const
-
-function href(esp?: string, niv?: string) {
-  const p = new URLSearchParams()
-  if (esp) p.set('esp', esp)
-  if (niv) p.set('niv', niv)
-  const qs = p.toString()
-  return qs ? `/admin/ejercicios?${qs}` : '/admin/ejercicios'
-}
-
-function formatoDuracion(seg: number | null) {
-  if (!seg) return null
-  const m = Math.floor(seg / 60)
-  const s = seg % 60
-  return `${m}:${String(s).padStart(2, '0')}`
+// PostgREST devuelve las relaciones a-uno como objeto (o array según
+// versión); esto normaliza ambos casos.
+function rel<T>(x: T | T[] | null | undefined): T | undefined {
+  if (!x) return undefined
+  return Array.isArray(x) ? x[0] : x
 }
 
 export default async function AdminEjerciciosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ esp?: string; niv?: string }>
+  searchParams: Promise<{ cat?: string }>
 }) {
-  const { esp, niv } = await searchParams
+  const { cat } = await searchParams
   const supabase = await createClient()
 
-  const { data: ejercicios, error } = await supabase
+  let consulta = supabase
     .from('ejercicios')
     .select(
-      'id, titulo, especialidad, nivel, publicado, orden, video_id, video_duracion, ejercicio_faqs(count)'
+      'id, titulo, slug, publicado, orden, video_id, categoria_id, tramo_id, categorias_ejercicio(nombre), tramos(nombre), ejercicio_oposiciones(especialidad), ejercicio_faqs(count)'
     )
-    .order('especialidad')
     .order('orden')
     .order('titulo')
+
+  if (cat) consulta = consulta.eq('categoria_id', cat)
+
+  const [{ data: ejercicios, error }, { data: categorias }] = await Promise.all([
+    consulta,
+    supabase.from('categorias_ejercicio').select('id, nombre').order('orden').order('nombre'),
+  ])
 
   if (error) {
     return <p className="form-error">Error cargando ejercicios: {error.message}</p>
   }
 
-  const todos = ejercicios ?? []
-  const visibles = todos.filter(
-    (e) => (!esp || e.especialidad === esp) && (!niv || e.nivel === niv)
-  )
-
-  // Contadores: especialidad cuenta dentro del nivel activo, y viceversa
-  const porEspecialidad = Object.keys(NOMBRE_ESPECIALIDAD).map((clave) => ({
-    clave,
-    nombre: NOMBRE_ESPECIALIDAD[clave],
-    n: todos.filter((e) => e.especialidad === clave && (!niv || e.nivel === niv)).length,
-  }))
-
-  const porNivel = NIVELES.map((clave) => ({
-    clave,
-    n: todos.filter((e) => e.nivel === clave && (!esp || e.especialidad === esp)).length,
-  }))
+  const lista = ejercicios ?? []
 
   return (
     <>
       <div className="topbar">
         <div>
-          <div className="greeting">Biblioteca · {todos.length} ejercicios</div>
+          <div className="greeting">Contenido · {lista.length} ejercicios</div>
           <h1 className="page-title">
             Tus <em>ejercicios.</em>
           </h1>
@@ -84,98 +67,87 @@ export default async function AdminEjerciciosPage({
         </div>
       </div>
 
-      {/* Filtro por especialidad */}
-      <div className="filters" style={{ marginBottom: 12 }}>
-        <Link href={href(undefined, niv)} className={`chip ${!esp ? 'active' : ''}`}>
-          Todas · {todos.filter((e) => !niv || e.nivel === niv).length}
-        </Link>
-        {porEspecialidad.map((c) => (
-          <Link
-            key={c.clave}
-            href={href(c.clave, niv)}
-            className={`chip ${esp === c.clave ? 'active' : ''}`}
-          >
-            {c.nombre} · {c.n}
-          </Link>
-        ))}
-      </div>
+      <AdminSubNav />
 
-      {/* Filtro por nivel */}
-      <div className="filters">
-        <Link href={href(esp, undefined)} className={`chip ${!niv ? 'active' : ''}`}>
-          Todos los niveles
+      {/* Filtro por categoría */}
+      <div className="chips-filtro">
+        <Link href="/admin/ejercicios" className={`chip-filtro ${!cat ? 'activo' : ''}`}>
+          Todas
         </Link>
-        {porNivel.map((c) => (
+        {(categorias ?? []).map((c) => (
           <Link
-            key={c.clave}
-            href={href(esp, c.clave)}
-            className={`chip ${niv === c.clave ? 'active' : ''}`}
-            style={{ textTransform: 'capitalize' }}
+            key={c.id}
+            href={`/admin/ejercicios?cat=${c.id}`}
+            className={`chip-filtro ${cat === c.id ? 'activo' : ''}`}
           >
-            {c.clave} · {c.n}
+            {c.nombre}
           </Link>
         ))}
       </div>
 
       <div className="admin-section">
-        {visibles.length === 0 ? (
+        {lista.length === 0 ? (
           <div className="admin-tabla-vacia">
-            {esp || niv
-              ? 'No hay ejercicios con estos filtros.'
-              : 'Aún no hay ejercicios. Crea el primero con «Nuevo ejercicio».'}
+            {cat
+              ? 'No hay ejercicios en esta categoría todavía.'
+              : 'Aún no hay ejercicios. Crea el primero.'}
           </div>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
                 <th>Ejercicio</th>
-                <th>Especialidad</th>
-                <th>Nivel</th>
+                <th>Categoría · Tramo</th>
+                <th>Oposiciones</th>
+                <th>Vídeo</th>
                 <th>Estado</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
-              {visibles.map((e) => {
+              {lista.map((e) => {
                 const nFaqs = e.ejercicio_faqs?.[0]?.count ?? 0
-                const dur = formatoDuracion(e.video_duracion)
+                const catNombre = rel(e.categorias_ejercicio)?.nombre ?? '—'
+                const tramoNombre = rel(e.tramos)?.nombre
+                const opos = (e.ejercicio_oposiciones ?? []).map(
+                  (o: { especialidad: string }) => o.especialidad
+                )
                 return (
                   <tr key={e.id}>
                     <td>
-                      <div className="alumno-cell">
-                        <div>
-                          <div className="name">{e.titulo}</div>
-                          <div className="sub">
-                            {e.video_id ? (dur ? `Vídeo · ${dur}` : 'Vídeo subido') : 'Sin vídeo'}
-                            {' · '}
-                            {nFaqs} FAQ{nFaqs === 1 ? '' : 's'}
-                          </div>
-                        </div>
+                      <Link href={`/admin/ejercicios/${e.id}`} className="name name-link">
+                        {e.titulo}
+                      </Link>
+                      <div className="sub">
+                        /{e.slug ?? '—'}
+                        {nFaqs > 0 && ` · ${nFaqs} pregunta${nFaqs === 1 ? '' : 's'}`}
                       </div>
                     </td>
                     <td>
-                      <span className="plan-tag oposicion">
-                        {NOMBRE_ESPECIALIDAD[e.especialidad] ?? e.especialidad}
-                      </span>
+                      {catNombre}
+                      <div className="sub">{tramoNombre ? `Tramo ${tramoNombre}` : 'Todos los tramos'}</div>
                     </td>
                     <td>
-                      <span className={`tag ${e.nivel}`}>{e.nivel}</span>
+                      {opos.length === 0 ? (
+                        <span className="tag-opos vacia">Sin marcar</span>
+                      ) : (
+                        opos.map((o: string) => (
+                          <span key={o} className="tag-opos">
+                            {ETIQ_CORTA[o] ?? o}
+                          </span>
+                        ))
+                      )}
                     </td>
+                    <td>{e.video_id ? '✓' : '—'}</td>
                     <td>
                       {e.publicado ? (
                         <span className="status-pill">
                           <span className="dot"></span> Publicado
                         </span>
                       ) : (
-                        <span className="status-pill warn">
+                        <span className="status-pill bad">
                           <span className="dot"></span> Borrador
                         </span>
                       )}
-                    </td>
-                    <td>
-                      <Link href={`/admin/ejercicios/${e.id}`} className="admin-row-action">
-                        Editar →
-                      </Link>
                     </td>
                   </tr>
                 )

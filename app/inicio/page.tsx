@@ -1,91 +1,82 @@
-import { Suspense } from 'react'
-// Área del alumno: primera versión REAL.
-// La query de ejercicios no filtra nada a propósito: es la RLS de la
-// BBDD quien decide qué ve el alumno (especialidad + nivel + suscripción
-// activa). Si esta página muestra lo correcto, la seguridad de contenido
-// funciona de verdad.
+// Área del alumno (v2). Sus ejercicios agrupados por categoría.
+//
+// No filtramos aquí por plan ni por tramo: la RLS de `ejercicios` ya
+// devuelve ÚNICAMENTE lo que este alumno puede ver (plan contratado +
+// su tramo, o todos los tramos si se le desbloquearon).
 import Link from 'next/link'
-import ListaEjerciciosTabs from '@/components/ListaEjerciciosTabs'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { logout } from '@/app/login/actions'
+import BotonLogout from '@/components/BotonLogout'
 import NavAlumno from '@/components/NavAlumno'
-import { contarNoLeidos } from '@/lib/no-leidos'
 
-const NOMBRE_ESPECIALIDAD: Record<string, string> = {
-  policia_local: 'Policía Local',
-  policia_nacional: 'Policía Nacional',
-  guardia_civil: 'Guardia Civil',
-  fuerzas_armadas: 'Fuerzas Armadas',
+export const metadata = { title: 'Mis ejercicios' }
+
+type Fila = {
+  id: string
+  slug: string | null
+  titulo: string
+  descripcion: string | null
+  video_id: string | null
+  orden: number
+  categoria_id: string
+  categorias_ejercicio: { nombre: string; orden: number } | { nombre: string; orden: number }[] | null
 }
 
-function formatoFecha(iso: string) {
-  const [y, m, d] = iso.split('-')
-  return `${d}/${m}/${y}`
+function rel<T>(x: T | T[] | null | undefined): T | undefined {
+  if (!x) return undefined
+  return Array.isArray(x) ? x[0] : x
 }
 
 export default async function InicioPage() {
   const supabase = await createClient()
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
   const hoy = new Date().toISOString().slice(0, 10)
-  const noLeidos = await contarNoLeidos()
 
-  const [{ data: perfil }, { data: susc }, { data: ejercicios }, { data: progreso }, { data: puedeSubir }] =
-    await Promise.all([
-      supabase
-        .from('profiles')
-        .select('nombre, apellidos, nivel, especialidad')
-        .eq('id', user.id)
-        .single(),
-      supabase
-        .from('suscripciones')
-        .select('fecha_fin')
-        .eq('user_id', user.id)
-        .eq('estado', 'activa')
-        .gte('fecha_fin', hoy)
-        .order('fecha_fin', { ascending: false })
-        .limit(1),
-      // Sin filtros: la RLS decide qué ejercicios existen para este alumno
-      supabase
-        .from('ejercicios')
-        .select('id, slug, titulo, descripcion, nivel, orden, ejercicio_faqs(count)')
-        .order('orden')
-        .order('titulo'),
-      // Progreso del alumno (ids de ejercicios completados)
-      supabase.from('progreso').select('ejercicio_id').eq('user_id', user.id).eq('completado', true),
-      // ¿Puede subir de nivel? (función de BBDD que valida el 100%)
-      supabase.rpc('puedo_subir_de_nivel'),
-    ])
+  const [{ data: perfil }, { data: ejercicios }, { data: subs }] = await Promise.all([
+    supabase.from('profiles').select('nombre, apellidos').eq('id', user.id).single(),
+    supabase
+      .from('ejercicios')
+      .select(
+        'id, slug, titulo, descripcion, video_id, orden, categoria_id, categorias_ejercicio(nombre, orden)'
+      )
+      .eq('publicado', true)
+      .order('orden'),
+    supabase
+      .from('suscripciones')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('estado', 'activa')
+      .gte('fecha_fin', hoy)
+      .limit(1),
+  ])
 
-  const vigente = susc?.[0]
+  const tieneAcceso = (subs ?? []).length > 0
+  const lista = (ejercicios ?? []) as Fila[]
 
-  // Orden correcto: primero por NIVEL (iniciado < avanzado < profesional),
-  // luego por el 'orden' que puso el preparador. El enum no se puede ordenar
-  // alfabéticamente (saldría avanzado, iniciado, profesional), así que
-  // usamos un rango explícito.
-  const RANGO_NIVEL: Record<string, number> = { iniciado: 0, avanzado: 1, profesional: 2 }
-  const lista = [...(ejercicios ?? [])].sort((a, b) => {
-    const rn = (RANGO_NIVEL[a.nivel] ?? 9) - (RANGO_NIVEL[b.nivel] ?? 9)
-    if (rn !== 0) return rn
-    return (a.orden ?? 0) - (b.orden ?? 0)
-  })
+  // Agrupar por categoría, respetando su orden
+  const grupos = new Map<string, { nombre: string; orden: number; ejercicios: Fila[] }>()
+  for (const e of lista) {
+    const c = rel(e.categorias_ejercicio)
+    if (!grupos.has(e.categoria_id)) {
+      grupos.set(e.categoria_id, {
+        nombre: c?.nombre ?? 'Ejercicios',
+        orden: c?.orden ?? 999,
+        ejercicios: [],
+      })
+    }
+    grupos.get(e.categoria_id)!.ejercicios.push(e)
+  }
+  const categorias = [...grupos.values()].sort((a, b) => a.orden - b.orden)
 
-  // Progreso: cuántos de los ejercicios visibles ha completado
-  const completados = new Set((progreso ?? []).map((p) => p.ejercicio_id))
-  const totalEj = lista.length
-  const hechos = lista.filter((e) => completados.has(e.id)).length
-  const porcentaje = totalEj > 0 ? Math.round((hechos / totalEj) * 100) : 0
-  const listoParaSubir = puedeSubir === true
-  const nombrePila = perfil?.nombre?.split(' ')[0] || 'alumno'
-
+  const nombreCorto = (perfil?.nombre ?? '').trim().split(' ')[0]
+  const nombreCompleto =
+    [perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ') || 'Alumno'
   const iniciales =
-    ((perfil?.nombre ?? '').charAt(0) + (perfil?.apellidos ?? '').charAt(0)).toUpperCase() ||
-    'FE'
+    ((perfil?.nombre ?? '').charAt(0) + (perfil?.apellidos ?? '').charAt(0)).toUpperCase() || 'FE'
 
   return (
     <div className="app">
@@ -96,105 +87,96 @@ export default async function InicioPage() {
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-
-        <NavAlumno noLeidos={noLeidos} />
-
+        <NavAlumno />
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>
-            <div className="who">
-              {[perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ') || 'Alumno'}
-            </div>
-            <form action={logout}>
-              <button type="submit" className="sidebar-logout">
-                Cerrar sesión
-              </button>
-            </form>
+            <div className="who">{nombreCompleto}</div>
+            <BotonLogout variante="texto" />
           </div>
         </div>
       </aside>
 
       <main className="main">
-        <div className="topbar">
+        <div className="topbar-movil">
+          <div className="topbar-movil-marca">
+            FÍSICA<span className="accent">.</span>ELITE
+          </div>
+          <BotonLogout variante="icono" />
+        </div>
+        <div className="al-cab">
           <div>
-            <div className="greeting">
-              {perfil?.especialidad
-                ? `${NOMBRE_ESPECIALIDAD[perfil.especialidad]} · Nivel ${perfil.nivel}`
-                : 'Sin especialidad asignada'}
-            </div>
-            <h1 className="page-title">
-              Hola, <em>{nombrePila}.</em>
+            <div className="al-saludo">{nombreCorto ? `Hola, ${nombreCorto}` : 'Hola'}</div>
+            <h1 className="al-titulo">
+              Tu <em>entrenamiento.</em>
             </h1>
           </div>
-          <div className="topbar-actions">
-            {vigente ? (
-              <span className="status-pill">
-                <span className="dot"></span> Acceso activo · hasta{' '}
-                {formatoFecha(vigente.fecha_fin)}
-              </span>
-            ) : (
-              <span className="status-pill bad">
-                <span className="dot"></span> Sin suscripción activa
-              </span>
-            )}
-          </div>
+          <Link href="/perfil" className="al-perfil-link">
+            Mi perfil
+          </Link>
         </div>
 
-        {/* Progreso del nivel actual */}
-        {vigente && totalEj > 0 && (
-          <div className="progreso-card">
-            <div className="progreso-cab">
-              <span className="progreso-titulo">Tu progreso en nivel {perfil?.nivel}</span>
-              <span className="progreso-cifra">{hechos}/{totalEj} · {porcentaje}%</span>
-            </div>
-            <div className="progreso-barra">
-              <div className="progreso-relleno" style={{ width: `${porcentaje}%` }} />
-            </div>
+        {!tieneAcceso ? (
+          <div className="al-vacio">
+            <div className="al-vacio-icono">🔒</div>
+            <h2>Tu acceso no está activo</h2>
+            <p>
+              En cuanto tu preparador active tu suscripción, aquí verás todos los ejercicios de lo
+              que tengas contratado.
+            </p>
+            <Link href="/chat" className="cta-primary">
+              Hablar con mi preparador
+            </Link>
           </div>
-        )}
-
-        {/* Aviso: listo para subir de nivel */}
-        {listoParaSubir && (
-          <Link href="/subir-nivel" className="subir-aviso">
-            <div className="subir-aviso-emoji">🏅</div>
-            <div className="subir-aviso-texto">
-              <div className="subir-aviso-titulo">¡Has completado tu nivel!</div>
-              <div className="subir-aviso-sub">Estás listo para pasar al siguiente. Pulsa aquí para subir.</div>
-            </div>
-            <span className="subir-aviso-flecha">→</span>
-          </Link>
-        )}
-
-        <div className="section-label">Tus ejercicios</div>
-
-        {lista.length === 0 ? (
-          <div className="ex-list">
-            <div className="admin-tabla-vacia">
-              {vigente
-                ? 'Tu preparador todavía no ha publicado ejercicios para tu especialidad y nivel.'
-                : 'Tu suscripción no está activa. Habla con tu preparador para renovar el acceso.'}
-            </div>
+        ) : categorias.length === 0 ? (
+          <div className="al-vacio">
+            <div className="al-vacio-icono">💪</div>
+            <h2>Aún no hay ejercicios para ti</h2>
+            <p>
+              Tu preparador está preparando el contenido de tu nivel. En cuanto lo publique,
+              aparecerá aquí.
+            </p>
+            <Link href="/chat" className="cta-primary">
+              Hablar con mi preparador
+            </Link>
           </div>
         ) : (
-          <Suspense fallback={<div className="ex-list"><div className="admin-tabla-vacia">Cargando…</div></div>}>
-          <ListaEjerciciosTabs
-            nivelAlumno={perfil?.nivel ?? 'iniciado'}
-            ejercicios={lista.map((e) => ({
-              id: e.id,
-              slug: e.slug,
-              titulo: e.titulo,
-              descripcion: e.descripcion,
-              nivel: e.nivel,
-              nFaqs: e.ejercicio_faqs?.[0]?.count ?? 0,
-              completado: completados.has(e.id),
-            }))}
-          />
-          </Suspense>
+          categorias.map((cat) => (
+            <section key={cat.nombre} className="al-cat">
+              <div className="al-cat-cab">
+                <h2>{cat.nombre}</h2>
+                <span className="al-cat-num">
+                  {cat.ejercicios.length} {cat.ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}
+                </span>
+              </div>
+              <div className="al-grid">
+                {cat.ejercicios.map((e) => (
+                  <Link
+                    key={e.id}
+                    href={`/ejercicio/${e.slug ?? e.id}`}
+                    className="al-card"
+                  >
+                    <div className="al-card-media">
+                      {e.video_id ? (
+                        <span className="al-card-play">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className="al-card-sinvideo">Sin vídeo</span>
+                      )}
+                    </div>
+                    <div className="al-card-cuerpo">
+                      <h3>{e.titulo}</h3>
+                      {e.descripcion && <p>{e.descripcion}</p>}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))
         )}
-
-        <p style={{ fontSize: 13, color: 'var(--ink-muted)', marginTop: 16 }}>
-          Pulsa un ejercicio para ver el vídeo, la técnica, los errores comunes y las preguntas frecuentes.
-        </p>
       </main>
     </div>
   )

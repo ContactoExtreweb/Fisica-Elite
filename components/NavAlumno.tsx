@@ -1,8 +1,10 @@
 'use client'
 
-// Nav del sidebar del alumno (Hoy · Chat), con el badge de no leídos
-// sobre el icono de Chat. Client component para marcar el activo y
-// hospedar el badge en vivo.
+// Nav del sidebar del alumno, con el badge de no leídos sobre Chat.
+// Secciones: Inicio · Mi progreso · Chat · Suscripción · Mi perfil.
+//
+// IMPORTANTE: úsalo en TODAS las páginas del alumno. Si alguna pinta su
+// propio <nav> a mano, se descuadra en cuanto se añade una sección.
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import BadgeNoLeidos from '@/components/BadgeNoLeidos'
@@ -21,6 +23,16 @@ export default function NavAlumno({ noLeidos = 0 }: { noLeidos?: number }) {
         </span>
         Inicio
       </Link>
+
+      <Link href="/registro" className={activo('/registro')}>
+        <span className="nav-icono-wrap">
+          <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path d="M4 19V5m0 14h16M8 15V9m4 6V6m4 9v-4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+        Mi progreso
+      </Link>
+
       <Link href="/chat" className={activo('/chat')}>
         <span className="nav-icono-wrap">
           <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -30,6 +42,7 @@ export default function NavAlumno({ noLeidos = 0 }: { noLeidos?: number }) {
         </span>
         Chat
       </Link>
+
       <Link href="/suscripcion" className={activo('/suscripcion')}>
         <span className="nav-icono-wrap">
           <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -39,6 +52,18 @@ export default function NavAlumno({ noLeidos = 0 }: { noLeidos?: number }) {
         Suscripción
       </Link>
 
+      <Link href="/perfil" className={activo('/perfil')}>
+        <span className="nav-icono-wrap">
+          <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path
+              d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+        Mi perfil
+      </Link>
     </nav>
   )
 }
