@@ -5973,3 +5973,678 @@ section:has(> .ff-form),
   .susc-anadir-botones { justify-content: stretch; }
   .susc-anadir-botones > button { flex: 1; }
 }
+/* ============================================
+   LOGIN · Salida a la web pública
+   Pegar al final de app/globals.css
+   ============================================ */
+
+/* Enlace de vuelta, arriba del formulario. Va con prefijo propio para no
+   pelearse con las reglas genéricas antiguas de globals.css. */
+.login-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-bottom: 22px;
+  padding: 7px 13px 7px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-muted);
+  text-decoration: none;
+  background: transparent;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.login-volver:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Enlace dentro del texto de "¿Aún no eres alumno?" */
+.login-volver-inline {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-volver-inline:hover {
+  text-decoration: underline;
+}
+
+/* La marca del panel izquierdo pasa a ser un enlace: que no herede
+   subrayado ni color de <a>. */
+.login-art .login-marca-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ============================================
+   SUSCRIPCIONES DEL ALUMNO · qué tengo contratado
+   (/suscripcion y /perfil)
+   ============================================ */
+
+.susc-planes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.susc-planes-sep {
+  margin-top: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.susc-plan-vacio {
+  margin: 0;
+  padding: 22px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 14px;
+  font-size: 14px;
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.susc-plan-card {
+  padding: 18px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.susc-plan-card.inactiva {
+  background: transparent;
+  opacity: 0.62;
+}
+
+.susc-plan-cab {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.susc-plan-titulo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.susc-plan-etq {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.susc-plan-etq.total {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.susc-plan-etq.opo {
+  background: var(--bg-alt);
+  color: var(--ink-2);
+}
+
+.susc-plan-estado {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.susc-plan-estado.ok {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.susc-plan-estado.off {
+  background: var(--bg-alt);
+  color: var(--ink-muted);
+}
+
+.susc-plan-cubre {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.susc-plan-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.susc-plan-cat {
+  padding: 4px 10px;
+  background: var(--bg-alt);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.susc-plan-pie {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.susc-plan-pie strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.susc-plan-desde {
+  color: var(--ink-faint);
+}
+
+.susc-plan-aviso {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: var(--accent-soft);
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent-dark);
+}
+
+/* Bloque de suscripción dentro de /perfil */
+.perfil-susc {
+  margin-top: 28px;
+  padding: 22px 26px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.perfil-susc-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.perfil-susc-sub {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 620px) {
+  .susc-plan-cab {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .perfil-susc {
+    padding: 20px 18px;
+  }
+  .perfil-susc-cab {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ============================================
+   PRECIOS v2 · parrilla de planes desde BBDD
+   ============================================ */
+
+.planes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.plan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px 22px;
+  text-align: left;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.plan-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.plan-card.activa {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.plan-card-cab {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.plan-card-nombre {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.plan-card-etq {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.plan-card-etq.total {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.plan-card-etq.opo {
+  background: var(--bg-alt);
+  color: var(--ink-2);
+}
+
+.plan-card-precio {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.plan-card-precio span {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  letter-spacing: 0;
+}
+
+.plan-card-cubre {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.plan-card-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.plan-card-cat {
+  padding: 4px 10px;
+  background: var(--bg-alt);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.plan-card-desc {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.plan-card-check {
+  margin-top: auto;
+  padding-top: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+
+.plan-card.activa .plan-card-check {
+  color: var(--accent);
+}
+
+/* Selector de meses */
+.planes-meses {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 22px 24px;
+  margin-bottom: 22px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.planes-meses label {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.planes-meses-nota {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-muted);
+  max-width: 380px;
+}
+
+.planes-meses-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.planes-mes-pill {
+  padding: 9px 15px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.planes-mes-pill:hover {
+  border-color: var(--border-strong);
+}
+
+.planes-mes-pill.activa {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.planes-meses-control input[type='number'] {
+  width: 76px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 13px;
+  text-align: center;
+  color: var(--ink);
+  background: var(--card);
+}
+
+.precios-sin-planes {
+  padding: 42px 28px;
+  text-align: center;
+  background: var(--card);
+  border: 1px dashed var(--border-strong);
+  border-radius: 18px;
+}
+
+.precios-sin-planes h3 {
+  margin: 0 0 8px;
+  font-size: 19px;
+  color: var(--ink);
+}
+
+.precios-sin-planes p {
+  margin: 0 auto 20px;
+  max-width: 420px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+@media (max-width: 620px) {
+  .planes-meses {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px 18px;
+  }
+  .plan-card-precio {
+    font-size: 32px;
+  }
+}
+
+/* ============================================
+   HOME · tarjetas de oposición enlazadas + "próximamente"
+   FICHA DEL ALUMNO · datos físicos del cuestionario
+   ============================================ */
+
+/* Las tarjetas de oposición pasan a ser <a>: que no hereden estilos de
+   enlace ni pierdan la caja de .oposicion-card. */
+.oposicion-card.enlazada {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+}
+
+.oposicion-cta {
+  margin-top: auto;
+  padding-top: 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--accent);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.oposicion-card.enlazada:hover .oposicion-cta,
+.oposicion-card.enlazada:focus-visible .oposicion-cta {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* En táctil no hay hover: que la llamada a la acción se vea siempre. */
+@media (hover: none) {
+  .oposicion-cta {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Aduanas: informa, no enlaza */
+.oposicion-card.proximamente {
+  background: transparent;
+  border-style: dashed;
+}
+
+.oposicion-card.proximamente:hover {
+  transform: none;
+  border-color: var(--border);
+}
+
+.oposicion-card.proximamente h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--ink-muted);
+}
+
+.oposicion-badge {
+  padding: 4px 10px;
+  background: var(--bg-alt);
+  border-radius: 999px;
+  font-family: var(--font-body, inherit);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.oposicion-card.proximamente p {
+  color: var(--ink-muted);
+}
+
+/* --- Datos físicos en la ficha del alumno (admin) --- */
+.ficha-fisicos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.ficha-fisico {
+  padding: 16px 18px;
+  background: var(--bg-alt);
+  border-radius: 14px;
+}
+
+.ficha-fisico.ancho {
+  grid-column: 1 / -1;
+}
+
+.ficha-fisico-k {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.ficha-fisico-v {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* ============================================================
+   PALETA "FÍSICAS ÉLITE" · negro verdoso · dorado ocre · blanco hueso
+   ------------------------------------------------------------
+   Va al FINAL a propósito: redefine las variables de :root por
+   cascada sin tocar el bloque original de arriba. Para volver a la
+   paleta antigua, basta con borrar este bloque entero.
+
+   Colores de marca (del logo):
+     #030E0A  negro verdoso   #C09D39  dorado ocre   #FFFFF0  blanco hueso
+
+   POR QUÉ HAY DOS DORADOS:
+   El ocre del logo sobre fondo hueso da 2,3:1 de contraste — ilegible
+   para texto, y en globals.css hay 84 usos de `color: var(--accent)`
+   frente a 31 de fondo. Así que --accent es un dorado PROFUNDO (legible
+   sobre claro, y con blanco encima en los botones), y --accent-viva es
+   el ocre exacto del logo, reservado a las superficies oscuras
+   (sidebar, hero, login), donde da 7,5:1 y luce como debe.
+
+   Los verdes/rojos/ámbares de estado NO se tocan: son semánticos
+   (éxito, error, aviso), no de marca.
+   ============================================================ */
+
+:root {
+  /* Superficies claras */
+  --bg: #F4F1DF;          /* hueso "papel" */
+  --bg-alt: #E9E5CE;
+  --card: #FFFFF0;        /* blanco hueso del logo */
+
+  /* Tinta: negro verdoso de marca y su escala */
+  --ink: #030E0A;
+  --ink-2: #23302A;
+  --ink-muted: #58635C;
+  --ink-faint: #8A948D;
+
+  /* Bordes en la misma familia cálida */
+  --border: #DED9C0;
+  --border-strong: #C4BEA2;
+
+  /* Dorado */
+  --accent: #7A5F1E;      /* profundo: texto, botones, bordes sobre claro.
+                             Despeja 4,5:1 tanto sobre --bg como sobre --bg-alt */
+  --accent-dark: #6B541A; /* hover / estados pulsados */
+  --accent-soft: #F2E7C8; /* lavado para pastillas y avisos */
+  --accent-viva: #C09D39; /* ocre exacto del logo, para superficies oscuras */
+}
+
+/* --- Superficies oscuras: ahí manda el ocre del logo -------------- */
+.sidebar {
+  color: #EDEAD8;          /* hueso apagado, antes #E8E6DD */
+}
+
+.sidebar .accent,
+.login-art .accent,
+.home-hero .accent {
+  color: var(--accent-viva);
+}
+
+.brand-sub.admin {
+  color: var(--accent-viva);
+}
+
+/* Texto secundario sobre oscuro (antes #B7B5AC / #888885, grises fríos
+   que sobre el negro verdoso se veían sucios) */
+.nav a,
+.login-tagline p,
+.home-hero-body p,
+.video-sin {
+  color: #A8B2AB;
+}
+
+.brand-sub,
+.sidebar-logout,
+.login-foot {
+  color: #7F8A83;
+}
+
+/* Filas con hover sobre claro (antes #FAF8F2, crema de la paleta vieja) */
+.admin-table tbody tr:hover,
+.ex-list-row:hover,
+.chat-lista-item:hover {
+  background: #FBF8E8;
+}
+
+/* --- Correcciones de contraste tras la paleta -------------------- */
+/* El pie de la web pública también va sobre negro verdoso: ahí el
+   dorado profundo se queda en 3,5:1. Le toca el ocre del logo (7,6:1).
+   El !important es para ganarle al !important que ya traía la regla. */
+.footer-pub-marca span {
+  color: var(--accent-viva);
+}
+.footer-pub-acceso {
+  color: var(--accent-viva) !important;
+}

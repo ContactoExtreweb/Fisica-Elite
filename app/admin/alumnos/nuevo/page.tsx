@@ -18,7 +18,7 @@ export default function NuevoAlumnoPage() {
     const c = estado.credenciales
     const copiar = async () => {
       await navigator.clipboard.writeText(
-        `Física Élite — Acceso a la plataforma\nUsuario: ${c.username}\nEmail: ${c.email}\nContraseña temporal: ${c.password}\n\nEntra en la web y te pedirá crear tu propia contraseña.`
+        `Físicas Élite — Acceso a la plataforma\nUsuario: ${c.username}\nEmail: ${c.email}\nContraseña temporal: ${c.password}\n\nEntra en la web y te pedirá crear tu propia contraseña.`
       )
       setCopiado(true)
     }
@@ -123,15 +123,19 @@ export default function NuevoAlumnoPage() {
 
           <div className="field-group">
             <div>
-              <label htmlFor="especialidad">Especialidad *</label>
-              <select id="especialidad" name="especialidad" required defaultValue="">
-                <option value="" disabled>Seleccionar…</option>
+              <label htmlFor="especialidad">Oposición</label>
+              <select id="especialidad" name="especialidad" defaultValue="">
+                <option value="">Sin oposición · solo entrenamiento</option>
                 <option value="policia_local">Policía Local</option>
                 <option value="policia_nacional">Policía Nacional</option>
                 <option value="guardia_civil">Guardia Civil</option>
                 <option value="fuerzas_armadas">Fuerzas Armadas</option>
                 <option value="aduanas">Aduanas</option>
               </select>
+              <span className="field-ayuda">
+                Opcional. Déjalo sin oposición si el alumno solo entrena
+                categorías sueltas (dominadas, carrera…).
+              </span>
             </div>
           </div>
 

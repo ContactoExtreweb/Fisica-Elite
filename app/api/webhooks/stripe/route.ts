@@ -15,15 +15,9 @@ import { headers } from 'next/headers'
 import type Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { esOposicionValida } from '@/lib/oposiciones'
 
 export const runtime = 'nodejs'
-
-const ESPECIALIDADES = [
-  'policia_local',
-  'policia_nacional',
-  'guardia_civil',
-  'fuerzas_armadas',
-]
 
 export async function POST(request: Request) {
   const body = await request.text() // CRUDO, imprescindible
@@ -107,14 +101,23 @@ async function crearSolicitudDesdeSesion(
 ) {
   const m = session.metadata ?? {}
 
-  const especialidad = ESPECIALIDADES.includes(String(m.especialidad))
+  // La oposición viene del PLAN (si es de tipo 'oposicion'); vacía es un
+  // estado válido: hay alumnos que solo entrenan categorías sueltas.
+  const especialidad = esOposicionValida(String(m.especialidad ?? ''))
     ? String(m.especialidad)
     : null
 
   const edadNum = Number(m.edad)
   const edad = Number.isInteger(edadNum) && edadNum >= 14 && edadNum <= 100 ? edadNum : null
 
+  // El plan comprado y lo que pagó de verdad (migración 017). Sin esto,
+  // al tramitar el alta la suscripción salía sin plan = acceso a todo.
+  const importeNum = Number(m.importe_centimos)
+  const importe = Number.isFinite(importeNum) && importeNum > 0 ? Math.round(importeNum) : null
+
   await admin.from('solicitudes_alta').insert({
+    plan_id: m.plan_id || null,
+    importe_centimos: importe,
     nombre: m.nombre || null,
     apellidos: m.apellidos || null,
     genero: m.genero || null,

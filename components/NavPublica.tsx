@@ -34,7 +34,7 @@ export default function NavPublica() {
       <header className={`nav-pub ${abierto ? 'abierto' : ''}`}>
         <div className="nav-pub-inner">
           <Link href="/" className="nav-pub-marca" onClick={() => setAbierto(false)}>
-            FÍSICA<span>.</span>ÉLITE
+            FÍSICAS<span>.</span>ÉLITE
           </Link>
 
           <nav className="nav-pub-links">

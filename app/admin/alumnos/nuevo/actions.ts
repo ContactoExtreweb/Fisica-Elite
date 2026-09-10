@@ -1,7 +1,11 @@
 'use server'
 
-// v2: fuera 'nivel'. El alta crea el alumno con su especialidad; el tramo
-// por categoría se asigna luego con la autoevaluación del alumno.
+// v2: fuera 'nivel'. El tramo por categoría se asigna luego con la
+// autoevaluación del alumno.
+//
+// La OPOSICIÓN es OPCIONAL: un alumno puede entrenar solo por categorías
+// (dominadas, carrera…) sin presentarse a ninguna oposición. Vacío se
+// guarda como NULL. La columna profiles.especialidad ya es nullable.
 
 import { revalidatePath } from 'next/cache'
 import { exigirAdmin } from '@/lib/autorizacion'
@@ -20,6 +24,7 @@ const ESPECIALIDADES = [
   'policia_nacional',
   'guardia_civil',
   'fuerzas_armadas',
+  'aduanas',
 ] as const
 
 // Fechas en zona España (evita el desfase de toISOString en UTC)
@@ -55,8 +60,8 @@ export async function crearAlumno(
   const especialidad = texto('especialidad')
   const edadRaw = texto('edad')
 
-  if (!nombre || !apellidos || !email || !username || !especialidad) {
-    return { error: 'Nombre, apellidos, email, usuario y especialidad son obligatorios' }
+  if (!nombre || !apellidos || !email || !username) {
+    return { error: 'Nombre, apellidos, email y usuario son obligatorios' }
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { error: 'El email no tiene un formato válido' }
@@ -64,8 +69,9 @@ export async function crearAlumno(
   if (!/^[a-zA-Z0-9._-]{3,24}$/.test(username)) {
     return { error: 'Usuario: 3-24 caracteres, solo letras, números, punto, guion o guion bajo' }
   }
-  if (!(ESPECIALIDADES as readonly string[]).includes(especialidad)) {
-    return { error: 'Especialidad no válida' }
+  // Vacía = "sin oposición". Si viene algo, tiene que ser del enum.
+  if (especialidad && !(ESPECIALIDADES as readonly string[]).includes(especialidad)) {
+    return { error: 'Oposición no válida' }
   }
 
   let edad: number | null = null
@@ -118,7 +124,7 @@ export async function crearAlumno(
       apellidos,
       genero: genero || null,
       edad,
-      especialidad,
+      especialidad: especialidad || null,
       username,
       telefono: telefono || null,
       email,

@@ -13,7 +13,10 @@ const NOMBRE_ESP: Record<string, string> = {
   policia_nacional: 'Policía Nacional',
   guardia_civil: 'Guardia Civil',
   fuerzas_armadas: 'Fuerzas Armadas',
+  aduanas: 'Aduanas',
 }
+
+type PlanRel = { nombre: string; tipo: string } | { nombre: string; tipo: string }[] | null
 
 export type Solicitud = {
   id: string
@@ -28,6 +31,19 @@ export type Solicitud = {
   referencia: string | null
   mensaje_usuario: string | null
   created_at: string
+  importe_centimos: number | null
+  planes: PlanRel
+}
+
+// PostgREST devuelve las relaciones a-uno como objeto o como array.
+function rel<T>(x: T | T[] | null | undefined): T | undefined {
+  if (!x) return undefined
+  return Array.isArray(x) ? x[0] : x
+}
+
+function euros(centimos: number | null): string | null {
+  if (centimos === null || centimos === undefined) return null
+  return (centimos / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })
 }
 
 export default function TarjetaSolicitud({
@@ -64,6 +80,8 @@ export default function TarjetaSolicitud({
   }
 
   const nombre = [solicitud.nombre, solicitud.apellidos].filter(Boolean).join(' ') || 'Sin nombre'
+  const plan = rel(solicitud.planes)
+  const importe = euros(solicitud.importe_centimos)
 
   return (
     <div className="solicitud-card">
@@ -78,12 +96,20 @@ export default function TarjetaSolicitud({
           )}
         </div>
         <div className="solicitud-pago">
+          {/* Qué ha comprado. Las solicitudes anteriores a la 017 no
+              tienen plan: se avisa en vez de dejar el hueco en blanco. */}
           <span className="plan-tag oposicion">
-            {solicitud.especialidad ? NOMBRE_ESP[solicitud.especialidad] : 'Sin especialidad'}
+            {plan ? plan.nombre : 'Sin plan (solicitud antigua)'}
           </span>
           <span className="solicitud-meses">
-            {solicitud.meses_pagados} {solicitud.meses_pagados === 1 ? 'mes' : 'meses'} pagados
+            {solicitud.meses_pagados} {solicitud.meses_pagados === 1 ? 'mes' : 'meses'}
+            {importe ? ` · ${importe}` : ''}
           </span>
+          {solicitud.especialidad && (
+            <span className="solicitud-meses">
+              {NOMBRE_ESP[solicitud.especialidad] ?? solicitud.especialidad}
+            </span>
+          )}
         </div>
       </div>
 
@@ -106,6 +132,14 @@ export default function TarjetaSolicitud({
             <div className="solicitud-mensaje-label">Lo que nos cuenta</div>
             <p>{solicitud.mensaje_usuario}</p>
           </div>
+        )}
+
+        {!plan && (
+          <p className="form-error">
+            Esta solicitud no tiene plan asociado. Si la apruebas, el alumno
+            entrará con <strong>acceso a todo el contenido</strong>. Revísalo y
+            ajústale la suscripción desde su ficha después de crearlo.
+          </p>
         )}
 
         {error && <p className="form-error">{error}</p>}

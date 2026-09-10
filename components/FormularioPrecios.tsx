@@ -1,21 +1,51 @@
 'use client'
 
+// Formulario público de compra.
+//
+// v2 — SE ELIGE UN PLAN:
+//  · Los planes y sus precios vienen de la BBDD (los pasa la página), no
+//    hay ningún precio escrito en el código. El total que se ve aquí es
+//    informativo: el importe de verdad lo recalcula /api/checkout leyendo
+//    el precio del plan en el servidor.
+//  · Un plan cada vez. Para contratar dos, se pasa dos veces por el pago.
+//  · Ya NO se pregunta la oposición: si el plan es de oposición, sale del
+//    propio plan. Hay alumnos que solo entrenan categorías sueltas.
+//  · Fuera la suscripción recurrente: solo pago por N meses.
 import { useState } from 'react'
 
-type Modalidad = 'pago_unico' | 'suscripcion'
+export type PlanPublico = {
+  id: string
+  nombre: string
+  tipo: 'ejercicio' | 'completo' | 'oposicion'
+  descripcion: string | null
+  precioCentimos: number
+  /** Qué incluye, ya resuelto por el servidor */
+  cubre: string
+  categorias: string[]
+}
 
-export default function FormularioPrecios() {
-  const [modalidad, setModalidad] = useState<Modalidad>('pago_unico')
+function euros(centimos: number): string {
+  const n = centimos / 100
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace('.', ',')
+}
+
+export default function FormularioPrecios({ planes }: { planes: PlanPublico[] }) {
+  const [planId, setPlanId] = useState<string>(planes[0]?.id ?? '')
   const [meses, setMeses] = useState(3)
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const precioMes = 39 // debe coincidir con PRECIO_MES_CENTIMOS del servidor
-  const total = modalidad === 'pago_unico' ? precioMes * meses : precioMes
+  const plan = planes.find((p) => p.id === planId)
+  const total = plan ? plan.precioCentimos * meses : 0
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
+
+    if (!plan) {
+      setError('Elige un plan antes de continuar.')
+      return
+    }
     setEnviando(true)
 
     const fd = new FormData(e.currentTarget)
@@ -26,11 +56,10 @@ export default function FormularioPrecios() {
       telefono: fd.get('telefono'),
       genero: fd.get('genero'),
       edad: fd.get('edad'),
-      especialidad: fd.get('especialidad'),
       username: fd.get('username'),
       mensaje: fd.get('mensaje'),
       website: fd.get('website'), // honeypot anti-bot (debe ir vacío)
-      modalidad,
+      plan_id: plan.id,
       meses,
     }
 
@@ -54,53 +83,97 @@ export default function FormularioPrecios() {
     }
   }
 
+  if (planes.length === 0) {
+    return (
+      <div className="precios-shell">
+        <div className="precios-sin-planes">
+          <h3>Todavía no hay planes publicados</h3>
+          <p>
+            Estamos preparando las tarifas. Escríbenos y te contamos las
+            opciones sin compromiso.
+          </p>
+          <a href="/contacto" className="cta-primary">
+            Hablar con el preparador
+          </a>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="precios-shell">
-      {/* Selector de modalidad */}
-      <div className="precios-modalidades">
-        <button
-          type="button"
-          className={`precios-card ${modalidad === 'pago_unico' ? 'activa' : ''}`}
-          onClick={() => setModalidad('pago_unico')}
-        >
-          <div className="precios-card-tag">Pago por meses</div>
-          <div className="precios-card-precio">
-            {precioMes}€<span>/mes</span>
-          </div>
-          <p className="precios-card-desc">
-            Pagas los meses que quieras de una vez. Cuando terminan, renuevas.
-            Sin cobros automáticos.
-          </p>
-          {modalidad === 'pago_unico' && (
-            <div className="precios-meses">
-              <label htmlFor="meses">Meses de acceso</label>
-              <input
-                id="meses"
-                type="number"
-                min={1}
-                max={24}
-                value={meses}
-                onChange={(e) => setMeses(Math.min(24, Math.max(1, Number(e.target.value) || 1)))}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-          )}
-        </button>
+      {/* Elección de plan */}
+      <div className="planes-grid">
+        {planes.map((p) => {
+          const activo = p.id === planId
+          return (
+            <button
+              key={p.id}
+              type="button"
+              className={`plan-card ${activo ? 'activa' : ''}`}
+              onClick={() => setPlanId(p.id)}
+              aria-pressed={activo}
+            >
+              <div className="plan-card-cab">
+                <span className="plan-card-nombre">{p.nombre}</span>
+                {p.tipo === 'completo' && <span className="plan-card-etq total">Todo</span>}
+                {p.tipo === 'oposicion' && <span className="plan-card-etq opo">Oposición</span>}
+              </div>
 
-        <button
-          type="button"
-          className={`precios-card ${modalidad === 'suscripcion' ? 'activa' : ''}`}
-          onClick={() => setModalidad('suscripcion')}
-        >
-          <div className="precios-card-tag">Suscripción mensual</div>
-          <div className="precios-card-precio">
-            {precioMes}€<span>/mes</span>
-          </div>
-          <p className="precios-card-desc">
-            Se renueva sola cada mes hasta que canceles. Comodidad total, sin
-            acordarte de renovar.
+              <div className="plan-card-precio">
+                {euros(p.precioCentimos)}€<span>/mes</span>
+              </div>
+
+              <p className="plan-card-cubre">{p.cubre}</p>
+
+              {p.categorias.length > 0 && (
+                <div className="plan-card-cats">
+                  {p.categorias.map((c) => (
+                    <span key={c} className="plan-card-cat">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {p.descripcion && <p className="plan-card-desc">{p.descripcion}</p>}
+
+              <span className="plan-card-check">{activo ? 'Seleccionado' : 'Elegir'}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Meses de acceso */}
+      <div className="planes-meses">
+        <div>
+          <label htmlFor="meses">¿Cuántos meses quieres?</label>
+          <p className="planes-meses-nota">
+            Pagas de una vez y no hay cobros automáticos. Cuando se acaben,
+            renuevas desde tu cuenta.
           </p>
-        </button>
+        </div>
+        <div className="planes-meses-control">
+          {[1, 3, 6, 12].map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={`planes-mes-pill ${meses === n ? 'activa' : ''}`}
+              onClick={() => setMeses(n)}
+            >
+              {n} {n === 1 ? 'mes' : 'meses'}
+            </button>
+          ))}
+          <input
+            id="meses"
+            type="number"
+            min={1}
+            max={24}
+            value={meses}
+            onChange={(e) => setMeses(Math.min(24, Math.max(1, Number(e.target.value) || 1)))}
+            aria-label="Meses de acceso"
+          />
+        </div>
       </div>
 
       {/* Datos del solicitante */}
@@ -135,20 +208,6 @@ export default function FormularioPrecios() {
 
         <div className="precios-grid">
           <div className="field">
-            <label htmlFor="especialidad">Oposición *</label>
-            <select id="especialidad" name="especialidad" required defaultValue="">
-              <option value="" disabled>Seleccionar…</option>
-              <option value="policia_local">Policía Local</option>
-              <option value="policia_nacional">Policía Nacional</option>
-              <option value="guardia_civil">Guardia Civil</option>
-              <option value="fuerzas_armadas">Fuerzas Armadas</option>
-            </select>
-          </div>
-          <div className="field"></div>
-        </div>
-
-        <div className="precios-grid">
-          <div className="field">
             <label htmlFor="username">Usuario deseado</label>
             <input type="text" id="username" name="username" placeholder="ej. maria.lopez" />
           </div>
@@ -172,12 +231,12 @@ export default function FormularioPrecios() {
         </div>
 
         <div className="field" style={{ marginTop: 4 }}>
-          <label htmlFor="mensaje">Cuéntanos tu nivel y tus dificultades (opcional)</label>
+          <label htmlFor="mensaje">Cuéntanos tu situación y tus objetivos (opcional)</label>
           <textarea
             id="mensaje"
             name="mensaje"
             rows={4}
-            placeholder="Ej.: vengo de correr por mi cuenta pero nunca he entrenado dominadas ni natación. Mi objetivo es Guardia Civil este año."
+            placeholder="Ej.: vengo de correr por mi cuenta pero nunca he entrenado dominadas. Me presento a Guardia Civil este año."
           />
           <span className="field-ayuda">
             Así tu preparador te conoce mejor desde el primer día.
@@ -195,14 +254,9 @@ export default function FormularioPrecios() {
         <div className="precios-total">
           <div>
             <span className="precios-total-label">
-              {modalidad === 'pago_unico'
-                ? `${meses} ${meses === 1 ? 'mes' : 'meses'} de acceso`
-                : 'Suscripción mensual'}
+              {plan?.nombre} · {meses} {meses === 1 ? 'mes' : 'meses'}
             </span>
-            <span className="precios-total-num">
-              {total}€
-              {modalidad === 'suscripcion' && <small>/mes</small>}
-            </span>
+            <span className="precios-total-num">{euros(total)}€</span>
           </div>
           <button type="submit" className="cta-primary precios-cta" disabled={enviando}>
             {enviando ? 'Redirigiendo…' : 'Ir al pago seguro'}

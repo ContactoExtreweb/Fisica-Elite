@@ -20,7 +20,7 @@ export default function HeaderPublico() {
     <header className="pub-header">
       <div className="pub-header-inner">
         <Link href="/" className="pub-logo" onClick={() => setAbierto(false)}>
-          FÍSICA<span>.</span>ÉLITE
+          FÍSICAS<span>.</span>ÉLITE
         </Link>
 
         <nav className="pub-nav">

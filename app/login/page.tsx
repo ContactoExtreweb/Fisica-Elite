@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useActionState } from 'react'
 import { login, type EstadoForm } from './actions'
 
@@ -13,9 +14,11 @@ export default function LoginPage() {
       {/* Lado izquierdo: branding */}
       <div className="login-art">
         <div>
-          <div className="brand">
-            FÍSICA<span className="accent">.</span>ELITE
-          </div>
+          {/* La marca vuelve a la home (solo se ve en escritorio: en móvil
+              .login-art está oculto, por eso el enlace de abajo). */}
+          <Link href="/" className="brand login-marca-link">
+            FÍSICAS<span className="accent">.</span>ELITE
+          </Link>
           <div className="brand-sub">Cáceres · Online</div>
         </div>
 
@@ -31,11 +34,17 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="login-foot">© Física Elite Cáceres · 2026</div>
+        <div className="login-foot">© Físicas Élite Cáceres · 2026</div>
       </div>
 
       {/* Lado derecho: formulario */}
       <form className="login-form" action={accion}>
+        {/* Salida a la web pública. Imprescindible en móvil: ahí el panel
+            de la izquierda no se pinta y sin esto no hay forma de volver. */}
+        <Link href="/" className="login-volver">
+          ← Volver a la web
+        </Link>
+
         <div className="label">Acceder</div>
         <h2>Bienvenido de vuelta</h2>
         <p className="lead">
@@ -72,7 +81,11 @@ export default function LoginPage() {
         </button>
 
         <p className="login-alt">
-          ¿Aún no eres alumno? Contacta con tu preparador para darte de alta.
+          ¿Aún no eres alumno?{' '}
+          <Link href="/precios" className="login-volver-inline">
+            Mira los planes
+          </Link>{' '}
+          o contacta con tu preparador para darte de alta.
         </p>
       </form>
     </div>

@@ -48,7 +48,7 @@ export default function BotonLogout({
         <div className="logout-overlay" onClick={() => !saliendo && setAbierto(false)}>
           <div className="logout-modal" onClick={(e) => e.stopPropagation()}>
             <div className="logout-modal-marca">
-              FÍSICA<span className="accent">.</span>ÉLITE
+              FÍSICAS<span className="accent">.</span>ÉLITE
             </div>
             <h3 className="logout-modal-titulo">¿Cerrar sesión?</h3>
             <p className="logout-modal-texto">

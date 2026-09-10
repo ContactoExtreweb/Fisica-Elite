@@ -6,7 +6,7 @@ import FormularioContacto from '@/components/FormularioContacto'
 export const metadata: Metadata = {
   title: 'Contacto',
   description:
-    'Ponte en contacto con Física Élite en Cáceres. Cuéntanos a qué oposición te presentas y te ayudamos a preparar tu prueba física.',
+    'Ponte en contacto con Físicas Élite en Cáceres. Cuéntanos a qué oposición te presentas y te ayudamos a preparar tu prueba física.',
 }
 
 export default function ContactoPage() {

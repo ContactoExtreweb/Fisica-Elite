@@ -39,7 +39,7 @@ export default async function RegistroPage() {
       <aside className="sidebar">
         <div>
           <div className="brand">
-            FÍSICA<span className="accent">.</span>ELITE
+            FÍSICAS<span className="accent">.</span>ELITE
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
@@ -56,7 +56,7 @@ export default async function RegistroPage() {
       <main className="main">
         <div className="topbar-movil">
           <div className="topbar-movil-marca">
-            FÍSICA<span className="accent">.</span>ELITE
+            FÍSICAS<span className="accent">.</span>ELITE
           </div>
           <BotonLogout variante="icono" />
         </div>

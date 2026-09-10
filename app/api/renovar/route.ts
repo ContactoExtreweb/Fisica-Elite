@@ -47,7 +47,7 @@ export async function POST(request: Request) {
           price_data: {
             currency: MONEDA,
             product_data: {
-              name: `Renovación Física Élite — ${meses} ${meses === 1 ? 'mes' : 'meses'}`,
+              name: `Renovación Físicas Élite — ${meses} ${meses === 1 ? 'mes' : 'meses'}`,
             },
             unit_amount: importe,
           },

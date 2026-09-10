@@ -37,7 +37,7 @@ export default async function ChatAlumnoPage() {
       <aside className="sidebar">
         <div>
           <div className="brand">
-            FÍSICA<span className="accent">.</span>ELITE
+            FÍSICAS<span className="accent">.</span>ELITE
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
@@ -55,14 +55,14 @@ export default async function ChatAlumnoPage() {
 
       <main className="main chat-main">
         <div className="topbar-movil">
-          <div className="topbar-movil-marca">FÍSICA<span className="accent">.</span>ELITE</div>
+          <div className="topbar-movil-marca">FÍSICAS<span className="accent">.</span>ELITE</div>
           <BotonLogout variante="icono" />
         </div>
         <div className="topbar">
           <div>
             <div className="greeting">Chat con tu preparador</div>
             <h1 className="page-title">
-              Habla con <em>Física Élite.</em>
+              Habla con <em>Físicas Élite.</em>
             </h1>
           </div>
         </div>

@@ -36,7 +36,7 @@ export default async function AdminLayout({
       <aside className="sidebar">
         <div>
           <div className="brand">
-            FÍSICA<span className="accent">.</span>ELITE
+            FÍSICAS<span className="accent">.</span>ELITE
           </div>
           <div className="brand-sub admin">Panel · Preparador</div>
         </div>
@@ -46,7 +46,7 @@ export default async function AdminLayout({
         <div className="sidebar-foot">
           <div className="avatar">FE</div>
           <div>
-            <div className="who">{perfil?.nombre ?? 'Física Élite'}</div>
+            <div className="who">{perfil?.nombre ?? 'Físicas Élite'}</div>
             <BotonLogout variante="texto" />
           </div>
         </div>
@@ -54,7 +54,7 @@ export default async function AdminLayout({
 
       <main className="main">
         <div className="topbar-movil">
-          <div className="topbar-movil-marca">FÍSICA<span className="accent">.</span>ELITE</div>
+          <div className="topbar-movil-marca">FÍSICAS<span className="accent">.</span>ELITE</div>
           <BotonLogout variante="icono" />
         </div>
         {children}

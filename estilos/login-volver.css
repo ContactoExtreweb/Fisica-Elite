@@ -1,0 +1,49 @@
+/* ============================================
+   LOGIN · Salida a la web pública
+   Pegar al final de app/globals.css
+   ============================================ */
+
+/* Enlace de vuelta, arriba del formulario. Va con prefijo propio para no
+   pelearse con las reglas genéricas antiguas de globals.css. */
+.login-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-bottom: 22px;
+  padding: 7px 13px 7px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-muted);
+  text-decoration: none;
+  background: transparent;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.login-volver:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Enlace dentro del texto de "¿Aún no eres alumno?" */
+.login-volver-inline {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-volver-inline:hover {
+  text-decoration: underline;
+}
+
+/* La marca del panel izquierdo pasa a ser un enlace: que no herede
+   subrayado ni color de <a>. */
+.login-art .login-marca-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}

@@ -1,11 +1,14 @@
-// Página del alumno: estado de su suscripción + renovación ONLINE.
-// Cualquier cuenta existente puede renovar aquí sin crear otra.
+// Página del alumno: QUÉ tiene contratado, hasta cuándo, y renovación
+// ONLINE. Cualquier cuenta existente puede renovar aquí sin crear otra.
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import BotonLogout from '@/components/BotonLogout'
 import NavAlumno from '@/components/NavAlumno'
 import RenovarOnline from '@/components/RenovarOnline'
+import ListaSuscripciones from '@/components/ListaSuscripciones'
+import { misSuscripciones, accesoHasta } from '@/lib/suscripciones'
+import { contarNoLeidos } from '@/lib/no-leidos'
 
 function fmt(iso: string | null) {
   if (!iso) return '—'
@@ -24,24 +27,15 @@ export default async function SuscripcionPage({
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: perfil } = await supabase
-    .from('profiles')
-    .select('nombre, apellidos')
-    .eq('id', user.id)
-    .single()
+  const [{ data: perfil }, suscripciones, noLeidos] = await Promise.all([
+    supabase.from('profiles').select('nombre, apellidos').eq('id', user.id).single(),
+    misSuscripciones(supabase, user.id),
+    contarNoLeidos(),
+  ])
 
-  const hoy = new Date().toISOString().slice(0, 10)
-  const { data: sub } = await supabase
-    .from('suscripciones')
-    .select('fecha_fin')
-    .eq('user_id', user.id)
-    .eq('estado', 'activa')
-    .gte('fecha_fin', hoy)
-    .order('fecha_fin', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  const activa = !!sub
+  const vigentes = suscripciones.filter((s) => s.vigente)
+  const activa = vigentes.length > 0
+  const finAcceso = accesoHasta(suscripciones)
   const iniciales =
     ((perfil?.nombre ?? '').charAt(0) + (perfil?.apellidos ?? '').charAt(0)).toUpperCase() || 'FE'
 
@@ -50,11 +44,11 @@ export default async function SuscripcionPage({
       <aside className="sidebar">
         <div>
           <div className="brand">
-            FÍSICA<span className="accent">.</span>ELITE
+            FÍSICAS<span className="accent">.</span>ELITE
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <NavAlumno />
+        <NavAlumno noLeidos={noLeidos} />
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>
@@ -68,7 +62,7 @@ export default async function SuscripcionPage({
 
       <main className="main">
         <div className="topbar-movil">
-          <div className="topbar-movil-marca">FÍSICA<span className="accent">.</span>ELITE</div>
+          <div className="topbar-movil-marca">FÍSICAS<span className="accent">.</span>ELITE</div>
           <BotonLogout variante="icono" />
         </div>
         <div className="topbar">
@@ -93,14 +87,25 @@ export default async function SuscripcionPage({
           </div>
           <div>
             <div className="susc-estado-titulo">
-              {activa ? 'Suscripción activa' : 'Sin acceso activo'}
+              {activa
+                ? `${vigentes.length} ${vigentes.length === 1 ? 'plan activo' : 'planes activos'}`
+                : 'Sin acceso activo'}
             </div>
             <div className="susc-estado-sub">
               {activa
-                ? `Tienes acceso hasta el ${fmt(sub!.fecha_fin)}.`
+                ? `Tienes acceso hasta el ${fmt(finAcceso)}.`
                 : 'Renueva para volver a acceder a tus entrenamientos.'}
             </div>
           </div>
+        </div>
+
+        {/* QUÉ tiene contratado exactamente, no solo si está activa */}
+        <div className="admin-section" style={{ padding: 28, marginBottom: 20 }}>
+          <h3 className="ficha-seccion-titulo">Lo que tienes contratado</h3>
+          <p className="ficha-accion-desc" style={{ maxWidth: '100%', marginBottom: 18 }}>
+            Cada plan que has contratado y qué te da acceso.
+          </p>
+          <ListaSuscripciones suscripciones={suscripciones} />
         </div>
 
         <div className="admin-section" style={{ padding: 28, maxWidth: 520 }}>

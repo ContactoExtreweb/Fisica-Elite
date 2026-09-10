@@ -2,11 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Física Élite · Preparación física para oposiciones en Cáceres',
+  title: 'Físicas Élite · Preparación física para oposiciones en Cáceres',
   description:
     'Preparación física para Policía Local, Policía Nacional, Guardia Civil y Fuerzas Armadas. Entrenamiento presencial en Cáceres y plataforma de vídeos online con tu preparador.',
   openGraph: {
-    title: 'Física Élite · Preparación física para oposiciones',
+    title: 'Físicas Élite · Preparación física para oposiciones',
     description:
       'Entrena las pruebas físicas de tu oposición con método: presencial en Cáceres y online.',
     type: 'website',

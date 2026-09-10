@@ -4,11 +4,11 @@ import NavPublica from '@/components/NavPublica'
 import FooterPublico from '@/components/FooterPublico'
 
 export const metadata: Metadata = {
-  title: { absolute: 'Física Élite · Preparación física para oposiciones en Cáceres' },
+  title: { absolute: 'Físicas Élite · Preparación física para oposiciones en Cáceres' },
   description:
     'Prepara las pruebas físicas de Policía Local, Policía Nacional, Guardia Civil y Fuerzas Armadas. Entrenamiento presencial en Cáceres y plataforma de vídeos online con seguimiento personalizado.',
   openGraph: {
-    title: 'Física Élite · Preparación física para oposiciones',
+    title: 'Físicas Élite · Preparación física para oposiciones',
     description:
       'Entrena las pruebas físicas de tu oposición con método. Presencial en Cáceres y online.',
     type: 'website',
@@ -21,6 +21,11 @@ const OPOSICIONES = [
   { n: 'Policía Nacional', d: 'Circuito de agilidad, dominadas o suspensión y carrera de resistencia.' },
   { n: 'Guardia Civil', d: 'Velocidad, fuerza de brazos (flexiones o dominadas) y resistencia aeróbica.' },
   { n: 'Fuerzas Armadas', d: 'Pruebas de tropa, marinería, suboficiales y oficiales de las FAS.' },
+  {
+    n: 'Vigilancia Aduanera',
+    d: 'Estamos preparando el temario físico específico del Servicio de Vigilancia Aduanera.',
+    proximamente: true,
+  },
 ]
 
 const PASOS = [
@@ -85,12 +90,25 @@ export default function HomePage() {
             </p>
           </div>
           <div className="oposiciones-grid">
-            {OPOSICIONES.map((o) => (
-              <div key={o.n} className="oposicion-card">
-                <h3>{o.n}</h3>
-                <p>{o.d}</p>
-              </div>
-            ))}
+            {OPOSICIONES.map((o) =>
+              o.proximamente ? (
+                // Aduanas todavía no se vende: la tarjeta informa pero no
+                // lleva a ningún sitio, para no prometer lo que no hay.
+                <div key={o.n} className="oposicion-card proximamente">
+                  <h3>
+                    {o.n}
+                    <span className="oposicion-badge">Próximamente</span>
+                  </h3>
+                  <p>{o.d}</p>
+                </div>
+              ) : (
+                <Link key={o.n} href="/precios" className="oposicion-card enlazada">
+                  <h3>{o.n}</h3>
+                  <p>{o.d}</p>
+                  <span className="oposicion-cta">Ver planes →</span>
+                </Link>
+              )
+            )}
           </div>
         </section>
 

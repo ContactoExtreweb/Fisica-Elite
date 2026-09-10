@@ -35,7 +35,9 @@ export default async function FichaAlumnoPage({
 
   const { data: alumno } = await supabase
     .from('profiles')
-    .select('id, nombre, apellidos, email, telefono, edad, especialidad, rol, username, created_at')
+    .select(
+      'id, nombre, apellidos, email, telefono, edad, especialidad, rol, username, created_at, peso_kg, altura_cm, facilidades, cuestionario_completado'
+    )
     .eq('id', id)
     .single()
 
@@ -113,7 +115,9 @@ export default async function FichaAlumnoPage({
         <div className="ficha-chip">
           <span className="ficha-chip-label">Oposición</span>
           <span className="plan-tag oposicion">
-            {alumno.especialidad ? NOMBRE_ESP[alumno.especialidad] : 'Sin asignar'}
+            {alumno.especialidad
+              ? (NOMBRE_ESP[alumno.especialidad] ?? alumno.especialidad)
+              : 'Sin oposición'}
           </span>
         </div>
         <div className="ficha-chip">
@@ -147,6 +151,41 @@ export default async function FichaAlumnoPage({
             suscripciones={suscripciones}
             planes={(planesRaw ?? []) as PlanOpcion[]}
           />
+        </div>
+
+        {/* Lo que el alumno contestó en el cuestionario inicial. El cliente
+            lo pidió expresamente: peso y altura actualizables por el alumno
+            "para que lo vean los entrenadores". Solo lectura: los edita él. */}
+        <div className="admin-section" style={{ marginTop: 24 }}>
+          <h2 className="prog-sub" style={{ marginTop: 0 }}>
+            Datos físicos
+          </h2>
+          {alumno.cuestionario_completado ? (
+            <div className="ficha-fisicos">
+              <div className="ficha-fisico">
+                <span className="ficha-fisico-k">Peso</span>
+                <span className="ficha-fisico-v">
+                  {alumno.peso_kg ? `${alumno.peso_kg} kg` : '—'}
+                </span>
+              </div>
+              <div className="ficha-fisico">
+                <span className="ficha-fisico-k">Altura</span>
+                <span className="ficha-fisico-v">
+                  {alumno.altura_cm ? `${alumno.altura_cm} cm` : '—'}
+                </span>
+              </div>
+              <div className="ficha-fisico ancho">
+                <span className="ficha-fisico-k">Qué tiene para entrenar en casa</span>
+                <span className="ficha-fisico-v">
+                  {alumno.facilidades?.trim() || 'No lo ha indicado.'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="admin-tabla-vacia">
+              Todavía no ha hecho el cuestionario inicial.
+            </div>
+          )}
         </div>
 
         {/* Marcas del alumno: lo que va apuntando en su entrenamiento */}

@@ -96,10 +96,15 @@ export async function procesarSolicitud(
   }
 
   // 4 · Suscripción con los meses pagados (método tarjeta)
+  //
+  // CLAVE: va con su plan_id. Una suscripción sin plan significa, por
+  // compatibilidad con la v1, ACCESO A TODO; si no lo copiamos aquí,
+  // quien pagó el plan de 15 € se lleva la plataforma entera.
   const inicio = hoyMadrid()
   const meses = Math.min(24, Math.max(1, sol.meses_pagados || 1))
   await supabase.from('suscripciones').insert({
     user_id: nuevoId,
+    plan_id: sol.plan_id ?? null,
     metodo: 'tarjeta',
     meses,
     fecha_inicio: inicio,

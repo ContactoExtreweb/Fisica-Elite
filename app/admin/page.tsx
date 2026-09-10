@@ -8,6 +8,7 @@ const NOMBRE_ESPECIALIDAD: Record<string, string> = {
   policia_nacional: 'Policía Nacional',
   guardia_civil: 'Guardia Civil',
   fuerzas_armadas: 'Fuerzas Armadas',
+  aduanas: 'Aduanas',
 }
 
 function saludoYFecha() {
@@ -92,13 +93,21 @@ export default async function AdminDashboardPage() {
   const conAcceso = new Set((subsActivas ?? []).map((s) => s.user_id)).size
   const sinAcceso = Math.max(0, totalAlumnos - conAcceso)
 
-  // Desglose por oposición
-  const desglose = Object.keys(NOMBRE_ESPECIALIDAD)
-    .map((clave) => ({
+  // Desglose por oposición. La oposición es OPCIONAL, así que los alumnos
+  // que solo entrenan categorías sueltas van en su propio grupo; si no,
+  // el desglose no sumaría el total y parecería que faltan alumnos.
+  const desglose = [
+    ...Object.keys(NOMBRE_ESPECIALIDAD).map((clave) => ({
       clave,
       nombre: NOMBRE_ESPECIALIDAD[clave],
       n: listaAlumnos.filter((a) => a.especialidad === clave).length,
-    }))
+    })),
+    {
+      clave: 'ninguna',
+      nombre: 'Sin oposición',
+      n: listaAlumnos.filter((a) => !a.especialidad).length,
+    },
+  ]
     .filter((d) => d.n > 0)
     .sort((a, b) => b.n - a.n)
 

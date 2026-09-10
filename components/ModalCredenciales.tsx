@@ -13,7 +13,7 @@ export default function ModalCredenciales({
   const [copiado, setCopiado] = useState(false)
 
   const copiar = async () => {
-    const texto = `Física Élite — acceso\nUsuario: ${cred.username}\nEmail: ${cred.email}\nContraseña: ${cred.password}`
+    const texto = `Físicas Élite — acceso\nUsuario: ${cred.username}\nEmail: ${cred.email}\nContraseña: ${cred.password}`
     try {
       await navigator.clipboard.writeText(texto)
       setCopiado(true)

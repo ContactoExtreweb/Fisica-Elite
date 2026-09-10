@@ -20,7 +20,7 @@ export default async function PagoExitoPage({
         <div className="pago-exito-icono">✓</div>
         <h1>¡Pago recibido!</h1>
         <p className="pago-exito-lead">
-          Gracias por confiar en Física Élite. Hemos registrado tu pago
+          Gracias por confiar en Físicas Élite. Hemos registrado tu pago
           correctamente.
         </p>
 

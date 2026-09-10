@@ -6,7 +6,7 @@ import FooterPublico from '@/components/FooterPublico'
 export const metadata: Metadata = {
   title: 'Sobre nosotros',
   description:
-    'Conoce el método y al equipo de Física Élite: más de 10 años preparando las pruebas físicas de oposiciones en Cáceres, de forma presencial y online.',
+    'Conoce el método y al equipo de Físicas Élite: más de 10 años preparando las pruebas físicas de oposiciones en Cáceres, de forma presencial y online.',
 }
 
 const VALORES = [
@@ -40,7 +40,7 @@ export default function SobreNosotrosPage() {
               <span className="sec-pub-eyebrow">Nuestra historia</span>
               <h2>De un pequeño grupo a una plataforma completa</h2>
               <p>
-                Física Élite nació en Cáceres con una idea sencilla: que nadie
+                Físicas Élite nació en Cáceres con una idea sencilla: que nadie
                 suspenda la parte física de su oposición por no haber entrenado lo
                 correcto. Empezamos con grupos reducidos en el gimnasio y hoy
                 combinamos ese trabajo presencial con una plataforma de vídeos que
@@ -58,7 +58,7 @@ export default function SobreNosotrosPage() {
                 «No entrenamos para estar en forma en general. Entrenamos para que
                 superes tu prueba, con sus marcas y su circuito.»
               </blockquote>
-              <cite>— El equipo de Física Élite</cite>
+              <cite>— El equipo de Físicas Élite</cite>
             </div>
           </div>
         </section>

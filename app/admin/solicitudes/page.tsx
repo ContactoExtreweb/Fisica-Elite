@@ -8,7 +8,7 @@ export default async function AdminSolicitudesPage() {
   const { data: solicitudes, error } = await supabase
     .from('solicitudes_alta')
     .select(
-      'id, nombre, apellidos, email, telefono, especialidad, username_solicitado, meses_pagados, modalidad, referencia, mensaje_usuario, created_at'
+      'id, nombre, apellidos, email, telefono, especialidad, username_solicitado, meses_pagados, modalidad, referencia, mensaje_usuario, created_at, importe_centimos, planes(nombre, tipo)'
     )
     .eq('estado', 'pendiente')
     .order('created_at', { ascending: false })

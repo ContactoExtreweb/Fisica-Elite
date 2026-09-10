@@ -6,7 +6,7 @@ import FooterPublico from '@/components/FooterPublico'
 export const metadata: Metadata = {
   title: 'Instalaciones',
   description:
-    'Descubre las instalaciones de Física Élite en Cáceres: espacio de entrenamiento equipado para preparar las pruebas físicas de tu oposición.',
+    'Descubre las instalaciones de Físicas Élite en Cáceres: espacio de entrenamiento equipado para preparar las pruebas físicas de tu oposición.',
 }
 
 // Placeholders de galería (sustituir por fotos reales cuando las tengáis).

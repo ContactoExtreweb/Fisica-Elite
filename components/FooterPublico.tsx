@@ -6,7 +6,7 @@ export default function FooterPublico() {
       <div className="footer-pub-inner">
         <div className="footer-pub-col footer-pub-marca-col">
           <div className="footer-pub-marca">
-            FÍSICA<span>.</span>ÉLITE
+            FÍSICAS<span>.</span>ÉLITE
           </div>
           <p>
             Preparación física para oposiciones en Cáceres y online. Entrena con
@@ -41,7 +41,7 @@ export default function FooterPublico() {
       </div>
 
       <div className="footer-pub-legal">
-        <span>© {new Date().getFullYear()} Física Élite · Cáceres</span>
+        <span>© {new Date().getFullYear()} Físicas Élite · Cáceres</span>
         <div className="footer-pub-legal-links">
           <Link href="/legal/aviso-legal">Aviso legal</Link>
           <Link href="/legal/privacidad">Privacidad</Link>

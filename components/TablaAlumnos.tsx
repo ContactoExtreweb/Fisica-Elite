@@ -48,7 +48,12 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
           .toLowerCase()
         if (!campos.includes(t)) return false
       }
-      if (especialidad !== 'todas' && a.especialidad !== especialidad) return false
+      // 'ninguna' = alumnos que solo entrenan categorías, sin oposición
+      if (especialidad === 'ninguna') {
+        if (a.especialidad) return false
+      } else if (especialidad !== 'todas' && a.especialidad !== especialidad) {
+        return false
+      }
       if (estado === 'activo' && !a.fechaFinVigente) return false
       if (estado === 'sin' && a.fechaFinVigente) return false
       return true
@@ -91,6 +96,7 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
           <option value="guardia_civil">Guardia Civil</option>
           <option value="fuerzas_armadas">Fuerzas Armadas</option>
           <option value="aduanas">Aduanas</option>
+          <option value="ninguna">Sin oposición</option>
         </select>
 
         <select value={estado} onChange={(e) => setEstado(e.target.value)} className="alumnos-select">
@@ -143,7 +149,7 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
                           {NOMBRE_ESPECIALIDAD[a.especialidad] ?? a.especialidad}
                         </span>
                       ) : (
-                        <span className="plan-tag">Sin asignar</span>
+                        <span className="plan-tag">Sin oposición</span>
                       )}
                     </td>
                     <td>
@@ -181,7 +187,7 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
                       <span className="v">
                         {a.especialidad
                           ? NOMBRE_ESPECIALIDAD[a.especialidad] ?? a.especialidad
-                          : 'Sin asignar'}
+                          : 'Sin oposición'}
                       </span>
                     </div>
                     <div className="alumno-tarjeta-dato">

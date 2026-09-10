@@ -71,7 +71,7 @@ export default function AlumnoEditor({ alumno }: { alumno: Alumno }) {
         <div className="field">
           <label>Oposición</label>
           <select value={form.especialidad} onChange={set('especialidad')} disabled={guardando}>
-            <option value="">Sin asignar</option>
+            <option value="">Sin oposición · solo entrenamiento</option>
             <option value="policia_local">Policía Local</option>
             <option value="policia_nacional">Policía Nacional</option>
             <option value="guardia_civil">Guardia Civil</option>
