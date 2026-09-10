@@ -44,8 +44,6 @@ export async function POST(request: Request) {
   const genero = texto('genero')
   const especialidad = texto('especialidad')
   const username = texto('username')
-  const nivelRaw = texto('nivel')
-  const nivel = ['iniciado', 'avanzado', 'profesional'].includes(nivelRaw) ? nivelRaw : 'iniciado'
   const mensaje = texto('mensaje').slice(0, 480) // Stripe limita metadata a 500 chars/valor
   const edadRaw = texto('edad')
   const modalidad = texto('modalidad') === 'suscripcion' ? 'suscripcion' : 'pago_unico'
@@ -82,7 +80,6 @@ export async function POST(request: Request) {
     genero,
     especialidad,
     username,
-    nivel,
     mensaje,
     edad: edadRaw,
     meses: String(meses),

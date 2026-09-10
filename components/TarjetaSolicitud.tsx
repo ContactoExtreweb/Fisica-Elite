@@ -8,12 +8,6 @@ import {
   type Credenciales,
 } from '@/app/admin/solicitudes/actions'
 
-const NIVEL_TXT: Record<string, string> = {
-  iniciado: 'Empiezo de cero / base',
-  avanzado: 'Ya tengo nivel',
-  profesional: 'Vengo casi listo',
-}
-
 const NOMBRE_ESP: Record<string, string> = {
   policia_local: 'Policía Local',
   policia_nacional: 'Policía Nacional',
@@ -32,7 +26,6 @@ export type Solicitud = {
   meses_pagados: number
   modalidad: string | null
   referencia: string | null
-  nivel_solicitado: string | null
   mensaje_usuario: string | null
   created_at: string
 }
@@ -45,7 +38,6 @@ export default function TarjetaSolicitud({
   onCreada: (c: Credenciales) => void
 }) {
   const [username, setUsername] = useState(solicitud.username_solicitado ?? '')
-  const [nivel, setNivel] = useState(solicitud.nivel_solicitado ?? 'iniciado')
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -53,7 +45,7 @@ export default function TarjetaSolicitud({
   const aprobar = async () => {
     setCargando(true)
     setError(null)
-    const res = await procesarSolicitud(solicitud.id, username, nivel)
+    const res = await procesarSolicitud(solicitud.id, username)
     // No tocamos estado local si fue bien: el padre abre el modal y luego
     // refresca la lista (esta tarjeta desaparecerá).
     if (res.ok) {
@@ -107,24 +99,7 @@ export default function TarjetaSolicitud({
               disabled={cargando}
             />
           </div>
-          <div className="field">
-            <label>Nivel inicial</label>
-            <select
-              value={nivel}
-              onChange={(e) => setNivel(e.target.value)}
-              disabled={cargando}
-            >
-              <option value="iniciado">Iniciado</option>
-              <option value="avanzado">Avanzado</option>
-              <option value="profesional">Profesional</option>
-            </select>
-          </div>
         </div>
-
-        <p className="solicitud-nota-nivel">
-          El usuario indicó: <strong>{NIVEL_TXT[solicitud.nivel_solicitado ?? 'iniciado'] ?? 'Empiezo de cero'}</strong>.
-          Puedes ajustarlo si lo ves necesario.
-        </p>
 
         {solicitud.mensaje_usuario && (
           <div className="solicitud-mensaje">

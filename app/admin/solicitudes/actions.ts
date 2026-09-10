@@ -8,6 +8,11 @@
 // DIRECTOS (no FormData) y NO hacen revalidatePath de /admin/solicitudes.
 // Así el componente cliente no se desmonta al procesar y puede enseñar las
 // credenciales en un modal. La lista se refresca al cerrar ese modal.
+//
+// v2: fuera 'nivel'. La 014 tiró profiles.nivel, pero aquí se seguía
+// escribiendo: el update fallaba, entraba el rollback y BORRABA el usuario
+// recién creado en Auth. Resultado: ninguna solicitud de pago web se podía
+// tramitar. El tramo del alumno lo asigna ahora el cuestionario inicial.
 import { revalidatePath } from 'next/cache'
 import { exigirAdmin } from '@/lib/autorizacion'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -28,8 +33,7 @@ function sumarMeses(fechaISO: string, meses: number): string {
 
 export async function procesarSolicitud(
   solicitudId: string,
-  username: string,
-  nivel: string
+  username: string
 ): Promise<ResultadoProceso> {
   const { supabase, user: admin } = await exigirAdmin()
   if (!solicitudId) return { ok: false, error: 'Falta la solicitud' }
@@ -46,7 +50,6 @@ export async function procesarSolicitud(
   if (!sol.email) return { ok: false, error: 'La solicitud no tiene email' }
 
   const nombreUsuario = (username || sol.username_solicitado || '').trim()
-  const nivelFinal = ['iniciado', 'avanzado', 'profesional'].includes(nivel) ? nivel : 'iniciado'
 
   // 2 · Crear el usuario en Auth (service_role, como en el alta manual)
   const adminClient = createAdminClient()
@@ -78,7 +81,6 @@ export async function procesarSolicitud(
       genero: sol.genero,
       edad: sol.edad,
       especialidad: sol.especialidad,
-      nivel: nivelFinal,
       username: nombreUsuario || null,
       telefono: sol.telefono,
       email: sol.email,

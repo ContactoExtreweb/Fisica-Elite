@@ -126,7 +126,6 @@ async function crearSolicitudDesdeSesion(
     meses_pagados: Math.min(24, Math.max(1, Number(m.meses) || 1)),
     modalidad: m.modalidad || 'pago_unico',
     referencia: m.referencia || null,
-    nivel_solicitado: m.nivel || 'iniciado',
     mensaje_usuario: m.mensaje || null,
     stripe_session_id: session.id,
     stripe_payment_intent:

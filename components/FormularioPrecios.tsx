@@ -27,7 +27,6 @@ export default function FormularioPrecios() {
       genero: fd.get('genero'),
       edad: fd.get('edad'),
       especialidad: fd.get('especialidad'),
-      nivel: fd.get('nivel'),
       username: fd.get('username'),
       mensaje: fd.get('mensaje'),
       website: fd.get('website'), // honeypot anti-bot (debe ir vacío)
@@ -145,14 +144,7 @@ export default function FormularioPrecios() {
               <option value="fuerzas_armadas">Fuerzas Armadas</option>
             </select>
           </div>
-          <div className="field">
-            <label htmlFor="nivel">Tu nivel actual *</label>
-            <select id="nivel" name="nivel" required defaultValue="iniciado">
-              <option value="iniciado">Empiezo de cero / base</option>
-              <option value="avanzado">Ya tengo nivel (avanzado)</option>
-              <option value="profesional">Vengo casi listo (profesional)</option>
-            </select>
-          </div>
+          <div className="field"></div>
         </div>
 
         <div className="precios-grid">
