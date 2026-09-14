@@ -6648,3 +6648,1512 @@ section:has(> .ff-form),
 .footer-pub-acceso {
   color: var(--accent-viva) !important;
 }
+
+/* ============================================
+   /suscripcion · renovar por plan y contratar otro
+   ============================================ */
+
+/* Desplegable "Renovar este plan" dentro de cada tarjeta. Es un <details>
+   nativo: funciona sin JS y no añade estado. */
+.susc-plan-renovar {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.susc-plan-renovar > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.susc-plan-renovar > summary::-webkit-details-marker {
+  display: none;
+}
+
+.susc-plan-renovar > summary::after {
+  content: '▾';
+  font-size: 11px;
+  transition: transform 0.15s ease;
+}
+
+.susc-plan-renovar[open] > summary {
+  margin-bottom: 14px;
+}
+
+.susc-plan-renovar[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.susc-plan-renovar .renovar-caja {
+  max-width: 440px;
+}
+
+.susc-plan-nota {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* Total antes de pagar (renovar y contratar) */
+.renovar-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: var(--bg-alt);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.renovar-total strong {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* Contratar otro plan: reutiliza .plan-card / .planes-grid de /precios */
+.contratar-grid {
+  margin-bottom: 18px;
+}
+
+.contratar-pago {
+  max-width: 440px;
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.contratar-ayuda {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+/* ============================================
+   PÁGINAS POR OPOSICIÓN · /oposiciones/<slug>
+   El color del cuerpo entra como variable --cuerpo desde el componente,
+   así este CSS sirve para las cuatro páginas sin duplicarse.
+   ============================================ */
+
+.opo-hero {
+  background: var(--cuerpo, var(--ink));
+  color: #fff;
+  padding: 88px 24px 72px;
+}
+
+.opo-hero-inner {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.opo-eyebrow {
+  display: inline-block;
+  margin-bottom: 18px;
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.opo-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 5vw, 52px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+}
+
+.opo-hero p {
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 620px;
+  margin: 0;
+}
+
+.opo-hero-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+/* Botones propios: sobre el color del cuerpo, el dorado de marca no pega */
+.opo-cta,
+.opo-cta-fantasma {
+  display: inline-flex;
+  align-items: center;
+  padding: 13px 24px;
+  border-radius: 999px;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.opo-cta {
+  background: #fff;
+  color: var(--cuerpo, var(--ink));
+}
+
+.opo-cta:hover {
+  opacity: 0.88;
+}
+
+.opo-cta-fantasma {
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+
+.opo-cta-fantasma:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Las pruebas */
+.opo-pruebas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.opo-prueba {
+  display: flex;
+  gap: 16px;
+  padding: 24px 22px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cuerpo, var(--accent));
+  border-radius: 16px;
+}
+
+.opo-prueba-num {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: var(--cuerpo, var(--accent));
+}
+
+.opo-prueba h3 {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.opo-prueba p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+/* El aviso del baremo: importante que se lea, no es letra pequeña */
+.opo-aviso {
+  max-width: 720px;
+  margin: 28px auto 0;
+  padding: 16px 20px;
+  background: var(--bg-alt);
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+/* Tarjetas de plan como enlace (en /precios son <button>) */
+.plan-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.plan-card-link:hover {
+  border-color: var(--cuerpo, var(--accent));
+}
+
+.plan-card-link .plan-card-check {
+  color: var(--cuerpo, var(--accent));
+}
+
+/* Ir a otra oposición */
+.opo-otras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.opo-otra {
+  padding: 12px 22px;
+  border: 1.5px solid var(--border);
+  border-left: 4px solid var(--cuerpo);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.opo-otra:hover {
+  border-color: var(--cuerpo);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 620px) {
+  .opo-hero {
+    padding: 64px 20px 52px;
+  }
+  .opo-hero-acciones .opo-cta,
+  .opo-hero-acciones .opo-cta-fantasma {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================================
+   AJUSTE FINO DE PALETA · valores muestreados del logo real
+   ------------------------------------------------------------
+   Medidos sobre public/logo.jpg píxel a píxel:
+     negro verdoso #060E0A (media de 68.518 px del escudo)
+     dorado ocre   #BB982F (la parte más saturada del ocre)
+     crema         #F8F4E8 (las letras "FÍSICAS")
+   Los valores anteriores estaban a 2-6 unidades; esto los clava.
+   ============================================================ */
+
+:root {
+  --ink: #060E0A;          /* el negro del escudo */
+  --card: #FAF6EC;         /* crema del logo, un punto más claro */
+  --bg: #F1EDDF;           /* el "papel", un escalón por debajo */
+  --bg-alt: #E6E1CE;
+  --border: #DCD6BF;
+  --border-strong: #C2BBA0;
+  --accent-viva: #BB982F;  /* el ocre exacto, para superficies oscuras */
+}
+
+/* La barra de navegación tenía el crema VIEJO escrito a mano. */
+.nav-pub {
+  background: rgba(241, 237, 223, 0.85);
+}
+
+/* --- Logo en la barra ------------------------------------------- */
+.nav-pub-marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-pub-logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+/* --- Desplegable de Oposiciones (escritorio) --------------------- */
+/* El padding/margin negativo hace de puente: sin él, al bajar el ratón
+   hacia el panel se pierde el :hover en el hueco y se cierra solo. */
+.nav-pub-drop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 14px 0;
+  margin: -14px 0;
+}
+
+.nav-pub-drop > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nav-pub-drop-flecha {
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+
+.nav-pub-drop:hover .nav-pub-drop-flecha,
+.nav-pub-drop:focus-within .nav-pub-drop-flecha {
+  transform: rotate(180deg);
+}
+
+.nav-pub-drop-panel {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  min-width: 240px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(6, 14, 10, 0.16);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+/* :focus-within = también se abre con el teclado, no solo con el ratón */
+.nav-pub-drop:hover .nav-pub-drop-panel,
+.nav-pub-drop:focus-within .nav-pub-drop-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.nav-pub-drop-panel a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.nav-pub-drop-panel a::before {
+  content: '';
+  flex-shrink: 0;
+  width: 4px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--cuerpo, transparent);
+}
+
+.nav-pub-drop-panel a:hover {
+  background: var(--bg-alt);
+  color: var(--ink);
+}
+
+.nav-pub-drop-todas {
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 10px 10px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* --- Submenú en el overlay de móvil ------------------------------ */
+/* Sin JS: el padre y sus hijos se ven a la vez, indentados. Es lo más
+   fiable en táctil (el menú móvil ya dio problemas una vez). */
+.nav-overlay-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 8px;
+  padding-left: 16px;
+  border-left: 2px solid var(--border-strong);
+}
+
+.nav-overlay-links .nav-overlay-sub a {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0;
+  padding: 4px 0;
+  color: var(--ink-muted);
+}
+
+.nav-overlay-links .nav-overlay-sub a:hover {
+  color: var(--accent);
+}
+
+/* ============================================================
+   ÍNDICE DE OPOSICIONES · /oposiciones
+   ============================================================ */
+
+.opoidx-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 96px 24px 80px;
+  background: var(--ink);
+  color: #fff;
+}
+
+.opoidx-hero-foto {
+  object-fit: cover;
+  object-position: center 45%;
+  opacity: 0.6;
+}
+
+.opoidx-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 14, 10, 0.3) 0%, rgba(6, 14, 10, 0.62) 45%, rgba(6, 14, 10, 0.9) 100%);
+}
+
+.opoidx-hero-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.opoidx-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 5.2vw, 54px);
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+}
+
+.opoidx-hero h1 em {
+  font-style: italic;
+  color: var(--accent-viva);
+}
+
+.opoidx-hero p {
+  max-width: 640px;
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* Cómo te preparamos */
+.opoidx-pasos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 18px;
+}
+
+.opoidx-paso {
+  padding: 26px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.opoidx-paso-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--accent-viva);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.opoidx-paso h3 {
+  margin: 0 0 8px;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.opoidx-paso p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* Las oposiciones */
+.opoidx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.opoidx-card {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--cuerpo);
+  border-radius: 18px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.opoidx-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(6, 14, 10, 0.1);
+}
+
+.opoidx-card h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.opoidx-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.opoidx-card-pruebas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.opoidx-card-prueba {
+  padding: 4px 10px;
+  background: var(--bg-alt);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.opoidx-card-cta {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--cuerpo);
+}
+
+.opoidx-card.proximamente {
+  background: transparent;
+  border-style: dashed;
+  border-top-style: solid;
+}
+
+.opoidx-card.proximamente h3,
+.opoidx-card.proximamente p {
+  color: var(--ink-muted);
+}
+
+@media (max-width: 620px) {
+  .opoidx-hero {
+    padding: 72px 20px 60px;
+  }
+}
+
+/* ============================================
+   INSTALACIONES · galería con las fotos reales
+   Las fotos son VERTICALES (3:4); la cuadrícula está montada para eso.
+   ============================================ */
+
+.inst-galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 22px;
+}
+
+.inst-foto {
+  margin: 0;
+}
+
+.inst-foto-marco {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--bg-alt);
+}
+
+.inst-foto-img {
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.inst-foto:hover .inst-foto-img {
+  transform: scale(1.03);
+}
+
+.inst-foto figcaption {
+  padding: 14px 4px 0;
+}
+
+.inst-foto figcaption h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.inst-foto figcaption p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* La vista general ocupa dos columnas y va apaisada, que es como mejor
+   se lee un plano del local. */
+@media (min-width: 860px) {
+  .inst-galeria {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .inst-foto.destacada {
+    grid-column: span 2;
+  }
+  .inst-foto.destacada .inst-foto-marco {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+/* ============================================
+   EMBLEMA DEL CUERPO en las páginas de oposición
+   Placa clara detrás: los emblemas son oscuros (azul marino, verde) y
+   sobre el color del cuerpo se perderían. Con 'contain' entran tanto los
+   PNG cuadrados como el SVG alto y estrecho de Fuerzas Armadas.
+   ============================================ */
+
+.opo-emblema {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+  margin-bottom: 24px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+.opo-emblema img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Emblema pequeño en los enlaces a las otras oposiciones */
+.opo-otra {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.opo-otra-emblema {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+@media (max-width: 620px) {
+  .opo-emblema {
+    width: 84px;
+    height: 84px;
+    border-radius: 20px;
+  }
+}
+
+/* ============================================
+   HOME · hero con logo y foto, bloques de oposición, fotos
+   ============================================ */
+
+/* El hero pasa de fondo crema a fondo oscuro con foto: hay que repasar
+   TODO lo que va dentro, que estaba pensado para texto oscuro. */
+.hero-pub {
+  position: relative;
+  overflow: hidden;
+  padding: 64px 24px 80px;
+  background: var(--ink);
+}
+
+.hero-pub-foto {
+  object-fit: cover;
+  object-position: center 45%;
+  opacity: 0.5;
+}
+
+.hero-pub::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 14, 10, 0.5) 0%,
+    rgba(6, 14, 10, 0.74) 45%,
+    rgba(6, 14, 10, 0.95) 100%
+  );
+}
+
+.hero-pub-inner {
+  position: relative;
+  z-index: 2;
+}
+
+/* Placa del logo. logo.jpg NO tiene transparencia todavía: sobre el fondo
+   oscuro saldría un recuadro blanco. La placa lo convierte en una chapa
+   y queda intencionado. Con un PNG con alfa, se puede quitar el fondo. */
+/* El logo va DIRECTO sobre el hero: logo.png ya viene sin fondo.
+   display:block (no inline-flex) para que el badge caiga debajo y no se
+   monte al lado, que es lo que pasaba antes.
+   El escudo es casi negro y sobre la foto oscura se fundiría, así que
+   lleva un filo claro muy tenue y una sombra que lo despega. */
+.hero-logo {
+  display: block;
+  width: 152px;
+  margin: 0 auto 26px;
+}
+
+.hero-logo img {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3))
+    drop-shadow(0 16px 34px rgba(0, 0, 0, 0.5));
+}
+
+/* El badge llevaba el rojo antiguo escrito a mano */
+.hero-pub-badge {
+  color: var(--accent-viva);
+  background: rgba(187, 152, 47, 0.16);
+  border: 1px solid rgba(187, 152, 47, 0.38);
+}
+
+.hero-pub h1 {
+  color: #fff;
+}
+
+.hero-pub h1 em {
+  color: var(--accent-viva);
+}
+
+.hero-pub > .hero-pub-inner > p {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+/* Sobre oscuro, el dorado profundo del botón no destaca: aquí va el ocre
+   del logo con texto oscuro encima. */
+.hero-pub .cta-primary {
+  background: var(--accent-viva);
+  color: var(--ink);
+}
+
+.hero-pub .cta-primary:hover {
+  background: #d0aa3c;
+}
+
+.hero-pub .cta-secundario {
+  /* OJO: .cta-secundario trae background: var(--card) (crema). Sobre el
+     hero oscuro hay que quitarlo tambien, o queda blanco sobre blanco. */
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.hero-pub .cta-secundario:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hero-pub-datos strong {
+  color: var(--accent-viva);
+}
+
+.hero-pub-datos span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* --- Lista detallada de oposiciones (home) ----------------------
+   Una FILA por cuerpo, con sus pruebas desglosadas. Antes eran cuatro
+   tarjetitas que repetían lo de la sección de arriba; esto aporta
+   información nueva en vez de duplicarla. */
+.opo-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.opo-fila {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 28px;
+  padding: 28px 30px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--cuerpo);
+  border-radius: 20px;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.opo-fila:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 38px rgba(6, 14, 10, 0.12);
+}
+
+.opo-fila-emblema {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+
+.opo-fila-emblema img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.opo-fila-cab {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.opo-fila-cab h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.opo-fila-cuenta {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg-alt);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* Dos columnas de pruebas en pantallas anchas; una en estrechas. */
+.opo-fila-pruebas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.opo-fila-pruebas li {
+  display: flex;
+  gap: 12px;
+}
+
+.opo-fila-num {
+  flex-shrink: 0;
+  padding-top: 2px;
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--cuerpo);
+}
+
+.opo-fila-pruebas strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.opo-fila-pruebas span {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+.opo-fila-cta {
+  align-self: center;
+  flex-shrink: 0;
+  padding: 12px 22px;
+  border-radius: 100px;
+  background: var(--cuerpo);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* --- Tira de fotos de instalaciones en la home ------------------- */
+.inicio-fotos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.inicio-foto {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--bg-alt);
+}
+
+.inicio-foto-img {
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.inicio-foto:hover .inicio-foto-img {
+  transform: scale(1.04);
+}
+
+.inicio-fotos-pie {
+  display: flex;
+  justify-content: center;
+  margin-top: 26px;
+}
+
+@media (max-width: 620px) {
+  .hero-logo {
+    width: 116px;
+  }
+  .opo-fila {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 24px 20px;
+  }
+  .opo-fila-cta {
+    justify-self: stretch;
+    text-align: center;
+  }
+}
+
+/* .cta-primary nació como botón de FORMULARIO: width:100% y esquinas
+   suaves. En la web pública se usa junto a .cta-secundario, que es una
+   pastilla, así que salía una barra a todo lo ancho y el otro botón
+   debajo. Aquí se iguala a la pastilla. */
+.hero-pub-acciones .cta-primary,
+.cta-final-inner > .cta-primary {
+  width: auto;
+  margin-top: 0;
+  padding: 14px 28px;
+  border-radius: 100px;
+}
+
+/* ============================================
+   PRUEBAS REALES (evaluaciones del alumno)
+   ============================================ */
+
+.eval-intro {
+  max-width: 720px;
+  margin: 0 0 26px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* A qué categorías le toca grabarse */
+.eval-calendario {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.eval-cat {
+  padding: 20px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.eval-cat.toca {
+  background: var(--card);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.eval-cat-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.eval-cat-nombre {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.eval-cat-estado {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ink-muted);
+}
+
+.eval-cat-estado.toca {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
+.eval-cat-fechas {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* Botones */
+.eval-btn,
+.eval-btn-fantasma {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 18px;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.eval-btn {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+}
+
+.eval-btn:hover:not(:disabled) {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+.eval-btn-fantasma {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--ink-2);
+}
+
+.eval-btn-fantasma:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.eval-btn:disabled,
+.eval-btn-fantasma:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Formulario de subida */
+.eval-subida {
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.eval-subida-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.eval-subida textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--card);
+  resize: vertical;
+}
+
+.eval-subida-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.eval-ayuda {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+
+/* Barra de progreso de la subida */
+.eval-progreso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.eval-barra {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-alt);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.eval-barra span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+/* Historial */
+.eval-historial {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.eval-item {
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.eval-item-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.eval-item-cat {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.eval-item-fecha {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+
+.eval-pill {
+  flex-shrink: 0;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.eval-pill.revisada {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.eval-pill.pendiente {
+  background: var(--bg-alt);
+  color: var(--ink-muted);
+}
+
+.eval-video {
+  margin-bottom: 14px;
+}
+
+.eval-notas,
+.eval-feedback {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.eval-notas {
+  background: var(--bg-alt);
+}
+
+.eval-feedback {
+  background: var(--accent-soft);
+}
+
+.eval-notas-label,
+.eval-feedback-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.eval-feedback-label {
+  color: var(--accent-dark);
+}
+
+.eval-notas p,
+.eval-feedback p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.eval-pendiente {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.eval-pendiente p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.eval-borrar .form-error {
+  margin-top: 8px;
+}
+
+@media (max-width: 620px) {
+  .eval-subida-acciones .eval-btn,
+  .eval-subida-acciones .eval-btn-fantasma {
+    flex: 1 1 100%;
+  }
+  .eval-pendiente {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ============================================
+   PRUEBAS REALES · bandeja del preparador
+   ============================================ */
+
+.eval-adm-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.eval-adm-item {
+  padding: 22px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.eval-adm-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.eval-adm-alumno {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.eval-adm-meta {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+/* El vídeo a la izquierda y la corrección a la derecha: así se escribe
+   mirando la ejecución, sin hacer scroll arriba y abajo. */
+.eval-adm-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.eval-adm-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.eval-adm-form textarea {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  resize: vertical;
+}
+
+.eval-adm-corregida {
+  padding: 16px 18px;
+  background: var(--success-soft);
+  border-radius: 14px;
+}
+
+.eval-adm-corregida p {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.eval-adm-corregida .eval-feedback-label {
+  color: var(--success);
+}
+
+/* Aviso cuando una prueba lleva una semana sin corregir */
+.eval-pill.urgente {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+@media (max-width: 900px) {
+  .eval-adm-cuerpo {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   PLAZOS DE EVALUACIÓN (panel del preparador)
+   ============================================ */
+
+.vent-bloque {
+  padding: 4px;
+}
+
+.vent-cab {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.vent-sub {
+  margin: 6px 0 0;
+  max-width: 520px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+.vent-form {
+  padding: 20px;
+  margin-bottom: 18px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.vent-form-fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.vent-form-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.vent-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+/* El plazo que está abierto ahora mismo, marcado */
+.vent-item.abierta {
+  border-color: var(--success);
+  box-shadow: 0 0 0 3px var(--success-soft);
+}
+
+.vent-item-nombre {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.vent-item-meta {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}

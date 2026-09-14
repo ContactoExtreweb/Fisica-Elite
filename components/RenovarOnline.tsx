@@ -1,20 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+// Elegir meses y pagar, para un alumno que YA tiene cuenta. Dos usos:
+//  · modo 'renovar' → alarga una suscripción suya (dentro de su tarjeta)
+//  · modo 'nuevo'   → contrata un plan que aún no tiene
+//
+// El total que se ve es informativo: /api/renovar recalcula el importe
+// con el precio del plan en el servidor. Nunca se manda un precio.
+import { useId, useState } from 'react'
+import { euros } from '@/lib/planes'
 
-export default function RenovarOnline() {
+type Props =
+  | { modo: 'renovar'; suscripcionId: string; nombrePlan: string; precioCentimos: number }
+  | { modo: 'nuevo'; planId: string; nombrePlan: string; precioCentimos: number }
+
+export default function RenovarOnline(props: Props) {
   const [meses, setMeses] = useState(1)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Puede haber varios en la misma página (uno por tarjeta): id único.
+  const idMeses = useId()
 
-  const renovar = async () => {
+  const total = props.precioCentimos * meses
+  const verbo = props.modo === 'renovar' ? 'Renovar' : 'Contratar'
+
+  const pagar = async () => {
     setCargando(true)
     setError(null)
     try {
       const res = await fetch('/api/renovar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meses }),
+        body: JSON.stringify(
+          props.modo === 'renovar'
+            ? { modo: 'renovar', suscripcion_id: props.suscripcionId, meses }
+            : { modo: 'nuevo', plan_id: props.planId, meses }
+        ),
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
@@ -47,9 +67,9 @@ export default function RenovarOnline() {
       </div>
 
       <div className="renovar-exacto">
-        <label htmlFor="meses-exactos">O elige los meses exactos:</label>
+        <label htmlFor={idMeses}>O elige los meses exactos:</label>
         <input
-          id="meses-exactos"
+          id={idMeses}
           type="number"
           min={1}
           max={24}
@@ -63,18 +83,34 @@ export default function RenovarOnline() {
         <span>{meses === 1 ? 'mes' : 'meses'}</span>
       </div>
 
-      {error && <p className="form-error" style={{ marginTop: 12 }}>{error}</p>}
+      <div className="renovar-total">
+        <span>
+          {props.nombrePlan} · {meses} {meses === 1 ? 'mes' : 'meses'}
+        </span>
+        <strong>{euros(total)} €</strong>
+      </div>
+
+      {error && (
+        <p className="form-error" style={{ marginTop: 12 }}>
+          {error}
+        </p>
+      )}
 
       <button
         type="button"
         className="cta-primary"
-        onClick={renovar}
+        onClick={pagar}
         disabled={cargando}
         style={{ width: '100%', marginTop: 16 }}
       >
-        {cargando ? 'Redirigiendo al pago…' : `Renovar ${meses} ${meses === 1 ? 'mes' : 'meses'}`}
+        {cargando ? 'Redirigiendo al pago…' : `${verbo} ${meses} ${meses === 1 ? 'mes' : 'meses'}`}
       </button>
-      <p className="renovar-nota">🔒 Pago seguro con Stripe. Tu acceso se amplía al instante.</p>
+      <p className="renovar-nota">
+        🔒 Pago seguro con Stripe.{' '}
+        {props.modo === 'renovar'
+          ? 'Los meses se suman a tu fecha de fin actual.'
+          : 'El acceso se activa en cuanto se confirma el pago.'}
+      </p>
     </div>
   )
 }

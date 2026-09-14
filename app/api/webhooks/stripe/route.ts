@@ -10,6 +10,9 @@
 //  5. Dar el acceso SOLO desde aquí (webhook), nunca desde la redirección
 //     del navegador: el usuario puede cerrar la pestaña y el pago igual
 //     se confirma por esta vía.
+//  6. Si guardar en BBDD falla, LANZAR el error: el catch borra el registro
+//     de idempotencia y responde 500, y Stripe reintenta. Tragarse el error
+//     deja el pago cobrado y el acceso sin dar, en silencio.
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import type Stripe from 'stripe'
@@ -70,17 +73,18 @@ export async function POST(request: Request) {
 
       if (pagado) {
         const m = session.metadata ?? {}
-        if (m.tipo === 'renovacion' && m.user_id) {
-          // Cuenta existente que renueva online: extendemos SU suscripción.
-          await renovarSuscripcionDesdeSesion(admin, session)
+        if ((m.tipo === 'renovacion' || m.tipo === 'nuevo_plan') && m.user_id) {
+          // Alumno con cuenta que renueva un plan o contrata otro desde
+          // /suscripcion: acceso al instante, sin solicitud.
+          await pagoDeAlumnoDesdeSesion(admin, session)
         } else {
           // Alta nueva: creamos la solicitud para que un admin la tramite.
           await crearSolicitudDesdeSesion(admin, session)
         }
       }
     }
-    // (En fase 2, aquí manejaríamos invoice.paid para renovaciones de
-    //  suscripción, customer.subscription.deleted para bajas, etc.)
+    // (Si algún día hay cobro recurrente, aquí irían invoice.paid,
+    //  customer.subscription.deleted, etc.)
   } catch (e) {
     console.error('Error procesando evento:', e)
     // 500 => Stripe reintenta. Como ya guardamos el id, para no bloquear
@@ -115,7 +119,7 @@ async function crearSolicitudDesdeSesion(
   const importeNum = Number(m.importe_centimos)
   const importe = Number.isFinite(importeNum) && importeNum > 0 ? Math.round(importeNum) : null
 
-  await admin.from('solicitudes_alta').insert({
+  const { error } = await admin.from('solicitudes_alta').insert({
     plan_id: m.plan_id || null,
     importe_centimos: importe,
     nombre: m.nombre || null,
@@ -137,10 +141,14 @@ async function crearSolicitudDesdeSesion(
       typeof session.customer === 'string' ? session.customer : null,
     estado: 'pendiente',
   })
+
+  // Antes este error se ignoraba: si el insert fallaba, el pago quedaba
+  // cobrado, el evento marcado como procesado y la solicitud perdida.
+  if (error) throw error
 }
 
 
-// --- Renovación online de una cuenta existente ---------------------
+// --- Pagos de alumnos que ya tienen cuenta ------------------------
 function hoyMadrid(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())
 }
@@ -149,38 +157,102 @@ function sumarMeses(fechaISO: string, meses: number): string {
   return new Date(Date.UTC(y, mo - 1 + meses, d)).toISOString().slice(0, 10)
 }
 
-// Extiende (o reactiva) la suscripción del usuario indicado en la sesión.
-// Si tiene acceso vigente, suma desde su fecha de fin; si no, desde hoy.
-async function renovarSuscripcionDesdeSesion(
+// Renovar un plan o contratar otro desde /suscripcion. Acceso al instante.
+//
+// UNA fila de 'suscripciones' por plan: si el alumno ya tiene ese plan
+// (vigente o caducado) se ALARGA esa misma fila —igual que hace el admin
+// desde la ficha—; si no, se crea. Así nunca quedan dos filas vivas del
+// mismo plan, y la suscripción siempre lleva su plan_id.
+//
+// ANTES: se insertaba una fila SIN plan_id, que por compatibilidad v1
+// significa acceso a todo. Renovar regalaba la plataforma entera.
+async function pagoDeAlumnoDesdeSesion(
   admin: ReturnType<typeof createAdminClient>,
   session: Stripe.Checkout.Session
 ) {
   const m = session.metadata ?? {}
   const userId = String(m.user_id)
+  const planId = m.plan_id || null
   const meses = Math.min(24, Math.max(1, Number(m.meses) || 1))
   const hoy = hoyMadrid()
+  const paymentIntent =
+    typeof session.payment_intent === 'string' ? session.payment_intent : null
 
-  const { data: actual } = await admin
-    .from('suscripciones')
-    .select('fecha_fin')
-    .eq('user_id', userId)
-    .eq('estado', 'activa')
-    .gte('fecha_fin', hoy)
-    .order('fecha_fin', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  // Compatibilidad: sesiones creadas con el código ANTERIOR a este cambio
+  // (sin plan_id) que se paguen ya desplegado esto. Stripe caduca las
+  // sesiones de Checkout a las 24 h, así que solo cubre ese margen: se
+  // pagaron con las reglas viejas y se les da lo que se les vendió.
+  if (!planId) {
+    const { error } = await admin.from('suscripciones').insert({
+      user_id: userId,
+      metodo: 'tarjeta',
+      meses,
+      fecha_inicio: hoy,
+      fecha_fin: sumarMeses(hoy, meses),
+      estado: 'activa',
+      stripe_payment_intent: paymentIntent,
+      notas: 'Renovación online (Stripe, sesión antigua sin plan)',
+    })
+    if (error) throw error
+    return
+  }
 
-  const base = actual?.fecha_fin && actual.fecha_fin >= hoy ? actual.fecha_fin : hoy
+  type Fila = { id: string; fecha_fin: string | null; meses: number | null }
+  let fila: Fila | null = null
 
-  await admin.from('suscripciones').insert({
+  // ¿Qué fila alargamos? Primero la que eligió en /suscripcion; si no viene
+  // (contratar plan nuevo), la que ya tenga de ese plan sin dar de baja.
+  // SIEMPRE filtrando por user_id: el admin client se salta la RLS, así que
+  // este filtro es lo único que impide tocar la suscripción de otro.
+  if (m.suscripcion_id) {
+    const { data } = await admin
+      .from('suscripciones')
+      .select('id, fecha_fin, meses')
+      .eq('id', m.suscripcion_id)
+      .eq('user_id', userId)
+      .maybeSingle()
+    fila = (data as Fila | null) ?? null
+  }
+
+  if (!fila) {
+    const { data } = await admin
+      .from('suscripciones')
+      .select('id, fecha_fin, meses')
+      .eq('user_id', userId)
+      .eq('plan_id', planId)
+      .neq('estado', 'cancelada')
+      .order('fecha_fin', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    fila = (data as Fila | null) ?? null
+  }
+
+  if (fila) {
+    // Si sigue vigente, se suma desde su fin; si ya caducó, desde hoy.
+    const desde = (fila.fecha_fin ?? '') > hoy ? (fila.fecha_fin as string) : hoy
+    const { error } = await admin
+      .from('suscripciones')
+      .update({
+        fecha_fin: sumarMeses(desde, meses),
+        meses: (fila.meses ?? 0) + meses,
+        estado: 'activa',
+        stripe_payment_intent: paymentIntent,
+      })
+      .eq('id', fila.id)
+    if (error) throw error
+    return
+  }
+
+  const { error } = await admin.from('suscripciones').insert({
     user_id: userId,
+    plan_id: planId,
     metodo: 'tarjeta',
     meses,
-    fecha_inicio: base,
-    fecha_fin: sumarMeses(base, meses),
+    fecha_inicio: hoy,
+    fecha_fin: sumarMeses(hoy, meses),
     estado: 'activa',
-    stripe_payment_intent:
-      typeof session.payment_intent === 'string' ? session.payment_intent : null,
-    notas: 'Renovación online (Stripe)',
+    stripe_payment_intent: paymentIntent,
+    notas: 'Contratado online por el alumno (Stripe)',
   })
+  if (error) throw error
 }

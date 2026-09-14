@@ -41,10 +41,9 @@ export const stripe: Stripe = new Proxy({} as Stripe, {
   },
 })
 
-// Precio por mes en céntimos. AJUSTA al precio real del cliente.
-// OJO: el formulario del cliente tiene el mismo número para mostrar el total
-// en pantalla — si cambias esto, cambia también en components/FormularioPrecios.tsx.
-export const PRECIO_MES_CENTIMOS = 3900 // 39,00 €
+// Los PRECIOS no viven aquí: salen de la tabla 'planes' (editable desde
+// /admin/planes) y cada endpoint los lee en el servidor. Antes había un
+// PRECIO_MES_CENTIMOS fijo de 39 € que se cobraba sin mirar el plan.
 export const MONEDA = 'eur'
 
 export function stripeConfigurado() {

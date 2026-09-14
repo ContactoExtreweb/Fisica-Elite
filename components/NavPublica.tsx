@@ -1,11 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { FICHAS } from '@/lib/oposiciones'
 
-const ENLACES = [
+type Enlace = { href: string; txt: string; desplegable?: boolean }
+
+const ENLACES: Enlace[] = [
   { href: '/', txt: 'Inicio' },
+  { href: '/oposiciones', txt: 'Oposiciones', desplegable: true },
   { href: '/sobre-nosotros', txt: 'Sobre nosotros' },
   { href: '/instalaciones', txt: 'Instalaciones' },
   { href: '/precios', txt: 'Precios' },
@@ -24,25 +29,69 @@ export default function NavPublica() {
     }
   }, [abierto])
 
-  // Cerrar el menú al cambiar de página
-  useEffect(() => {
+  // Cerrar el menú al cambiar de página. Se ajusta EN RENDER, no en un
+  // efecto: así no hay un fotograma con el menú abierto sobre la página
+  // nueva, y además cubre el botón "atrás" del navegador, que no pasa por
+  // el onClick de ningún enlace.
+  const [rutaPrevia, setRutaPrevia] = useState(pathname)
+  if (rutaPrevia !== pathname) {
+    setRutaPrevia(pathname)
     setAbierto(false)
-  }, [pathname])
+  }
+
+  // Una sección se marca activa también en sus subpáginas
+  const activo = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   return (
     <>
       <header className={`nav-pub ${abierto ? 'abierto' : ''}`}>
         <div className="nav-pub-inner">
           <Link href="/" className="nav-pub-marca" onClick={() => setAbierto(false)}>
+            <Image
+              src="/logo.png"
+              alt=""
+              width={38}
+              height={45}
+              className="nav-pub-logo"
+              priority
+            />
             FÍSICAS<span>.</span>ÉLITE
           </Link>
 
           <nav className="nav-pub-links">
-            {ENLACES.map((e) => (
-              <Link key={e.href} href={e.href} className={pathname === e.href ? 'activo' : ''}>
-                {e.txt}
-              </Link>
-            ))}
+            {ENLACES.map((e) =>
+              e.desplegable ? (
+                // Desplegable con las oposiciones. Se abre con el ratón y
+                // también con el teclado (:focus-within en el CSS).
+                <div key={e.href} className="nav-pub-drop">
+                  <Link href={e.href} className={activo(e.href) ? 'activo' : ''}>
+                    {e.txt}
+                    <span className="nav-pub-drop-flecha" aria-hidden="true">
+                      ▾
+                    </span>
+                  </Link>
+                  <div className="nav-pub-drop-panel">
+                    {FICHAS.map((f) => (
+                      <Link
+                        key={f.slug}
+                        href={`/oposiciones/${f.slug}`}
+                        style={{ ['--cuerpo' as string]: f.color }}
+                      >
+                        {f.nombre}
+                      </Link>
+                    ))}
+                    <Link href="/oposiciones" className="nav-pub-drop-todas">
+                      Cómo las preparamos →
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <Link key={e.href} href={e.href} className={activo(e.href) ? 'activo' : ''}>
+                  {e.txt}
+                </Link>
+              )
+            )}
           </nav>
 
           <Link href="/login" className="nav-pub-cta">
@@ -70,14 +119,32 @@ export default function NavPublica() {
       <div className={`nav-overlay ${abierto ? 'abierto' : ''}`}>
         <nav className="nav-overlay-links">
           {ENLACES.map((e) => (
-            <Link
-              key={e.href}
-              href={e.href}
-              className={pathname === e.href ? 'activo' : ''}
-              onClick={() => setAbierto(false)}
-            >
-              {e.txt}
-            </Link>
+            <div key={e.href}>
+              <Link
+                href={e.href}
+                className={activo(e.href) ? 'activo' : ''}
+                onClick={() => setAbierto(false)}
+              >
+                {e.txt}
+              </Link>
+
+              {/* En móvil no hay desplegable: las oposiciones se listan
+                  debajo, indentadas. Un menú que hay que desplegar con el
+                  dedo es justo lo que ya falló una vez aquí. */}
+              {e.desplegable && (
+                <div className="nav-overlay-sub">
+                  {FICHAS.map((f) => (
+                    <Link
+                      key={f.slug}
+                      href={`/oposiciones/${f.slug}`}
+                      onClick={() => setAbierto(false)}
+                    >
+                      {f.nombre}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </nav>
 

@@ -1,9 +1,11 @@
 // Tarjetas de "lo que tengo contratado". Se usa en /suscripcion (completo,
-// con historial) y en /perfil (solo lo vigente, en modo resumen).
+// con historial y con renovar por plan) y en /perfil (solo lo vigente, en
+// modo resumen y sin acciones).
 //
 // Es presentacional: no consulta nada, recibe ya las filas de
 // lib/suscripciones.ts. Así las dos páginas enseñan exactamente lo mismo.
 import type { SuscripcionAlumno } from '@/lib/suscripciones'
+import RenovarOnline from '@/components/RenovarOnline'
 
 function fmt(iso: string | null) {
   if (!iso) return '—'
@@ -23,7 +25,7 @@ function diasRestantes(iso: string | null): number | null {
   return Math.round((fin.getTime() - hoy.getTime()) / 86_400_000)
 }
 
-function Tarjeta({ s }: { s: SuscripcionAlumno }) {
+function Tarjeta({ s, permitirRenovar }: { s: SuscripcionAlumno; permitirRenovar: boolean }) {
   const dias = s.vigente ? diasRestantes(s.fechaFin) : null
   const caduca = dias !== null && dias <= 14
 
@@ -67,6 +69,34 @@ function Tarjeta({ s }: { s: SuscripcionAlumno }) {
             : `Te quedan ${dias} ${dias === 1 ? 'día' : 'días'} de acceso.`}
         </div>
       )}
+
+      {/* Renovar ESTE plan (solo en /suscripcion). <details> nativo: se
+          despliega sin JS y no añade estado a la página. */}
+      {permitirRenovar && s.renovable && s.plan && s.precioCentimos !== null && (
+        <details className="susc-plan-renovar">
+          <summary>{s.vigente ? 'Ampliar este plan' : 'Renovar este plan'}</summary>
+          <RenovarOnline
+            modo="renovar"
+            suscripcionId={s.id}
+            nombrePlan={s.plan}
+            precioCentimos={s.precioCentimos}
+          />
+        </details>
+      )}
+
+      {permitirRenovar && !s.plan && !s.planIlegible && s.estado === 'activa' && (
+        <p className="susc-plan-nota">
+          Es una suscripción antigua sin plan asociado, así que no se puede
+          renovar tal cual. Para seguir después de su fecha de fin, contrata un
+          plan más abajo.
+        </p>
+      )}
+
+      {permitirRenovar && s.estado === 'cancelada' && (
+        <p className="susc-plan-nota">
+          Dada de baja por tu preparador. Si quieres recuperarla, habla con él.
+        </p>
+      )}
     </div>
   )
 }
@@ -74,32 +104,31 @@ function Tarjeta({ s }: { s: SuscripcionAlumno }) {
 export default function ListaSuscripciones({
   suscripciones,
   mostrarHistorial = true,
+  permitirRenovar = false,
 }: {
   suscripciones: SuscripcionAlumno[]
   mostrarHistorial?: boolean
+  /** Botón de renovar en cada tarjeta. Solo en /suscripcion. */
+  permitirRenovar?: boolean
 }) {
   const vigentes = suscripciones.filter((s) => s.vigente)
   const pasadas = suscripciones.filter((s) => !s.vigente)
 
   if (vigentes.length === 0 && (!mostrarHistorial || pasadas.length === 0)) {
-    return (
-      <p className="susc-plan-vacio">
-        Todavía no tienes ningún plan contratado.
-      </p>
-    )
+    return <p className="susc-plan-vacio">Todavía no tienes ningún plan contratado.</p>
   }
 
   return (
     <div className="susc-planes">
       {vigentes.map((s) => (
-        <Tarjeta key={s.id} s={s} />
+        <Tarjeta key={s.id} s={s} permitirRenovar={permitirRenovar} />
       ))}
 
       {mostrarHistorial && pasadas.length > 0 && (
         <>
           <div className="susc-planes-sep">Historial</div>
           {pasadas.map((s) => (
-            <Tarjeta key={s.id} s={s} />
+            <Tarjeta key={s.id} s={s} permitirRenovar={permitirRenovar} />
           ))}
         </>
       )}

@@ -1,7 +1,10 @@
+import type { CSSProperties } from 'react'
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import NavPublica from '@/components/NavPublica'
 import FooterPublico from '@/components/FooterPublico'
+import { FICHAS, EMBLEMA } from '@/lib/oposiciones'
 
 export const metadata: Metadata = {
   title: { absolute: 'Físicas Élite · Preparación física para oposiciones en Cáceres' },
@@ -29,9 +32,27 @@ const OPOSICIONES = [
 ]
 
 const PASOS = [
-  { n: '1', t: 'Evaluamos tu punto de partida', d: 'Analizamos tu nivel actual y la prueba concreta a la que te presentas.' },
-  { n: '2', t: 'Entrenas con un plan a medida', d: 'Presencial en nuestras instalaciones y con vídeos guiados en la plataforma, a tu ritmo.' },
-  { n: '3', t: 'Progresas y llegas listo', d: 'Seguimiento continuo de tu evolución hasta que superas las marcas de tu oposición.' },
+  {
+    n: '1',
+    t: 'Vemos por dónde andas',
+    d: 'Empiezas con una evaluación: cuántas dominadas te salen hoy, cuánto tardas, qué te cuesta. Sin eso, cualquier plan es a ojo.',
+  },
+  {
+    n: '2',
+    t: 'Entrenas lo tuyo',
+    d: 'Presencial en Cáceres y con los vídeos para los días que vas por tu cuenta. Solo ves los ejercicios de tu tramo.',
+  },
+  {
+    n: '3',
+    t: 'Apuntas y ajustamos',
+    d: 'Registras lo que haces cada día. Tu preparador lo ve, y si algo no avanza se cambia.',
+  },
+]
+
+const FOTOS_INICIO = [
+  { src: '/instalaciones/instalaciones.jpeg', alt: 'Sala de entrenamiento con el circuito montado' },
+  { src: '/instalaciones/instalacionese2.jpeg', alt: 'Barras de dominadas regulables' },
+  { src: '/instalaciones/instalaciones1.jpeg', alt: 'Zona de fuerza con máquinas y mancuernas' },
 ]
 
 export default function HomePage() {
@@ -40,9 +61,21 @@ export default function HomePage() {
       <NavPublica />
 
       <main className="pub">
-        {/* HERO */}
+        {/* HERO — logo, foto de la nave de fondo */}
         <section className="hero-pub">
+          <Image
+            src="/instalaciones/instalaciones1.jpeg"
+            alt=""
+            fill
+            priority
+            className="hero-pub-foto"
+            sizes="100vw"
+          />
           <div className="hero-pub-inner">
+            <div className="hero-logo">
+              <Image src="/logo.png" alt="Físicas Élite" width={304} height={359} priority />
+            </div>
+
             <div className="hero-pub-badge">Cáceres · Presencial y online</div>
             <h1>
               Prepara tu oposición
@@ -50,9 +83,9 @@ export default function HomePage() {
               <em>en tu mejor forma.</em>
             </h1>
             <p>
-              Entrenamiento específico para las pruebas físicas de Policía Local,
-              Policía Nacional, Guardia Civil y Fuerzas Armadas. Con método,
-              seguimiento y todo el temario en vídeo.
+              Entrenamos las pruebas físicas de Policía Local, Policía Nacional,
+              Guardia Civil y Fuerzas Armadas. En nuestra nave de Cáceres, y con
+              todo el temario en vídeo para los días que vas por tu cuenta.
             </p>
             <div className="hero-pub-acciones">
               <Link href="/precios" className="cta-primary">
@@ -79,14 +112,14 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* OPOSICIONES */}
+        {/* QUÉ PREPARAMOS — estas tarjetas llevan a precios */}
         <section className="sec-pub">
           <div className="sec-pub-cab">
             <span className="sec-pub-eyebrow">Qué preparamos</span>
             <h2>Tu oposición, tu prueba física</h2>
             <p>
-              Cada cuerpo tiene sus marcas y su circuito. Entrenamos exactamente
-              lo que te van a pedir el día del examen.
+              Cada cuerpo tiene su circuito y sus marcas. Mira los planes y elige
+              el que te encaja.
             </p>
           </div>
           <div className="oposiciones-grid">
@@ -112,11 +145,96 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* AL DETALLE — una fila por cuerpo con SUS PRUEBAS desglosadas.
+            A propósito NO se repite la entradilla de las tarjetas de
+            arriba: aquella sección vende, esta informa. Si aquí volviera
+            a salir el mismo texto, sobraría una de las dos. */}
+        <section className="sec-pub sec-pub-alt">
+          <div className="sec-pub-cab">
+            <span className="sec-pub-eyebrow">Al detalle</span>
+            <h2>¿Qué te van a pedir exactamente?</h2>
+            <p>
+              Estas son las pruebas de cada cuerpo. Entra en la tuya y te
+              contamos cómo se entrena cada una y por dónde se empieza.
+            </p>
+          </div>
+
+          <div className="opo-lista">
+            {FICHAS.map((f) => (
+              <Link
+                key={f.slug}
+                href={`/oposiciones/${f.slug}`}
+                className="opo-fila"
+                style={{ ['--cuerpo' as string]: f.color } as CSSProperties}
+              >
+                <div className="opo-fila-emblema">
+                  <Image src={EMBLEMA[f.clave]} alt="" width={84} height={84} />
+                </div>
+
+                <div className="opo-fila-cuerpo">
+                  <div className="opo-fila-cab">
+                    <h3>{f.nombre}</h3>
+                    <span className="opo-fila-cuenta">
+                      {f.pruebas.length} pruebas
+                    </span>
+                  </div>
+
+                  <ul className="opo-fila-pruebas">
+                    {f.pruebas.map((p, i) => (
+                      <li key={p.nombre}>
+                        <span className="opo-fila-num">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <div>
+                          <strong>{p.nombre}</strong>
+                          <span>{p.detalle}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <span className="opo-fila-cta">Ver preparación →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* INSTALACIONES */}
+        <section className="sec-pub">
+          <div className="sec-pub-cab">
+            <span className="sec-pub-eyebrow">Dónde entrenas</span>
+            <h2>Una nave en Cáceres, montada para esto</h2>
+            <p>
+              Barras regulables, zona de fuerza y espacio libre para montar el
+              circuito entero.
+            </p>
+          </div>
+          <div className="inicio-fotos">
+            {FOTOS_INICIO.map((f) => (
+              <div key={f.src} className="inicio-foto">
+                <Image
+                  src={f.src}
+                  alt={f.alt}
+                  fill
+                  className="inicio-foto-img"
+                  sizes="(max-width: 700px) 100vw, 33vw"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="inicio-fotos-pie">
+            <Link href="/instalaciones" className="cta-secundario">
+              Ver las instalaciones
+            </Link>
+          </div>
+        </section>
+
         {/* CÓMO FUNCIONA */}
         <section className="sec-pub sec-pub-alt">
           <div className="sec-pub-cab">
             <span className="sec-pub-eyebrow">Cómo funciona</span>
-            <h2>De tu nivel de hoy a superar la prueba</h2>
+            <h2>De tu marca de hoy a la del examen</h2>
           </div>
           <div className="pasos-grid">
             {PASOS.map((p) => (
@@ -136,17 +254,16 @@ export default function HomePage() {
               <div className="doble-icono">🏋️</div>
               <h3>Presencial en Cáceres</h3>
               <p>
-                Entrena en nuestras instalaciones con la corrección técnica de tu
-                preparador. Sesiones específicas para tu circuito y tus marcas.
+                Entrenas con tu preparador delante, que te corrige la técnica
+                sobre la marcha. Es donde más rápido se arreglan los fallos.
               </p>
             </div>
             <div className="doble-card">
               <div className="doble-icono">▶️</div>
               <h3>Plataforma online</h3>
               <p>
-                Todos los ejercicios en vídeo, con la técnica, los errores comunes
-                y las variantes. Entrena donde quieras y sigue tu progreso desde tu
-                cuenta.
+                Cada ejercicio en vídeo, con la técnica, los errores que más se
+                repiten y las variantes para casa. Y ahí mismo apuntas tus marcas.
               </p>
             </div>
           </div>
@@ -156,7 +273,7 @@ export default function HomePage() {
         <section className="cta-final">
           <div className="cta-final-inner">
             <h2>¿Empezamos a preparar tu prueba?</h2>
-            <p>Cuéntanos a qué oposición te presentas y diseñamos tu plan.</p>
+            <p>Cuéntanos a qué te presentas y te decimos por dónde empezar.</p>
             <div className="hero-pub-acciones">
               <Link href="/precios" className="cta-primary">
                 Ver planes

@@ -1,4 +1,13 @@
+// Instalaciones: la galería real, con las fotos de la nave de Cáceres.
+//
+// Antes esto eran seis recuadros con un emoji de cámara y una nota de
+// "próximamente". Ahora son las cuatro fotos que hay, con pies que
+// describen lo que de verdad se ve en cada una.
+//
+// Las fotos son VERTICALES (3:4). La cuadrícula está montada para eso:
+// si algún día llegan horizontales, hay que revisar el aspect-ratio.
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import NavPublica from '@/components/NavPublica'
 import FooterPublico from '@/components/FooterPublico'
@@ -6,26 +15,40 @@ import FooterPublico from '@/components/FooterPublico'
 export const metadata: Metadata = {
   title: 'Instalaciones',
   description:
-    'Descubre las instalaciones de Físicas Élite en Cáceres: espacio de entrenamiento equipado para preparar las pruebas físicas de tu oposición.',
+    'Las instalaciones de Físicas Élite en Cáceres: barras de dominadas regulables, zona de fuerza y espacio para montar el circuito de tu convocatoria.',
 }
 
-// Placeholders de galería (sustituir por fotos reales cuando las tengáis).
 const GALERIA = [
-  { t: 'Zona de fuerza', d: 'Material para trabajar dominadas, flexiones y tren superior.' },
-  { t: 'Pista de agilidad', d: 'Espacio para montar el circuito de tu convocatoria.' },
-  { t: 'Zona de carrera', d: 'Preparación de resistencia y velocidad.' },
-  { t: 'Sala de core y movilidad', d: 'Trabajo preventivo y de técnica.' },
-  { t: 'Vestuarios', d: 'Comodidad antes y después de entrenar.' },
-  { t: 'Grabación de vídeos', d: 'Donde grabamos el contenido de la plataforma.' },
+  {
+    src: '/instalaciones/instalaciones.jpeg',
+    t: 'La sala',
+    d: 'Espacio diáfano para montar el circuito completo, con el material de agilidad siempre a mano.',
+    destacada: true,
+  },
+  {
+    src: '/instalaciones/instalaciones1.jpeg',
+    t: 'Zona de fuerza',
+    d: 'Máquina multiestación, mancuernas, bancos regulables y remo para el trabajo de tren superior.',
+  },
+  {
+    src: '/instalaciones/instalacionese2.jpeg',
+    t: 'Barras de dominadas',
+    d: 'Varias barras en fila, para entrenar en grupo sin esperar turno.',
+  },
+  {
+    src: '/instalaciones/instalaciones3.jpeg',
+    t: 'Altura regulable',
+    d: 'Cada barra se ajusta a tu altura y al tipo de suspensión que pide tu prueba.',
+  },
 ]
 
 const EQUIPAMIENTO = [
   'Barras de dominadas regulables',
-  'Zona de carrera cronometrada',
-  'Material de circuito (vallas, conos, testigos)',
-  'Colchonetas y zona de core',
-  'Espacio de movilidad y calentamiento',
-  'Cronómetros y medición de marcas',
+  'Máquina multiestación y mancuernas',
+  'Bancos regulables y remo',
+  'Postes y vallas para el circuito',
+  'Espacio diáfano para agilidad y velocidad',
+  'Cronómetro y control de marcas',
 ]
 
 export default function InstalacionesPage() {
@@ -37,43 +60,48 @@ export default function InstalacionesPage() {
         <section className="cabecera-pub">
           <div className="cabecera-pub-inner">
             <span className="sec-pub-eyebrow">Instalaciones</span>
-            <h1>Un espacio pensado para tu prueba</h1>
+            <h1>Aquí es donde entrenas</h1>
             <p>
-              Entrenamos en Cáceres en un espacio equipado para reproducir las
-              condiciones de tu examen: el circuito, las marcas y el material que te
-              vas a encontrar.
+              Una nave en Cáceres montada para lo que necesitas: barras,
+              material de circuito y sitio de sobra para correr y montar las
+              pruebas de tu convocatoria.
             </p>
           </div>
         </section>
 
         <section className="sec-pub">
-          <div className="galeria-grid">
-            {GALERIA.map((g, i) => (
-              <div key={i} className="galeria-item">
-                {/* Placeholder visual; sustituir por <img> real */}
-                <div className="galeria-foto">
-                  <span>📷</span>
+          <div className="inst-galeria">
+            {GALERIA.map((g) => (
+              <figure
+                key={g.src}
+                className={`inst-foto ${g.destacada ? 'destacada' : ''}`}
+              >
+                <div className="inst-foto-marco">
+                  <Image
+                    src={g.src}
+                    alt={g.t}
+                    fill
+                    className="inst-foto-img"
+                    sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 33vw"
+                  />
                 </div>
-                <div className="galeria-cap">
+                <figcaption>
                   <h3>{g.t}</h3>
                   <p>{g.d}</p>
-                </div>
-              </div>
+                </figcaption>
+              </figure>
             ))}
           </div>
-          <p className="galeria-nota">
-            Las imágenes definitivas de nuestras instalaciones se añadirán próximamente.
-          </p>
         </section>
 
         <section className="sec-pub sec-pub-alt">
           <div className="equip-bloque">
             <div className="equip-texto">
               <span className="sec-pub-eyebrow">Equipamiento</span>
-              <h2>Todo lo necesario para entrenar tu circuito</h2>
+              <h2>Lo que hay, sin humo</h2>
               <p>
-                No hace falta un macrogimnasio: hace falta el material correcto y
-                saber usarlo. Esto es lo que encontrarás.
+                No hace falta un macrogimnasio. Hace falta el material correcto
+                y alguien que sepa para qué sirve cada cosa.
               </p>
             </div>
             <ul className="equip-lista">
@@ -89,10 +117,10 @@ export default function InstalacionesPage() {
 
         <section className="cta-final">
           <div className="cta-final-inner">
-            <h2>Ven a conocernos</h2>
-            <p>Concierta una visita y te enseñamos dónde entrenarías.</p>
+            <h2>Ven a verlo</h2>
+            <p>Pásate cuando quieras y te enseñamos dónde entrenarías.</p>
             <Link href="/contacto" className="cta-primary">
-              Reservar una visita
+              Concertar una visita
             </Link>
           </div>
         </section>

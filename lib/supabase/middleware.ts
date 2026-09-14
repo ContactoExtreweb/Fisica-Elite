@@ -34,6 +34,7 @@ const RUTAS_PUBLICAS = [
   '/sobre-nosotros',
   '/instalaciones',
   '/contacto',
+  '/oposiciones', // por prefijo: cubre /oposiciones/policia-nacional, etc.
   '/legal',
 ]
 

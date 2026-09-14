@@ -1,13 +1,14 @@
-// Página del alumno: QUÉ tiene contratado, hasta cuándo, y renovación
-// ONLINE. Cualquier cuenta existente puede renovar aquí sin crear otra.
+// Página del alumno: QUÉ tiene contratado, hasta cuándo, renovar cada plan
+// y contratar otros. Todo online, sin crear otra cuenta.
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import BotonLogout from '@/components/BotonLogout'
 import NavAlumno from '@/components/NavAlumno'
-import RenovarOnline from '@/components/RenovarOnline'
 import ListaSuscripciones from '@/components/ListaSuscripciones'
+import ContratarPlan from '@/components/ContratarPlan'
 import { misSuscripciones, accesoHasta } from '@/lib/suscripciones'
+import { planesALaVenta } from '@/lib/planes'
 import { contarNoLeidos } from '@/lib/no-leidos'
 
 function fmt(iso: string | null) {
@@ -27,9 +28,10 @@ export default async function SuscripcionPage({
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: perfil }, suscripciones, noLeidos] = await Promise.all([
+  const [{ data: perfil }, suscripciones, planes, noLeidos] = await Promise.all([
     supabase.from('profiles').select('nombre, apellidos').eq('id', user.id).single(),
     misSuscripciones(supabase, user.id),
+    planesALaVenta(supabase),
     contarNoLeidos(),
   ])
 
@@ -38,6 +40,12 @@ export default async function SuscripcionPage({
   const finAcceso = accesoHasta(suscripciones)
   const iniciales =
     ((perfil?.nombre ?? '').charAt(0) + (perfil?.apellidos ?? '').charAt(0)).toUpperCase() || 'FE'
+
+  // Planes que puede contratar: los que NO tiene ya. Si tiene uno (aunque
+  // esté caducado) se renueva desde su propia tarjeta; y si se lo dio de
+  // baja el preparador, no se reabre desde aquí.
+  const yaTiene = new Set(suscripciones.map((s) => s.planId).filter(Boolean))
+  const disponibles = planes.filter((p) => !yaTiene.has(p.id))
 
   return (
     <div className="app">
@@ -76,8 +84,8 @@ export default async function SuscripcionPage({
 
         {renovado && (
           <div className="aviso-ok">
-            ¡Pago recibido! Tu acceso se ha ampliado. Si no ves el cambio al
-            instante, recarga en unos segundos.
+            ¡Pago recibido! Tus planes se actualizan en cuanto Stripe confirma el
+            cobro. Si no ves el cambio, recarga en unos segundos.
           </div>
         )}
 
@@ -94,28 +102,29 @@ export default async function SuscripcionPage({
             <div className="susc-estado-sub">
               {activa
                 ? `Tienes acceso hasta el ${fmt(finAcceso)}.`
-                : 'Renueva para volver a acceder a tus entrenamientos.'}
+                : 'Renueva un plan o contrata uno nuevo para volver a entrenar.'}
             </div>
           </div>
         </div>
 
-        {/* QUÉ tiene contratado exactamente, no solo si está activa */}
+        {/* QUÉ tiene contratado exactamente, con renovar por plan */}
         <div className="admin-section" style={{ padding: 28, marginBottom: 20 }}>
           <h3 className="ficha-seccion-titulo">Lo que tienes contratado</h3>
           <p className="ficha-accion-desc" style={{ maxWidth: '100%', marginBottom: 18 }}>
-            Cada plan que has contratado y qué te da acceso.
+            Cada plan que has contratado y qué te da acceso. Desde aquí puedes
+            renovarlos.
           </p>
-          <ListaSuscripciones suscripciones={suscripciones} />
+          <ListaSuscripciones suscripciones={suscripciones} permitirRenovar />
         </div>
 
-        <div className="admin-section" style={{ padding: 28, maxWidth: 520 }}>
-          <h3 className="ficha-seccion-titulo">
-            {activa ? 'Ampliar mi acceso' : 'Renovar mi acceso'}
-          </h3>
+        {/* Contratar un plan que aún no tiene. Acceso al instante al pagar. */}
+        <div className="admin-section" style={{ padding: 28 }}>
+          <h3 className="ficha-seccion-titulo">Contratar otro plan</h3>
           <p className="ficha-accion-desc" style={{ maxWidth: '100%', marginBottom: 18 }}>
-            Elige cuántos meses quieres añadir. Se suman a tu fecha actual.
+            Añade un plan a los que ya tienes. El acceso se activa en cuanto se
+            confirma el pago, sin esperar a tu preparador.
           </p>
-          <RenovarOnline />
+          <ContratarPlan planes={disponibles} />
         </div>
 
         <p style={{ marginTop: 20, fontSize: 13, color: 'var(--ink-muted)' }}>

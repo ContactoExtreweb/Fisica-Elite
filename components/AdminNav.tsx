@@ -53,6 +53,20 @@ const ENLACES = [
     ),
   },
   {
+    href: '/admin/evaluaciones',
+    label: 'Pruebas reales',
+    exacto: false,
+    icono: (
+      <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <path
+          d="M15 10l4.55-2.28A1 1 0 0121 8.6v6.8a1 1 0 01-1.45.89L15 14M5 6h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+  {
     href: '/admin/chat',
     label: 'Chat',
     exacto: false,

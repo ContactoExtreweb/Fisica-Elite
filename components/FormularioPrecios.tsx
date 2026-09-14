@@ -12,17 +12,7 @@
 //    propio plan. Hay alumnos que solo entrenan categorías sueltas.
 //  · Fuera la suscripción recurrente: solo pago por N meses.
 import { useState } from 'react'
-
-export type PlanPublico = {
-  id: string
-  nombre: string
-  tipo: 'ejercicio' | 'completo' | 'oposicion'
-  descripcion: string | null
-  precioCentimos: number
-  /** Qué incluye, ya resuelto por el servidor */
-  cubre: string
-  categorias: string[]
-}
+import type { PlanPublico } from '@/lib/planes'
 
 function euros(centimos: number): string {
   const n = centimos / 100

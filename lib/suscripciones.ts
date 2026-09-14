@@ -20,6 +20,7 @@ export type SuscripcionAlumno = {
   vigente: boolean
   /** Nombre del plan tal cual, o null si la suscripción no tiene plan */
   plan: string | null
+  planId: string | null
   tipo: 'ejercicio' | 'completo' | 'oposicion' | null
   precioCentimos: number | null
   /** Título que se enseña en pantalla */
@@ -32,6 +33,8 @@ export type SuscripcionAlumno = {
   accesoTotal: boolean
   /** true si tiene plan_id pero no hemos podido leer el plan */
   planIlegible: boolean
+  /** Se puede renovar desde su cuenta: plan a la venta, con precio, y no dada de baja */
+  renovable: boolean
 }
 
 function hoyMadrid(): string {
@@ -117,6 +120,12 @@ export async function misSuscripciones(
           : 'Este plan aún no tiene categorías asignadas.'
     }
 
+    // Renovable desde la cuenta del alumno: tiene un plan legible (o sea, a
+    // la venta), con precio cobrable, y no la ha dado de baja el preparador.
+    // Las mismas reglas que aplica /api/renovar en el servidor.
+    const renovable =
+      !!plan && !planIlegible && s.estado === 'activa' && (plan.precio_centimos ?? 0) >= 50
+
     return {
       id: s.id as string,
       estado: s.estado as string,
@@ -126,6 +135,7 @@ export async function misSuscripciones(
       fechaFin: (s.fecha_fin as string) ?? null,
       vigente,
       plan: plan?.nombre ?? null,
+      planId: (s.plan_id as string) ?? null,
       tipo: plan?.tipo ?? null,
       precioCentimos: plan?.precio_centimos ?? null,
       titulo,
@@ -133,6 +143,7 @@ export async function misSuscripciones(
       categorias,
       accesoTotal,
       planIlegible,
+      renovable,
     }
   })
 }
