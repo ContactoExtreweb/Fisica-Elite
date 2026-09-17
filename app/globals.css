@@ -8893,3 +8893,100 @@ section:has(> .ff-form),
   .cf-acciones { flex-direction: column-reverse; }
   .cf-btn { width: 100%; }
 }
+
+/* ============================================================
+   BARRA INFERIOR EN MÓVIL · botón "Más" y su hoja
+   Con 8 secciones (alumno) y 7 (admin) ya no caben todas en la
+   tab bar: las que sobran llevan .nav-extra, se ocultan de la
+   barra y se listan en la hoja que abre "Más". En escritorio el
+   sidebar las sigue pintando todas y "Más" no existe.
+   ============================================================ */
+.nav-mas { display: none; }
+
+@media (max-width: 900px) {
+  /* Gana a `.nav a` (0,1,1) sin recurrir a !important */
+  .nav .nav-extra { display: none; }
+
+  .nav-mas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #A8B2AB;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .nav-mas.activo {
+    background: rgba(255, 255, 255, 0.1);
+    color: #FFF;
+  }
+  .nav-mas svg { width: 22px; height: 22px; }
+}
+
+.nav-hoja-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(3, 14, 10, 0.5);
+  animation: nav-hoja-fondo-in 0.15s ease;
+}
+.nav-hoja {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 111;
+  background: var(--ink);
+  color: #EDEAD8;
+  border-radius: 18px 18px 0 0;
+  padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+  animation: nav-hoja-in 0.18s ease;
+}
+.nav-hoja-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7F8A83;
+}
+.nav-hoja-cab button {
+  border: 0;
+  background: transparent;
+  color: #A8B2AB;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+/* Dentro de la hoja las secciones se leen en vertical, como en el
+   sidebar de escritorio: icono a la izquierda y texto al lado. */
+@media (max-width: 900px) {
+  .nav-hoja-lista { flex-direction: column; gap: 2px; }
+  .nav-hoja-lista a {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    font-size: 14.5px;
+    border-radius: 10px;
+  }
+  .nav-hoja-lista svg { width: 20px; height: 20px; }
+}
+
+@keyframes nav-hoja-fondo-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nav-hoja-in { from { transform: translateY(100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .nav-hoja-fondo, .nav-hoja { animation: none; }
+}

@@ -1,6 +1,6 @@
 'use client'
 
-// Nav del sidebar del alumno, con el badge de no leídos sobre Chat.
+// Nav del sidebar del alumno.
 //
 // Secciones: Inicio · Explicaciones · Reservar clase (solo presenciales) ·
 // Mi progreso · Pruebas reales · Chat · Suscripción · Mi perfil.
@@ -9,13 +9,12 @@
 // reducido: Reservar clase · Chat · Suscripción · Mi perfil. Nada de
 // ejercicios ni progreso, porque no tiene contenido.
 //
+// En móvil no caben todas en la barra inferior: NavSecciones deja las 4
+// primeras (Chat incluido, por el badge) y mete el resto en "Más".
+//
 // IMPORTANTE: úsalo en TODAS las páginas del alumno. Si alguna pinta su
 // propio <nav> a mano, se descuadra en cuanto se añade una sección.
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import BadgeNoLeidos from '@/components/BadgeNoLeidos'
-
-type Entrada = { href: string; label: string; icono: React.ReactNode; badge?: boolean }
+import NavSecciones, { type EntradaNav } from '@/components/NavSecciones'
 
 const ICONO = {
   inicio: (
@@ -84,40 +83,37 @@ export default function NavAlumno({
   /** Presencial SIN plan online: menú reducido */
   soloPresencial?: boolean
 }) {
-  const pathname = usePathname()
-  const activo = (href: string) => (pathname === href ? 'active' : '')
+  const chat: EntradaNav = {
+    href: '/chat',
+    label: 'Chat',
+    icono: ICONO.chat,
+    noLeidos,
+    fijo: true, // el badge de no leídos tiene que verse siempre
+  }
+  const suscripcion: EntradaNav = {
+    href: '/suscripcion',
+    label: 'Suscripción',
+    icono: ICONO.suscripcion,
+  }
+  const perfil: EntradaNav = { href: '/perfil', label: 'Mi perfil', icono: ICONO.perfil }
+  const reservas: EntradaNav = {
+    href: '/reservas',
+    label: 'Reservar clase',
+    icono: ICONO.reservas,
+  }
 
-  const entradas: Entrada[] = soloPresencial
-    ? [
-        { href: '/reservas', label: 'Reservar clase', icono: ICONO.reservas },
-        { href: '/chat', label: 'Chat', icono: ICONO.chat, badge: true },
-        { href: '/suscripcion', label: 'Suscripción', icono: ICONO.suscripcion },
-        { href: '/perfil', label: 'Mi perfil', icono: ICONO.perfil },
-      ]
+  const entradas: EntradaNav[] = soloPresencial
+    ? [reservas, chat, suscripcion, perfil]
     : [
         { href: '/inicio', label: 'Inicio', icono: ICONO.inicio },
         { href: '/explicaciones', label: 'Explicaciones', icono: ICONO.explicaciones },
-        ...(presencial
-          ? [{ href: '/reservas', label: 'Reservar clase', icono: ICONO.reservas }]
-          : []),
+        ...(presencial ? [reservas] : []),
         { href: '/registro', label: 'Mi progreso', icono: ICONO.progreso },
         { href: '/evaluaciones', label: 'Pruebas reales', icono: ICONO.evaluaciones },
-        { href: '/chat', label: 'Chat', icono: ICONO.chat, badge: true },
-        { href: '/suscripcion', label: 'Suscripción', icono: ICONO.suscripcion },
-        { href: '/perfil', label: 'Mi perfil', icono: ICONO.perfil },
+        chat,
+        suscripcion,
+        perfil,
       ]
 
-  return (
-    <nav className="nav">
-      {entradas.map((e) => (
-        <Link key={e.href} href={e.href} className={activo(e.href)}>
-          <span className="nav-icono-wrap">
-            {e.icono}
-            {e.badge && <BadgeNoLeidos inicial={noLeidos} />}
-          </span>
-          {e.label}
-        </Link>
-      ))}
-    </nav>
-  )
+  return <NavSecciones entradas={entradas} />
 }
