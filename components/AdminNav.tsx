@@ -67,6 +67,17 @@ const ENLACES = [
     ),
   },
   {
+    href: '/admin/reservas',
+    label: 'Reservas',
+    exacto: false,
+    icono: (
+      <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: '/admin/chat',
     label: 'Chat',
     exacto: false,

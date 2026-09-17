@@ -201,7 +201,9 @@ export default function PrivacidadPage() {
           Aplicamos medidas técnicas y organizativas para proteger tus datos:
           cifrado en tránsito, control de acceso por roles, y reglas a nivel de
           base de datos que impiden que un alumno acceda a la información de
-          otro. Los vídeos se sirven mediante enlaces firmados con caducidad.
+          otro. Los vídeos se sirven mediante enlaces firmados con caducidad y
+          se muestran con una marca de agua con tu nombre y tu correo, para
+          disuadir de su difusión.
         </p>
       </section>
 

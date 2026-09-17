@@ -115,6 +115,11 @@ export default function AvisoLegalPage() {
           redistribuir, revender ni mostrar públicamente el contenido.
         </p>
         <p>
+          Los vídeos que ves dentro de la plataforma llevan superpuestos tu
+          nombre y tu correo electrónico. Si un vídeo aparece fuera de la
+          plataforma, sabemos de qué cuenta ha salido.
+        </p>
+        <p>
           Los vídeos que tú subes a la plataforma en tus pruebas de evaluación
           siguen siendo tuyos. Nos autorizas únicamente a almacenarlos y a que
           tu preparador los vea para corregirte, y puedes solicitar su borrado

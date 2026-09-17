@@ -36,15 +36,20 @@ export default async function InicioPage() {
 
   const hoy = new Date().toISOString().slice(0, 10)
 
-  const [{ data: perfil }, { data: ejercicios }, { data: subs }] = await Promise.all([
-    supabase.from('profiles').select('nombre, apellidos').eq('id', user.id).single(),
+  const [{ data: perfil }, { data: ejercicios }, { data: explicativos }, { data: subs }] =
+    await Promise.all([
+    supabase.from('profiles').select('nombre, apellidos, presencial').eq('id', user.id).single(),
     supabase
       .from('ejercicios')
       .select(
         'id, slug, titulo, descripcion, video_id, orden, categoria_id, categorias_ejercicio(nombre, orden)'
       )
       .eq('publicado', true)
+      .eq('explicativo', false) // los explicativos tienen su sección: /explicaciones
       .order('orden'),
+    // Cuántas explicaciones hay por categoría, para enlazarlas desde la
+    // cabecera de cada bloque. La RLS filtra igual que la consulta de arriba.
+    supabase.from('ejercicios').select('categoria_id').eq('publicado', true).eq('explicativo', true),
     supabase
       .from('suscripciones')
       .select('id')
@@ -55,14 +60,24 @@ export default async function InicioPage() {
   ])
 
   const tieneAcceso = (subs ?? []).length > 0
+
+  // Alumno SOLO presencial (paga en mano, sin plan online): su inicio es
+  // el calendario de reservas, no una lista de ejercicios vacía.
+  if (perfil?.presencial && !tieneAcceso) redirect('/reservas')
   const lista = (ejercicios ?? []) as Fila[]
 
+  const explPorCat = new Map<string, number>()
+  for (const e of explicativos ?? []) {
+    explPorCat.set(e.categoria_id, (explPorCat.get(e.categoria_id) ?? 0) + 1)
+  }
+
   // Agrupar por categoría, respetando su orden
-  const grupos = new Map<string, { nombre: string; orden: number; ejercicios: Fila[] }>()
+  const grupos = new Map<string, { id: string; nombre: string; orden: number; ejercicios: Fila[] }>()
   for (const e of lista) {
     const c = rel(e.categorias_ejercicio)
     if (!grupos.has(e.categoria_id)) {
       grupos.set(e.categoria_id, {
+        id: e.categoria_id,
         nombre: c?.nombre ?? 'Ejercicios',
         orden: c?.orden ?? 999,
         ejercicios: [],
@@ -87,7 +102,7 @@ export default async function InicioPage() {
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <NavAlumno />
+        <NavAlumno presencial={!!perfil?.presencial} />
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>
@@ -142,12 +157,18 @@ export default async function InicioPage() {
           </div>
         ) : (
           categorias.map((cat) => (
-            <section key={cat.nombre} className="al-cat">
+            <section key={cat.id} className="al-cat">
               <div className="al-cat-cab">
                 <h2>{cat.nombre}</h2>
                 <span className="al-cat-num">
                   {cat.ejercicios.length} {cat.ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}
                 </span>
+                {(explPorCat.get(cat.id) ?? 0) > 0 && (
+                  <Link href={`/explicaciones?cat=${cat.id}`} className="al-cat-expl">
+                    {explPorCat.get(cat.id)}{' '}
+                    {explPorCat.get(cat.id) === 1 ? 'explicación' : 'explicaciones'} →
+                  </Link>
+                )}
               </div>
               <div className="al-grid">
                 {cat.ejercicios.map((e) => (

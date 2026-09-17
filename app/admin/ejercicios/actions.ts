@@ -36,11 +36,18 @@ export async function guardarEjercicio(
     .map(String)
     .filter((o) => ESPECIALIDADES.includes(o))
 
+  // Explicativo = vídeo de técnica de un movimiento (press banca,
+  // sentadilla…). Va en su categoría, pero el alumno lo ve en la sección
+  // "Explicaciones" y no en su entrenamiento por tramos. Por eso se
+  // guarda SIEMPRE sin tramo: una explicación vale para todos.
+  const explicativo = formData.get('explicativo') === 'on'
+
   const datos = {
     titulo,
     slug: texto('slug') || null, // el trigger de BBDD lo genera/normaliza
     categoria_id,
-    tramo_id: texto('tramo_id') || null, // vacío = visible en todos los tramos
+    explicativo,
+    tramo_id: explicativo ? null : texto('tramo_id') || null, // vacío = visible en todos los tramos
     descripcion: texto('descripcion') || null,
     tecnica: texto('tecnica') || null,
     errores_comunes: texto('errores_comunes') || null,

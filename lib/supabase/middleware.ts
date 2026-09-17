@@ -113,7 +113,7 @@ export async function updateSession(request: NextRequest) {
   // La RLS permite a cada usuario leer su propio perfil.
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('rol, must_change_password, cuestionario_completado')
+    .select('rol, must_change_password, cuestionario_completado, presencial')
     .eq('id', user.id)
     .single()
 
@@ -123,10 +123,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   // 2. Alumno que aún no ha hecho el cuestionario inicial: a /bienvenida.
-  //    (Los admin no lo necesitan.)
+  //    (Los admin no lo necesitan, y los alumnos PRESENCIALES tampoco: no
+  //    tienen categorías que responder, solo reservan clase.)
   if (
     perfil?.rol === 'alumno' &&
     !perfil?.cuestionario_completado &&
+    !perfil?.presencial &&
     ruta !== '/bienvenida' &&
     ruta !== '/cambiar-password'
   ) {

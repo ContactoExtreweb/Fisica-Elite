@@ -6,16 +6,20 @@ import {
   regenerarPassword,
   darDeBaja,
   eliminarAlumno,
+  marcarPresencial,
 } from '@/app/admin/alumnos/actions'
 
 export default function AlumnoAcciones({
   alumnoId,
   nombre,
   tieneAccesoActivo,
+  presencial,
 }: {
   alumnoId: string
   nombre: string
   tieneAccesoActivo: boolean
+  /** Tiene activadas las reservas de clase en el centro */
+  presencial: boolean
 }) {
   const [password, setPassword] = useState<string | null>(null)
   const [copiado, setCopiado] = useState(false)
@@ -53,6 +57,15 @@ export default function AlumnoAcciones({
     else setError(res.error ?? 'No se pudo dar de baja')
   }
 
+  const cambiarPresencial = async () => {
+    setCargando('pres')
+    setError(null)
+    const res = await marcarPresencial(alumnoId, !presencial)
+    setCargando(null)
+    if (res.ok) router.refresh()
+    else setError(res.error ?? 'No se pudo cambiar')
+  }
+
   const eliminar = async () => {
     if (
       !confirm(
@@ -67,6 +80,26 @@ export default function AlumnoAcciones({
   return (
     <div className="admin-section" style={{ padding: 28 }}>
       <h3 className="ficha-seccion-titulo">Gestión de la cuenta</h3>
+
+      {/* Clases presenciales: solo el admin puede activarlo (trigger en BBDD) */}
+      <div className="ficha-accion">
+        <div>
+          <div className="ficha-accion-titulo">Clases en el centro</div>
+          <div className="ficha-accion-desc">
+            {presencial
+              ? 'Puede reservar clase desde su área. Si además tiene un plan online, ve las dos cosas.'
+              : 'Actívalo si viene a entrenar al centro: le aparecerá el calendario para reservar turno. No necesita suscripción.'}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="btn-ghost-chat"
+          onClick={cambiarPresencial}
+          disabled={cargando === 'pres'}
+        >
+          {cargando === 'pres' ? 'Guardando…' : presencial ? 'Desactivar' : 'Activar'}
+        </button>
+      </div>
 
       {/* Regenerar contraseña */}
       <div className="ficha-accion">

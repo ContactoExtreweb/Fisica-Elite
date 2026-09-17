@@ -20,6 +20,7 @@ type Ejercicio = {
   mejoras: string | null
   orden: number
   publicado: boolean
+  explicativo?: boolean
 }
 
 type Categoria = { id: string; nombre: string }
@@ -42,6 +43,7 @@ export default function EjercicioForm({ ejercicio }: { ejercicio?: Ejercicio }) 
   const [tramos, setTramos] = useState<Tramo[]>([])
   const [catSel, setCatSel] = useState(ejercicio?.categoria_id ?? '')
   const [tramoSel, setTramoSel] = useState(ejercicio?.tramo_id ?? '')
+  const [explicativo, setExplicativo] = useState(ejercicio?.explicativo ?? false)
   const [opos, setOpos] = useState<string[]>([])
   const [cargando, setCargando] = useState(true)
 
@@ -151,7 +153,7 @@ export default function EjercicioForm({ ejercicio }: { ejercicio?: Ejercicio }) 
                 name="tramo_id"
                 value={tramoSel}
                 onChange={(e) => setTramoSel(e.target.value)}
-                disabled={cargando || !catSel}
+                disabled={cargando || !catSel || explicativo}
               >
                 <option value="">Todos los tramos</option>
                 {tramosDeCat.map((t) => (
@@ -161,9 +163,35 @@ export default function EjercicioForm({ ejercicio }: { ejercicio?: Ejercicio }) 
                 ))}
               </select>
               <span className="ff-hint">
-                {catSel ? 'Vacío = se ve en todos los tramos (técnica general).' : 'Elige antes una categoría.'}
+                {explicativo
+                  ? 'Los explicativos se ven en todos los tramos.'
+                  : catSel
+                    ? 'Vacío = se ve en todos los tramos (técnica general).'
+                    : 'Elige antes una categoría.'}
               </span>
             </div>
+          </div>
+
+          <div className="ff-field">
+            <label>Tipo de contenido</label>
+            <label className="ff-switch">
+              <input
+                type="checkbox"
+                name="explicativo"
+                checked={explicativo}
+                onChange={(e) => {
+                  setExplicativo(e.target.checked)
+                  if (e.target.checked) setTramoSel('')
+                }}
+              />
+              <span className="ff-switch-track"><span className="ff-switch-thumb" /></span>
+              <span className="ff-switch-txt">Ejercicio explicativo</span>
+            </label>
+            <span className="ff-hint">
+              Vídeo de técnica de un movimiento (press banca, sentadilla…). El alumno lo ve en su
+              sección «Explicaciones», dentro de esta categoría, y no mezclado con el
+              entrenamiento por tramos.
+            </span>
           </div>
 
           <div className="ff-field">

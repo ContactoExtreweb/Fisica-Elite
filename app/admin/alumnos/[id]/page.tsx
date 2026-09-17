@@ -36,7 +36,7 @@ export default async function FichaAlumnoPage({
   const { data: alumno } = await supabase
     .from('profiles')
     .select(
-      'id, nombre, apellidos, email, telefono, edad, especialidad, rol, username, created_at, peso_kg, altura_cm, facilidades, cuestionario_completado'
+      'id, nombre, apellidos, email, telefono, edad, especialidad, rol, username, created_at, peso_kg, altura_cm, facilidades, cuestionario_completado, presencial'
     )
     .eq('id', id)
     .single()
@@ -128,6 +128,14 @@ export default async function FichaAlumnoPage({
             <span className="susc-pill inactiva">● Sin acceso</span>
           )}
         </div>
+        <div className="ficha-chip">
+          <span className="ficha-chip-label">Clases en el centro</span>
+          {alumno.presencial ? (
+            <span className="susc-pill activa">● Presencial</span>
+          ) : (
+            <span className="susc-pill inactiva">● Solo online</span>
+          )}
+        </div>
       </div>
 
       {esAdmin ? (
@@ -141,7 +149,12 @@ export default async function FichaAlumnoPage({
         <>
         <div className="ficha-columnas">
           <AlumnoEditor alumno={alumno} />
-          <AlumnoAcciones alumnoId={alumno.id} nombre={nombre} tieneAccesoActivo={accesoActivo} />
+          <AlumnoAcciones
+            alumnoId={alumno.id}
+            nombre={nombre}
+            tieneAccesoActivo={accesoActivo}
+            presencial={!!alumno.presencial}
+          />
         </div>
 
         {/* Gestión de sus accesos: añadir plan, renovar, baja individual */}

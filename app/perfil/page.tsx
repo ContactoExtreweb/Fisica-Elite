@@ -9,6 +9,7 @@ import PerfilForm from '@/components/PerfilForm'
 import ListaSuscripciones from '@/components/ListaSuscripciones'
 import { misSuscripciones, accesoHasta } from '@/lib/suscripciones'
 import { contarNoLeidos } from '@/lib/no-leidos'
+import { modoAlumno } from '@/lib/reservas'
 
 export const metadata = { title: 'Mi perfil' }
 
@@ -19,7 +20,7 @@ export default async function PerfilPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: perfil }, suscripciones, noLeidos] = await Promise.all([
+  const [{ data: perfil }, suscripciones, noLeidos, modo] = await Promise.all([
     supabase
       .from('profiles')
       .select('nombre, apellidos, peso_kg, altura_cm, facilidades')
@@ -27,6 +28,7 @@ export default async function PerfilPage() {
       .single(),
     misSuscripciones(supabase, user.id),
     contarNoLeidos(),
+    modoAlumno(supabase, user.id),
   ])
 
   const vigentes = suscripciones.filter((s) => s.vigente)
@@ -46,7 +48,11 @@ export default async function PerfilPage() {
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <NavAlumno noLeidos={noLeidos} />
+        <NavAlumno
+          noLeidos={noLeidos}
+          presencial={modo.presencial}
+          soloPresencial={modo.presencial && !modo.online}
+        />
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>

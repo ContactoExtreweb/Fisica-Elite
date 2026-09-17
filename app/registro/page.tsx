@@ -18,7 +18,7 @@ export default async function RegistroPage() {
   if (!user) redirect('/login')
 
   const [{ data: perfil }, categorias, { data: registros }] = await Promise.all([
-    supabase.from('profiles').select('nombre, apellidos').eq('id', user.id).single(),
+    supabase.from('profiles').select('nombre, apellidos, presencial').eq('id', user.id).single(),
     categoriasContratadas(supabase, user.id),
     supabase
       .from('registros_entrenamiento')
@@ -43,7 +43,7 @@ export default async function RegistroPage() {
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <NavAlumno />
+        <NavAlumno presencial={!!perfil?.presencial} />
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>

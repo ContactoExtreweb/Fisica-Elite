@@ -73,7 +73,7 @@ export default function SelectorAccesoAlta() {
     <div className="field-group bloque-opcion">
       <label className="radio-opcion" style={{ fontSize: 14 }}>
         <input type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} />
-        Ha pagado en efectivo (presencial)
+        Ha pagado en efectivo
       </label>
 
       {/* Marcador para el servidor: hay pago en efectivo */}

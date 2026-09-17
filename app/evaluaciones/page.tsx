@@ -41,7 +41,7 @@ export default async function EvaluacionesPage() {
   if (!user) redirect('/login')
 
   const [{ data: perfil }, categorias, evaluaciones, ventanas, noLeidos] = await Promise.all([
-    supabase.from('profiles').select('nombre, apellidos').eq('id', user.id).single(),
+    supabase.from('profiles').select('nombre, apellidos, presencial').eq('id', user.id).single(),
     categoriasContratadas(supabase, user.id),
     misEvaluaciones(supabase, user.id),
     ventanasActivas(supabase),
@@ -66,7 +66,7 @@ export default async function EvaluacionesPage() {
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <NavAlumno noLeidos={noLeidos} />
+        <NavAlumno noLeidos={noLeidos} presencial={!!perfil?.presencial} />
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>

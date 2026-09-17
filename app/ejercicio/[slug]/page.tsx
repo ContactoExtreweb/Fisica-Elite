@@ -14,6 +14,7 @@ import { createClient } from '@/lib/supabase/server'
 import { bunnyConfigurado, urlEmbedFirmada } from '@/lib/bunny'
 import TabsEjercicio from '@/components/TabsEjercicio'
 import BotonCompletar from '@/components/BotonCompletar'
+import VideoProtegido from '@/components/VideoProtegido'
 
 // PostgREST devuelve las relaciones a-uno como objeto o como array según
 // la versión; esto normaliza ambos casos.
@@ -54,7 +55,7 @@ export default async function FichaEjercicioAlumno({
 
   // Datos para el sidebar completo (mismo shell que el resto del área)
   const [{ data: perfilSidebar }, noLeidos] = await Promise.all([
-    supabase.from('profiles').select('nombre, apellidos').eq('id', user!.id).single(),
+    supabase.from('profiles').select('nombre, apellidos, presencial').eq('id', user!.id).single(),
     contarNoLeidos(),
   ])
   const inicialesSidebar =
@@ -75,6 +76,7 @@ export default async function FichaEjercicioAlumno({
     .from('ejercicios')
     .select('id, titulo, slug')
     .eq('categoria_id', ejercicio.categoria_id)
+    .eq('explicativo', ejercicio.explicativo) // entrenamiento y explicaciones no se mezclan
     .eq('publicado', true)
     .order('orden')
     .order('titulo')
@@ -115,7 +117,7 @@ export default async function FichaEjercicioAlumno({
           <div className="brand-sub">Área del alumno</div>
         </div>
 
-        <NavAlumno noLeidos={noLeidos} />
+        <NavAlumno noLeidos={noLeidos} presencial={!!perfilSidebar?.presencial} />
 
         <div className="sidebar-foot">
           <div className="avatar">{inicialesSidebar}</div>
@@ -135,29 +137,37 @@ export default async function FichaEjercicioAlumno({
         </div>
 
         <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginBottom: 24 }}>
-          <Link href="/inicio" style={{ color: 'var(--ink-muted)', fontWeight: 500 }}>
-            ← Volver a mis ejercicios
+          <Link
+            href={ejercicio.explicativo ? '/explicaciones' : '/inicio'}
+            style={{ color: 'var(--ink-muted)', fontWeight: 500 }}
+          >
+            {ejercicio.explicativo ? '← Volver a explicaciones' : '← Volver a mis ejercicios'}
           </Link>
         </div>
 
         <div className="exercise-detail">
           {/* Columna principal */}
           <div>
-            <div className="video-frame">
-              {embedUrl ? (
-                <iframe
-                  src={embedUrl}
-                  loading="lazy"
-                  allow="accelerometer; gyroscope; encrypted-media"
-                  allowFullScreen
-                  title={ejercicio.titulo}
-                />
-              ) : (
+            {embedUrl ? (
+              // Marca de agua con el nombre y el email del alumno (ver el
+              // componente): si el vídeo se graba y se comparte, va firmado.
+              <VideoProtegido
+                src={embedUrl}
+                titulo={ejercicio.titulo}
+                marca={{
+                  nombre:
+                    [perfilSidebar?.nombre, perfilSidebar?.apellidos].filter(Boolean).join(' ') ||
+                    'Alumno',
+                  email: user!.email ?? '',
+                }}
+              />
+            ) : (
+              <div className="video-frame">
                 <div className="video-sin">
                   El vídeo de este ejercicio estará disponible en breve.
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <h1 className="exercise-title">{ejercicio.titulo}</h1>
             {ejercicio.descripcion && (
@@ -169,15 +179,21 @@ export default async function FichaEjercicioAlumno({
                 <span className="plan-tag oposicion">{categoria.nombre}</span>
               )}
               <span className="tag">
-                {tramo?.nombre ? `Tramo ${tramo.nombre}` : 'Todos los tramos'}
+                {ejercicio.explicativo
+                  ? 'Explicativo'
+                  : tramo?.nombre
+                    ? `Tramo ${tramo.nombre}`
+                    : 'Todos los tramos'}
               </span>
             </div>
 
-            {/* Completar + registro de la marca (se despliega al completar) */}
+            {/* Completar + registro de la marca (se despliega al completar).
+                En un explicativo no hay marca que apuntar (es la técnica de
+                un movimiento), así que el botón va sin registro. */}
             <BotonCompletar
               ejercicioId={id}
               completadoInicial={completado}
-              categoria={categoria ?? null}
+              categoria={ejercicio.explicativo ? null : (categoria ?? null)}
             />
 
             <TabsEjercicio tabs={tabs} />

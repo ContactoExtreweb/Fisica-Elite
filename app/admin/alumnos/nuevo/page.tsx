@@ -61,6 +61,7 @@ export default function NuevoAlumnoPage() {
             <Link href="/admin/alumnos" className="cred-link">
               Ver alumnos →
             </Link>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- <a> a propósito: recarga completa que reinicia el formulario */}
             <a href="/admin/alumnos/nuevo" className="cred-link">
               Crear otro alumno
             </a>
@@ -199,6 +200,19 @@ export default function NuevoAlumnoPage() {
             )}
             <p className="nota-campo">
               El alumno podrá mantenerla o cambiarla en su primer acceso.
+            </p>
+          </div>
+
+          {/* Clases en el centro: activa las reservas de turno. Es independiente
+              del pago: un presencial puede no tener ningún plan online. */}
+          <div className="field-group bloque-opcion">
+            <label className="radio-opcion" style={{ fontSize: 14 }}>
+              <input type="checkbox" name="presencial" />
+              Viene a entrenar al centro (clases presenciales)
+            </label>
+            <p className="nota-campo">
+              Le aparecerá el calendario para reservar turno. No necesita plan online; si además
+              paga uno, márcalo abajo.
             </p>
           </div>
 

@@ -10,6 +10,7 @@ import ContratarPlan from '@/components/ContratarPlan'
 import { misSuscripciones, accesoHasta } from '@/lib/suscripciones'
 import { planesALaVenta } from '@/lib/planes'
 import { contarNoLeidos } from '@/lib/no-leidos'
+import { modoAlumno } from '@/lib/reservas'
 
 function fmt(iso: string | null) {
   if (!iso) return '—'
@@ -28,11 +29,12 @@ export default async function SuscripcionPage({
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: perfil }, suscripciones, planes, noLeidos] = await Promise.all([
+  const [{ data: perfil }, suscripciones, planes, noLeidos, modo] = await Promise.all([
     supabase.from('profiles').select('nombre, apellidos').eq('id', user.id).single(),
     misSuscripciones(supabase, user.id),
     planesALaVenta(supabase),
     contarNoLeidos(),
+    modoAlumno(supabase, user.id),
   ])
 
   const vigentes = suscripciones.filter((s) => s.vigente)
@@ -56,7 +58,11 @@ export default async function SuscripcionPage({
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <NavAlumno noLeidos={noLeidos} />
+        <NavAlumno
+          noLeidos={noLeidos}
+          presencial={modo.presencial}
+          soloPresencial={modo.presencial && !modo.online}
+        />
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>

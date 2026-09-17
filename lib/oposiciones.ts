@@ -88,10 +88,6 @@ export const FICHAS: FichaOposicion[] = [
         detalle:
           'Carrera de fondo o course-navette. Se prepara con series y control de ritmo, no corriendo a ciegas.',
       },
-      {
-        nombre: 'Natación',
-        detalle: 'Solo en algunas convocatorias. Si la tuya la lleva, entra en el plan.',
-      },
     ],
   },
   {

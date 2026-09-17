@@ -5,6 +5,7 @@ import BotonLogout from '@/components/BotonLogout'
 import NavAlumno from '@/components/NavAlumno'
 import { obtenerOCrearConversacion } from '@/app/chat/actions'
 import VentanaChat, { type Mensaje } from '@/components/VentanaChat'
+import { modoAlumno } from '@/lib/reservas'
 
 export default async function ChatAlumnoPage() {
   const supabase = await createClient()
@@ -18,6 +19,8 @@ export default async function ChatAlumnoPage() {
     .select('nombre, apellidos')
     .eq('id', user.id)
     .single()
+
+  const modo = await modoAlumno(supabase, user.id)
 
   // Abre (o recupera) la conversación del alumno
   const conversacionId = await obtenerOCrearConversacion()
@@ -41,7 +44,7 @@ export default async function ChatAlumnoPage() {
           </div>
           <div className="brand-sub">Área del alumno</div>
         </div>
-        <NavAlumno />
+        <NavAlumno presencial={modo.presencial} soloPresencial={modo.presencial && !modo.online} />
         <div className="sidebar-foot">
           <div className="avatar">{iniciales}</div>
           <div>

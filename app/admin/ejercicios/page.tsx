@@ -22,20 +22,22 @@ function rel<T>(x: T | T[] | null | undefined): T | undefined {
 export default async function AdminEjerciciosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cat?: string }>
+  searchParams: Promise<{ cat?: string; tipo?: string }>
 }) {
-  const { cat } = await searchParams
+  const { cat, tipo } = await searchParams
+  const soloExpl = tipo === 'explicativos'
   const supabase = await createClient()
 
   let consulta = supabase
     .from('ejercicios')
     .select(
-      'id, titulo, slug, publicado, orden, video_id, categoria_id, tramo_id, categorias_ejercicio(nombre), tramos(nombre), ejercicio_oposiciones(especialidad), ejercicio_faqs(count)'
+      'id, titulo, slug, publicado, explicativo, orden, video_id, categoria_id, tramo_id, categorias_ejercicio(nombre), tramos(nombre), ejercicio_oposiciones(especialidad), ejercicio_faqs(count)'
     )
     .order('orden')
     .order('titulo')
 
   if (cat) consulta = consulta.eq('categoria_id', cat)
+  if (soloExpl) consulta = consulta.eq('explicativo', true)
 
   const [{ data: ejercicios, error }, { data: categorias }] = await Promise.all([
     consulta,
@@ -47,6 +49,15 @@ export default async function AdminEjerciciosPage({
   }
 
   const lista = ejercicios ?? []
+
+  // Enlaces de los chips: la categoría y "solo explicativos" se combinan
+  const href = (c?: string, expl?: boolean) => {
+    const p = new URLSearchParams()
+    if (c) p.set('cat', c)
+    if (expl) p.set('tipo', 'explicativos')
+    const q = p.toString()
+    return `/admin/ejercicios${q ? `?${q}` : ''}`
+  }
 
   return (
     <>
@@ -69,28 +80,37 @@ export default async function AdminEjerciciosPage({
 
       <AdminSubNav />
 
-      {/* Filtro por categoría */}
+      {/* Filtro por categoría + "solo explicativos" (se combinan) */}
       <div className="chips-filtro">
-        <Link href="/admin/ejercicios" className={`chip-filtro ${!cat ? 'activo' : ''}`}>
+        <Link href={href(undefined, soloExpl)} className={`chip-filtro ${!cat ? 'activo' : ''}`}>
           Todas
         </Link>
         {(categorias ?? []).map((c) => (
           <Link
             key={c.id}
-            href={`/admin/ejercicios?cat=${c.id}`}
+            href={href(c.id, soloExpl)}
             className={`chip-filtro ${cat === c.id ? 'activo' : ''}`}
           >
             {c.nombre}
           </Link>
         ))}
+        <Link
+          href={href(cat, !soloExpl)}
+          className={`chip-filtro chip-filtro-expl ${soloExpl ? 'activo' : ''}`}
+          title="Solo los vídeos de técnica marcados como explicativos"
+        >
+          Solo explicativos
+        </Link>
       </div>
 
       <div className="admin-section">
         {lista.length === 0 ? (
           <div className="admin-tabla-vacia">
-            {cat
-              ? 'No hay ejercicios en esta categoría todavía.'
-              : 'Aún no hay ejercicios. Crea el primero.'}
+            {soloExpl
+              ? 'No hay ejercicios explicativos todavía. Se marcan con el interruptor «Ejercicio explicativo» de la ficha.'
+              : cat
+                ? 'No hay ejercicios en esta categoría todavía.'
+                : 'Aún no hay ejercicios. Crea el primero.'}
           </div>
         ) : (
           <table className="admin-table">
@@ -124,7 +144,13 @@ export default async function AdminEjerciciosPage({
                     </td>
                     <td>
                       {catNombre}
-                      <div className="sub">{tramoNombre ? `Tramo ${tramoNombre}` : 'Todos los tramos'}</div>
+                      <div className="sub">
+                        {e.explicativo
+                          ? 'Explicativo · todos los tramos'
+                          : tramoNombre
+                            ? `Tramo ${tramoNombre}`
+                            : 'Todos los tramos'}
+                      </div>
                     </td>
                     <td>
                       {opos.length === 0 ? (

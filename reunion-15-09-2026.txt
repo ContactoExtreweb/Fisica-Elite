@@ -1,0 +1,9 @@
+- Asistente virtual. Detección de inactividad que mande correos. Y hablé con el cliente estilo chatbot.
+
+- Policia local sin natación.
+
+- Reservar entrenamientos, para opositores, solo con oposicion. (Solo se dan de alta, de manera manual)
+
+- Apartado de ejercicios explicativos, solo para gente que se ha registrado.
+
+- Marca de agua en los videos por ID

@@ -112,3 +112,21 @@ export async function eliminarAlumno(alumnoId: string) {
   revalidatePath('/admin/alumnos')
   redirect('/admin/alumnos')
 }
+
+
+/**
+ * Activa o desactiva las reservas de clase presencial del alumno. Solo el
+ * admin puede tocar 'presencial': el trigger proteger_campos_perfil()
+ * rechaza el cambio si lo intenta el propio alumno.
+ */
+export async function marcarPresencial(
+  alumnoId: string,
+  presencial: boolean
+): Promise<ResultadoEdicion> {
+  const { supabase } = await exigirAdmin()
+  const { error } = await supabase.from('profiles').update({ presencial }).eq('id', alumnoId)
+  if (error) return { ok: false, error: 'No se pudo cambiar la modalidad' }
+  revalidatePath(`/admin/alumnos/${alumnoId}`)
+  revalidatePath('/admin/reservas')
+  return { ok: true }
+}

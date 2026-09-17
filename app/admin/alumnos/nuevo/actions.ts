@@ -130,6 +130,7 @@ export async function crearAlumno(
       email,
       created_by: admin.id,
       must_change_password: true,
+      presencial: formData.get('presencial') === 'on',
     })
     .eq('id', nuevoId)
 
