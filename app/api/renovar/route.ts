@@ -19,6 +19,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { stripe, stripeConfigurado, MONEDA } from '@/lib/stripe'
+import { origenSeguro } from '@/lib/site'
 
 export const runtime = 'nodejs'
 
@@ -144,8 +145,8 @@ export async function POST(request: Request) {
     .eq('id', user.id)
     .single()
 
-  const origin =
-    request.headers.get('origin') ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  // Solo se fía del Origin si es este mismo sitio (ver lib/site.ts)
+  const origin = origenSeguro(request)
 
   const importe = plan.precio_centimos * meses
   const etiqueta = modo === 'renovar' ? 'Renovación' : 'Nuevo plan'

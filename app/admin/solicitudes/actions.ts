@@ -17,6 +17,7 @@ import { revalidatePath } from 'next/cache'
 import { exigirAdmin } from '@/lib/autorizacion'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generarPasswordSegura } from '@/lib/password'
+import { stripe, stripeConfigurado } from '@/lib/stripe'
 
 export type Credenciales = { email: string; username: string; password: string }
 export type ResultadoProceso =
@@ -130,6 +131,93 @@ export async function procesarSolicitud(
     ok: true,
     credenciales: { email: sol.email, username: nombreUsuario || sol.email, password },
   }
+}
+
+/**
+ * Rechaza la solicitud Y DEVUELVE el pago por Stripe. Es la versión con dinero
+ * de rechazarSolicitud, y solo la dispara el admin con su botón y una
+ * confirmación explícita.
+ *
+ *  · Devuelve el importe COMPLETO del pago (Stripe no reintegra su comisión).
+ *  · La devolución lleva clave de idempotencia por solicitud: si algo falla a
+ *    medias y el admin vuelve a pulsar, Stripe devuelve la MISMA devolución en
+ *    vez de crear otra. Nunca se devuelve dos veces.
+ *  · Orden: primero el dinero, después el estado. Si Stripe falla, la
+ *    solicitud NO se toca. Si el dinero sale pero el estado no se guarda, el
+ *    mensaje lo dice y basta volver a pulsar.
+ */
+export async function rechazarYReembolsar(
+  solicitudId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { supabase } = await exigirAdmin()
+  if (!solicitudId) return { ok: false, error: 'Falta la solicitud' }
+
+  const { data: sol } = await supabase
+    .from('solicitudes_alta')
+    .select('id, estado, stripe_payment_intent')
+    .eq('id', solicitudId)
+    .single()
+
+  if (!sol) return { ok: false, error: 'Solicitud no encontrada' }
+  if (sol.estado !== 'pendiente') return { ok: false, error: 'Esta solicitud ya fue tramitada' }
+  if (!sol.stripe_payment_intent) {
+    return {
+      ok: false,
+      error:
+        'Esta solicitud no tiene un pago de Stripe asociado. Si hay que devolver dinero, hazlo a mano desde el panel de Stripe.',
+    }
+  }
+  if (!stripeConfigurado()) return { ok: false, error: 'Stripe no está configurado' }
+
+  let reembolsoId: string | null = null
+  try {
+    const devolucion = await stripe.refunds.create(
+      {
+        payment_intent: sol.stripe_payment_intent as string,
+        reason: 'requested_by_customer',
+        metadata: { solicitud_id: sol.id },
+      },
+      { idempotencyKey: `reembolso-solicitud-${sol.id}` }
+    )
+    reembolsoId = devolucion.id
+  } catch (e) {
+    // Ya devuelto antes (a mano en Stripe, o un intento anterior): el dinero
+    // ya está en su sitio, así que solo falta marcar la solicitud.
+    const codigo = (e as { code?: string }).code
+    if (codigo !== 'charge_already_refunded') {
+      console.error('[reembolso]', e instanceof Error ? e.message : e)
+      return {
+        ok: false,
+        error:
+          'Stripe no ha podido devolver el pago. No ha cambiado nada: puedes reintentarlo o devolverlo a mano desde el panel de Stripe.',
+      }
+    }
+  }
+
+  const { error } = await supabase
+    .from('solicitudes_alta')
+    .update({ estado: 'rechazada' })
+    .eq('id', sol.id)
+  if (error) {
+    return {
+      ok: false,
+      error:
+        'El pago SÍ se ha devuelto, pero no se pudo marcar la solicitud como rechazada. Vuelve a pulsar el botón: no se devolverá dos veces.',
+    }
+  }
+
+  // Traza de la devolución (migración 030). Si esa migración aún no está
+  // aplicada, falla en silencio: el dinero ya está devuelto y la solicitud
+  // marcada, que es lo importante.
+  if (reembolsoId) {
+    await supabase
+      .from('solicitudes_alta')
+      .update({ reembolso_id: reembolsoId, reembolsado_at: new Date().toISOString() })
+      .eq('id', sol.id)
+  }
+
+  revalidatePath('/admin/solicitudes')
+  return { ok: true }
 }
 
 export async function rechazarSolicitud(solicitudId: string) {

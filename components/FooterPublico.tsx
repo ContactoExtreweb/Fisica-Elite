@@ -1,6 +1,9 @@
 import Link from 'next/link'
+import { contactoPublico } from '@/lib/legal'
 
 export default function FooterPublico() {
+  const contacto = contactoPublico()
+
   return (
     <footer className="footer-pub">
       <div className="footer-pub-inner">
@@ -33,8 +36,10 @@ export default function FooterPublico() {
 
         <div className="footer-pub-col">
           <h4>Contacto</h4>
-          <a href="mailto:info@fisicaelite.es">info@fisicaelite.es</a>
-          <a href="tel:+34600000000">600 00 00 00</a>
+          {contacto.email && <a href={`mailto:${contacto.email}`}>{contacto.email}</a>}
+          {contacto.telefono && contacto.telefonoHref && (
+            <a href={contacto.telefonoHref}>{contacto.telefono}</a>
+          )}
           <span>Cáceres, España</span>
           <Link href="/login" className="footer-pub-acceso">Acceso alumnos →</Link>
         </div>

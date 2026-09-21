@@ -41,13 +41,18 @@ function inicialesDe(nombre?: string | null, apellidos?: string | null) {
   return ((nombre ?? '').charAt(0) + (apellidos ?? '').charAt(0)).toUpperCase() || '??'
 }
 
+/** Fecha a N días de hoy (negativo = pasado). Fuera del componente: esto solo se evalúa al servir la página. */
+function fechaEnDias(dias: number): Date {
+  return new Date(Date.now() + dias * 24 * 60 * 60 * 1000)
+}
+
 export default async function AdminDashboardPage() {
   const supabase = await createClient()
   const { saludo, fecha } = saludoYFecha()
 
   const hoy = new Date().toISOString().slice(0, 10)
-  const hace30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  const en7dias = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const hace30 = fechaEnDias(-30).toISOString()
+  const en7dias = fechaEnDias(7).toISOString().slice(0, 10)
 
   const [
     { data: alumnos },

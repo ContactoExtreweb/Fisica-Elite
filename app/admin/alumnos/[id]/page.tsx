@@ -13,6 +13,8 @@ import GestorSuscripciones, {
   type PlanOpcion,
 } from '@/components/GestorSuscripciones'
 import { abrirConversacionConAlumno } from '@/app/chat/actions'
+import { categoriasContratadas } from '@/lib/acceso'
+import TramosAlumno, { type FilaTramoAlumno } from '@/components/TramosAlumno'
 
 const NOMBRE_ESP: Record<string, string> = {
   policia_local: 'Policía Local',
@@ -93,6 +95,42 @@ export default async function FichaAlumnoPage({
       .limit(40),
     supabase.from('categorias_ejercicio').select('id, nombre, metrica, unidad'),
   ])
+
+  // Nivel (tramo) por categoría contratada, para poder corregirlo. Solo tiene
+  // sentido en alumnos: la cuenta de admin no entrena.
+  let filasTramos: FilaTramoAlumno[] = []
+  if (alumno.rol !== 'admin') {
+    const contratadas = await categoriasContratadas(supabase, id)
+    const idsCat = contratadas.map((c) => c.id)
+    if (idsCat.length > 0) {
+      const [{ data: tramosRaw }, { data: asignados }] = await Promise.all([
+        supabase
+          .from('tramos')
+          .select('id, categoria_id, nombre, orden')
+          .in('categoria_id', idsCat)
+          .order('orden'),
+        supabase
+          .from('alumno_tramos')
+          .select('categoria_id, tramo_id, origen')
+          .eq('user_id', id)
+          .in('categoria_id', idsCat),
+      ])
+      filasTramos = contratadas
+        .map((c) => {
+          const fila = (asignados ?? []).find((a) => a.categoria_id === c.id)
+          return {
+            categoriaId: c.id,
+            categoriaNombre: c.nombre,
+            tramos: (tramosRaw ?? [])
+              .filter((t) => t.categoria_id === c.id)
+              .map((t) => ({ id: t.id as string, nombre: t.nombre as string })),
+            actual: fila ? { tramoId: (fila.tramo_id as string | null) ?? null, origen: fila.origen as string } : null,
+          }
+        })
+        // una categoría sin tramos no tiene nada que asignar
+        .filter((f) => f.tramos.length > 0)
+    }
+  }
 
   const nombre = [alumno.nombre, alumno.apellidos].filter(Boolean).join(' ') || 'Sin nombre'
   const esAdmin = alumno.rol === 'admin'
@@ -204,6 +242,18 @@ export default async function FichaAlumnoPage({
               suscripciones={suscripciones}
               planes={(planesRaw ?? []) as PlanOpcion[]}
             />
+          </div>
+        </div>
+
+        {/* Nivel por categoría: lo asigna su autoevaluación y el preparador
+            puede corregirlo (petición del cliente: "reasignable por admin") */}
+        <div className="admin-section" style={{ marginTop: 24 }}>
+          <div className="admin-section-head">
+            <h3>Nivel por categoría</h3>
+            <div className="meta">Qué tramo de ejercicios ve</div>
+          </div>
+          <div className="admin-section-body">
+            <TramosAlumno alumnoId={alumno.id} filas={filasTramos} />
           </div>
         </div>
 

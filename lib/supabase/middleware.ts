@@ -39,6 +39,8 @@ const RUTAS_PUBLICAS = [
   '/contacto',
   '/oposiciones', // por prefijo: cubre /oposiciones/policia-nacional, etc.
   '/legal',
+  '/robots.txt', // los buscadores lo piden sin sesión
+  '/sitemap.xml',
 ]
 
 export async function updateSession(request: NextRequest) {

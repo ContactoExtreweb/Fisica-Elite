@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { logout } from '@/app/login/actions'
 
@@ -15,9 +15,13 @@ export default function BotonLogout({
 }) {
   const [abierto, setAbierto] = useState(false)
   const [saliendo, setSaliendo] = useState(false)
-  const [montado, setMontado] = useState(false)
-
-  useEffect(() => setMontado(true), [])
+  // true solo en el navegador (el portal del modal necesita document.body).
+  // useSyncExternalStore da false al hidratar y true después, sin efecto.
+  const montado = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   const confirmar = async () => {
     setSaliendo(true)

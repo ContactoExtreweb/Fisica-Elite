@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Syne, Manrope, Instrument_Serif } from 'next/font/google'
 import './globals.css'
 import AsistenteChat from '@/components/AsistenteChat'
+import { SITE_URL } from '@/lib/site'
 
 // Las mismas fuentes del mockup, self-hosted por next/font
 // (sin peticiones a Google en producción, sin salto de layout).
@@ -25,7 +26,9 @@ const instrument = Instrument_Serif({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://fisicaelite.vercel.app'),
+  // Sale de NEXT_PUBLIC_SITE_URL (lib/site.ts): al comprar el dominio se cambia
+  // esa variable en Vercel, no este archivo.
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Físicas Élite · Preparación física para oposiciones en Cáceres',
     template: '%s · Físicas Élite',

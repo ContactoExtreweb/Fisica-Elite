@@ -34,6 +34,16 @@ export default function FormularioMarca({
 }) {
   const [estado, accion, pendiente] = useActionState(guardarMarca, inicial)
 
+  // Tras guardar con éxito, el formulario se REINICIA (key nueva). Un contador
+  // que sube en cada guardado correcto, ajustado en render, en vez de una
+  // clave aleatoria (impura: cambiaba en cada render y en los errores).
+  const [guardadas, setGuardadas] = useState(0)
+  const [estadoVisto, setEstadoVisto] = useState(estado)
+  if (estado !== estadoVisto) {
+    setEstadoVisto(estado)
+    if (estado.ok) setGuardadas((g) => g + 1)
+  }
+
   const [catId, setCatId] = useState(categoriaFija ?? categorias[0]?.id ?? '')
   const [parciales, setParciales] = useState<{ metros: number; seg: string }[]>([])
 
@@ -62,7 +72,7 @@ export default function FormularioMarca({
   }
 
   return (
-    <form action={accion} className={`marca-caja ${titulo ? "" : "embebida"}`} key={estado.ok ? Math.random() : 'form'}>
+    <form action={accion} className={`marca-caja ${titulo ? "" : "embebida"}`} key={`form-${guardadas}`}>
       <div className={`marca-cab ${titulo ? '' : 'sin-titulo'}`}>
         {titulo ? <h3>{titulo}</h3> : <span />}
         <input type="date" name="fecha" defaultValue={hoy} max={hoy} className="marca-fecha" />

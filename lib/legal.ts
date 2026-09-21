@@ -43,6 +43,29 @@ export function estaPendiente(valor: string | null): boolean {
 }
 
 /**
+ * Correo y teléfono para enseñar en la web pública (contacto, pie y menú).
+ *
+ * Salen de DATOS, el mismo sitio que las páginas legales: se rellenan UNA vez
+ * y aparecen en todas partes. Mientras el cliente no los haya dado, devuelven
+ * null y la web NO los enseña: antes había un teléfono y un correo inventados
+ * (600 00 00 00), y eso en una web en producción es peor que no poner nada.
+ */
+export function contactoPublico(): {
+  email: string | null
+  telefono: string | null
+  /** Para href="tel:…": solo dígitos y el + inicial */
+  telefonoHref: string | null
+} {
+  const email = estaPendiente(DATOS.email) ? null : DATOS.email
+  const telefono = estaPendiente(DATOS.telefono) ? null : DATOS.telefono
+  return {
+    email,
+    telefono,
+    telefonoHref: telefono ? 'tel:' + telefono.replace(/[^d+]/g, '') : null,
+  }
+}
+
+/**
  * Asistente virtual (chatbot). Solo entra en las páginas legales cuando
  * está activado (NEXT_PUBLIC_ASISTENTE=on, el mismo interruptor que pinta el
  * botón en la web): si no se ve, no se cuenta en la política de privacidad.

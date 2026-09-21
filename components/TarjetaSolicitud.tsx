@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   procesarSolicitud,
   rechazarSolicitud,
+  rechazarYReembolsar,
   type Credenciales,
 } from '@/app/admin/solicitudes/actions'
 
@@ -32,6 +33,8 @@ export type Solicitud = {
   mensaje_usuario: string | null
   created_at: string
   importe_centimos: number | null
+  /** Hay un pago de Stripe detrás (el id no viaja al navegador) */
+  tienePagoStripe?: boolean
   planes: PlanRel
 }
 
@@ -73,10 +76,34 @@ export default function TarjetaSolicitud({
   }
 
   const rechazar = async () => {
-    if (!confirm('¿Rechazar esta solicitud? No se creará ningún alumno.')) return
+    const aviso = solicitud.tienePagoStripe
+      ? '¿Rechazar esta solicitud SIN devolver el dinero? No se creará ningún alumno. Si hay que devolver el pago, usa «Rechazar y devolver el pago».'
+      : '¿Rechazar esta solicitud? No se creará ningún alumno.'
+    if (!confirm(aviso)) return
     setCargando(true)
     await rechazarSolicitud(solicitud.id)
     router.refresh()
+  }
+
+  // Con dinero de por medio: confirmación con el importe y el destinatario, y
+  // el aviso de que no hay vuelta atrás.
+  const rechazarYDevolver = async () => {
+    const cuanto = euros(solicitud.importe_centimos) ?? 'el pago'
+    if (
+      !confirm(
+        `¿Rechazar y DEVOLVER ${cuanto} a ${solicitud.email ?? 'esta persona'}?\n\nEl dinero se devuelve por Stripe, no se puede deshacer y Stripe no reintegra su comisión. No se creará ningún alumno.`
+      )
+    )
+      return
+    setCargando(true)
+    setError(null)
+    const res = await rechazarYReembolsar(solicitud.id)
+    if (res.ok) {
+      router.refresh()
+    } else {
+      setCargando(false)
+      setError(res.error)
+    }
   }
 
   const nombre = [solicitud.nombre, solicitud.apellidos].filter(Boolean).join(' ') || 'Sin nombre'
@@ -161,6 +188,16 @@ export default function TarjetaSolicitud({
           >
             Rechazar
           </button>
+          {solicitud.tienePagoStripe && (
+            <button
+              type="button"
+              className="btn-borrar-chat"
+              onClick={rechazarYDevolver}
+              disabled={cargando}
+            >
+              Rechazar y devolver el pago
+            </button>
+          )}
         </div>
       </div>
     </div>

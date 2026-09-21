@@ -14,6 +14,34 @@ const nextConfig: NextConfig = {
     "192.168.1.*", // por si el router cambia la IP
     "192.168.0.*",
   ],
+
+  // Cabeceras de seguridad en TODAS las respuestas. Son las que no rompen nada:
+  //  · nosniff: el navegador no adivina el tipo de un archivo.
+  //  · SAMEORIGIN: nadie puede meter esta web en un <iframe> suyo (clickjacking).
+  //    Los vídeos de Bunny son un iframe DENTRO de nuestra página, no al revés.
+  //  · Referrer-Policy: a otras webs solo se les cuenta el dominio, no la ruta.
+  //  · Permissions-Policy: la web no usa cámara, micro, ubicación ni pagos del
+  //    navegador (Stripe es una redirección), así que se cierran. El vídeo a
+  //    pantalla completa no se toca.
+  // Pendiente a propósito: Content-Security-Policy. Bien hecha necesita nonces
+  // para los scripts de Next y permitir Bunny, Supabase y Stripe; una a medias
+  // rompería el vídeo o los pagos.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

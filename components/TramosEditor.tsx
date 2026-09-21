@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { crearTramo, actualizarTramo, borrarTramo } from '@/app/admin/categorias/actions'
 
@@ -35,7 +35,12 @@ export default function TramosEditor({
 
   // Tras guardar/crear/borrar, router.refresh() re-renderiza la página del
   // servidor y llegan tramos nuevos por props: sincronizamos el estado.
-  useEffect(() => setFilas(tramos), [tramos])
+  // Se ajusta EN RENDER al cambiar la prop, no en un efecto.
+  const [tramosVistos, setTramosVistos] = useState(tramos)
+  if (tramos !== tramosVistos) {
+    setTramosVistos(tramos)
+    setFilas(tramos)
+  }
 
   const num = (s: string) => (s.trim() === '' ? null : Number(s.replace(',', '.')))
 

@@ -8,7 +8,7 @@ export default async function AdminSolicitudesPage() {
   const { data: solicitudes, error } = await supabase
     .from('solicitudes_alta')
     .select(
-      'id, nombre, apellidos, email, telefono, especialidad, username_solicitado, meses_pagados, modalidad, referencia, mensaje_usuario, created_at, importe_centimos, planes(nombre, tipo)'
+      'id, nombre, apellidos, email, telefono, especialidad, username_solicitado, meses_pagados, modalidad, referencia, mensaje_usuario, created_at, importe_centimos, stripe_payment_intent, planes(nombre, tipo)'
     )
     .eq('estado', 'pendiente')
     .order('created_at', { ascending: false })
@@ -17,7 +17,12 @@ export default async function AdminSolicitudesPage() {
     return <p className="form-error">Error cargando solicitudes: {error.message}</p>
   }
 
-  const lista = solicitudes ?? []
+  // Al navegador NO va el id del pago de Stripe: solo si existe (para enseñar
+  // el botón de devolver). La devolución la hace el servidor.
+  const lista = (solicitudes ?? []).map(({ stripe_payment_intent, ...resto }) => ({
+    ...resto,
+    tienePagoStripe: !!stripe_payment_intent,
+  }))
 
   return (
     <>

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { FICHAS } from '@/lib/oposiciones'
+import { contactoPublico } from '@/lib/legal'
 
 type Enlace = { href: string; txt: string; desplegable?: boolean }
 
@@ -20,6 +21,7 @@ const ENLACES: Enlace[] = [
 export default function NavPublica() {
   const [abierto, setAbierto] = useState(false)
   const pathname = usePathname()
+  const contacto = contactoPublico()
 
   // Bloquear el scroll del fondo cuando el menú está abierto
   useEffect(() => {
@@ -157,11 +159,16 @@ export default function NavPublica() {
           Acceder a la plataforma
         </Link>
 
-        <div className="nav-overlay-contacto">
-          <span>CONTÁCTANOS</span>
-          <a href="tel:+34600000000">600 00 00 00</a>
-          <a href="mailto:info@fisicaelite.es">info@fisicaelite.es</a>
-        </div>
+        {/* Sin teléfono ni correo dados, el bloque no se pinta */}
+        {(contacto.telefono || contacto.email) && (
+          <div className="nav-overlay-contacto">
+            <span>CONTÁCTANOS</span>
+            {contacto.telefono && contacto.telefonoHref && (
+              <a href={contacto.telefonoHref}>{contacto.telefono}</a>
+            )}
+            {contacto.email && <a href={`mailto:${contacto.email}`}>{contacto.email}</a>}
+          </div>
+        )}
       </div>
     </>
   )

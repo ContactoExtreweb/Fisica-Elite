@@ -5,13 +5,17 @@
 > pegarlo entero en Claude y que entienda el proyecto sin necesitar nada más.
 >
 > **Escrito por:** Saúl Correyero Pañero (desarrollador hasta ahora), con
-> ayuda de Claude, el 18 de agosto de 2026.
+> ayuda de Claude, el 18 de agosto de 2026. **Actualizado el 21 de septiembre
+> de 2026: ver la sección 0 bis, que es el estado real.**
 >
-> **Fecha de entrega comprometida: 1 de septiembre de 2026.** Quedan 14 días.
+> La fecha de entrega comprometida (1 de septiembre) ya pasó. Las secciones 8, 9
+> y 10 son del 18 de agosto y están **superadas** por la 0 bis.
 
 ---
 
 ## 0. Aviso importante antes de empezar
+
+> **(Texto del 18 de agosto. Hoy el código está terminado; ver 0 bis.)**
 
 Este proyecto está **muy avanzado pero NO terminado**, y quedan cosas que
 son **obligatorias** para poder entregar. Lee las secciones 7 y 8 antes de
@@ -21,6 +25,141 @@ qué se le vende a cada alumno.
 
 Léelo todo antes de escribir la primera línea. El proyecto tiene muchas
 decisiones tomadas y muchas trampas ya pisadas; repetirlas cuesta días.
+
+---
+
+## 0 bis. ACTUALIZACIÓN DEL 21 DE SEPTIEMBRE DE 2026 — LEE ESTO PRIMERO
+
+> El resto de este manual se escribió el 18 de agosto. **Casi todo lo que
+> allí figura como pendiente ya está hecho**, y desde entonces se añadieron
+> funciones que no aparecen abajo. Esta sección es el estado real. Si algo
+> de las secciones 8, 9 y 10 la contradice, manda esta.
+
+### Estado en una frase
+
+El código está **terminado**. Lo que queda depende del cliente o de
+terceros (dominio, datos fiscales, cobros en real): ver «En espera».
+
+### Hecho desde el 18 de agosto
+
+**Modelo y pagos** — especialidad opcional (9.1), suscripciones en el perfil
+(9.2), `/suscripcion` con contratar y renovar (9.3), checkout por plan con el
+precio leído de la BBDD (9.5, **falta lo de producción**), rebranding a
+«Físicas Élite» con la paleta del logo (9.6).
+
+**Web pública** — home con hero, oposiciones y fichas por cuerpo
+(`/oposiciones/<slug>`), menú móvil a pantalla completa, `/precios` con la
+misma barra que el resto, **planes dinámicos en el Inicio** (salen de la
+tabla `planes`; página con ISR de 60 s vía `lib/supabase/publico.ts`, y las
+acciones del admin llaman a `revalidatePath('/')`), **reseñas manuales**
+(migraciones 026–028; se editan en `/admin/resenas`; el Inicio enseña las 6
+primeras, «Sobre nosotros» todas), `sitemap.ts` y `robots.ts`, páginas legales
+(aviso, privacidad, cookies).
+
+**Área del alumno** — `/inicio` como panel (continúa por donde lo dejaste,
+siguiente ejercicio, accesos, resumen, últimas marcas; mig. 025),
+`/ejercicios`, `/explicaciones` (ejercicios «explicativos», mig. 021),
+**reservas de clases presenciales** (mig. 022; calendario para el alumno,
+agenda y horario para el admin; solo alumnos marcados como presenciales),
+**marca de agua** con el id del alumno sobre el vídeo (`VideoProtegido`),
+«Pruebas reales» cada 6 semanas (mig. 018–019), barra inferior en móvil con
+«Más», cuestionario inicial con datos físicos y botón de omitir.
+
+**Admin** — alumnos rediseñados, chat que puede abrir el propio admin
+(mig. 024), **recordatorios por inactividad** (mig. 023; `lib/recordatorios.ts`,
+Resend, cron diario en `vercel.json`), **nivel (tramo) reasignable por
+alumno** (`components/TramosAlumno.tsx`; lo que fija el admin lleva
+`origen = 'admin'` y el cuestionario del alumno **no lo pisa**), **rechazar
+una solicitud y devolver el pago** por Stripe (`rechazarYReembolsar`, mig. 030;
+idempotente, con confirmación explícita).
+
+**Asistente virtual (chatbot)** — botón flotante en la web pública y en el área
+del alumno. Ver «Asistente virtual» abajo.
+
+**Endurecimiento** — cabeceras de seguridad en `next.config.ts`, freno por IP
+en contacto, checkout y asistente (`lib/limites.ts`), el origen de vuelta de
+Stripe ya no se fía del encabezado `Origin` (`lib/site.ts → origenSeguro`),
+topes de tamaño en el formulario de contacto.
+
+**Limpieza** — código muerto borrado (`app/(publica)/`, `HeaderPublico`),
+eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
+
+### En espera (depende del cliente o de terceros)
+
+1. **Separar contenido de oposición del individual (9.4). SIGUE ABIERTO.**
+   `cubierto_por_plan` no se ha tocado: un plan `completo` da acceso a todo,
+   también a los ejercicios marcados para una oposición. Hoy no hay planes de
+   oposición a la venta, así que no hay fuga, pero la habrá en cuanto los haya.
+   Hay que decidirlo con el cliente (opciones A/B/C en 9.4) antes de tocar nada.
+2. **Datos del titular y de contacto en `lib/legal.ts` (`DATOS`).** Mientras
+   estén como PENDIENTE, las páginas legales los enseñan resaltados en amarillo
+   y **el teléfono y el correo públicos NO se muestran** (sale de
+   `contactoPublico()`). Al rellenarlos aparecen solos en contacto, pie, menú
+   móvil y legales.
+3. **Lanzamiento:** dominio; verificar el dominio en Resend, poner `EMAIL_FROM`
+   y **borrar `EMAIL_PRUEBAS_A`**; Stripe en modo real y webhook de producción
+   (`https://<dominio>/api/webhooks/stripe`, con su `whsec_` en Vercel); Supabase
+   Pro; `NEXT_PUBLIC_SITE_URL` con el dominio (sitemap y metadatos salen de ahí).
+4. **Asistente:** comprobar en Mistral que la región de datos es la UE, aceptar
+   su DPA y valorar pasar al plan de pago con tope de gasto (el gratuito es «para
+   pruebas»). Rellenar la ficha de `ASISTENTE` en `lib/legal.ts` si cambia de
+   proveedor.
+5. **Content-Security-Policy:** no puesta a propósito. Hecha bien necesita nonces
+   para los scripts de Next y permitir Bunny, Supabase y Stripe; una a medias
+   rompería el vídeo o los pagos.
+6. **Prueba de seguridad del contenido de pago** con tres alumnos: uno con plan
+   suelto, uno con Completo y uno con oposición (ver 9.4).
+
+### Asistente virtual (`lib/asistente/`, `app/api/asistente`, `components/AsistenteChat.tsx`)
+
+- **Interruptor:** `NEXT_PUBLIC_ASISTENTE=on` (se incrusta en el build). Sin él, o
+  sin las claves, la web es idéntica a antes y la política de privacidad no lo
+  menciona.
+- **Modelo:** cualquier API tipo OpenAI, con `ASISTENTE_API_URL`,
+  `ASISTENTE_API_KEY` y `ASISTENTE_MODEL`. Hoy, Mistral (`ministral-14b-latest`;
+  `mistral-small-latest` da 429 en el plan gratuito). En Vercel,
+  `NEXT_PUBLIC_ASISTENTE` va como **Config** (no «Secret»: Vercel no deja poner
+  `NEXT_PUBLIC_` en un secreto) y la clave como **Secret**.
+- **Dos modos**, decididos en el servidor por la sesión: visitante (planes,
+  oposiciones, cómo empezar) y alumno (cómo usar la plataforma y, con una ficha
+  de ejercicio abierta, **el texto de esa ficha**, leído con la sesión del propio
+  alumno, o sea, bajo la misma RLS: nunca ve el asistente lo que no ve el alumno).
+- **Privacidad:** al modelo no se le manda ningún dato personal, ni el vídeo. No
+  se guarda ninguna conversación (vive en la pestaña). Los contadores de uso
+  (migración 029, tabla `asistente_uso`) guardan una huella HMAC de la IP durante
+  un máximo de dos días.
+- **Límites:** por persona y global, en Postgres. Falla **cerrado** (sin contador,
+  no atiende). En contacto y checkout falla **abierto** (no se pierde un pago).
+
+### Trampas nuevas (se suman a la sección 6)
+
+- **`overflow-x: hidden` va solo en `<html>`, nunca también en `<body>`.** Con los
+  dos, el body se vuelve un contenedor con scroll y el menú `position: sticky`
+  deja de quedarse fijo en escritorio.
+- **Rejillas y flex:** un hijo de `grid` o `flex` tiene `min-width: auto`, y un
+  contenido ancho ensancha la columna por encima del móvil. Usa `minmax(0, 1fr)`
+  y `min-width: 0`. Así se resolvió el desborde de `/registro`.
+- **Lint de React 19 (`react-hooks`):** no se llama a `setState` dentro de un
+  efecto. Para sincronizar con una prop, se ajusta **en render** (guardando la
+  prop anterior en un estado); para «ya montado», `useSyncExternalStore`. No
+  uses `Math.random()` ni `Date.now()` en el cuerpo de un componente.
+- **`.next/types` se queda viejo** si borras una ruta: `tsc` da errores de
+  módulos inexistentes hasta el siguiente `npm run build`, que lo regenera.
+- **Migraciones antes que el código que las usa.** El código de reseñas (026) y
+  del reembolso (030) tolera que falten; el del asistente (029) no (falla cerrado).
+- **Nunca pegues ni fotografíes el `.env.local`.** Si una clave se ve, se rota.
+- **`alumno_tramos` no tiene política de DELETE**, para nadie. El admin reasigna
+  con upsert (no se puede «dejar sin asignar»).
+- **La URL del sitio sale de `lib/site.ts`** (`NEXT_PUBLIC_SITE_URL`). No la
+  escribas a mano en ningún archivo.
+
+### Migraciones desde la 017 (todas aditivas; aplicar en orden)
+
+017 plan en la solicitud · 018 evaluaciones del alumno · 019 ventanas de
+evaluación · 020 limpiar vídeos huérfanos · 021 ejercicios explicativos · 022
+reservas presenciales · 023 actividad y recordatorios · 024 el admin abre chats
+· 025 último ejercicio visto · 026 reseñas · 027 reseñas iniciales (opcional) ·
+028 dos reseñas más · 029 límites del asistente · 030 traza de reembolsos.
 
 ---
 
@@ -641,6 +780,10 @@ Tras una reunión con el cliente se cambió el modelo: **fuera los niveles
 
 ## 9. Qué FALTA — y esto es lo que hay que entregar
 
+> ⚠️ **Del 18 de agosto. Ya hecho:** 9.1, 9.2, 9.3, 9.5 (falta solo producción),
+> 9.6 (rebranding y web pública), 9.7 (Pruebas reales). **Sigue abierto:** 9.4 y
+> 9.8. El estado real está en la sección 0 bis.
+
 > Ordenado por prioridad real. Los puntos 9.1 a 9.4 son **correcciones
 > pendientes que el cliente ya ha señalado**: hay que hacerlas sí o sí.
 
@@ -860,6 +1003,8 @@ hablarlo con el cliente, pero el producto es lanzable sin ella.
 
 ## 10. Plan propuesto para llegar al 1 de septiembre
 
+> ⚠️ **Histórico.** El plan ya se ejecutó; no lo sigas. Ver la sección 0 bis.
+
 Hoy es **18 de agosto**. Quedan **14 días**. Este plan asume que Pedro
 puede dedicarle bastantes horas; si no, hay que recortar por el final (ver
 10.1).
@@ -1013,6 +1158,14 @@ BUNNY_TOKEN_AUTH_KEY=             ← SECRETA (firma de los embeds)
 
 # Resend
 RESEND_API_KEY=                   ← SECRETA
+EMAIL_FROM=                       ← "Físicas Élite <avisos@dominio>" (sin dominio verificado,
+                                    solo vale <onboarding@resend.dev>)
+EMAIL_PRUEBAS_A=                  ← SOLO en pruebas: desvía TODOS los correos a esta
+                                    dirección. En producción se BORRA.
+
+# Tarea diaria de avisos por inactividad (Vercel Cron)
+CRON_SECRET=                      ← SECRETA. Sin ella el endpoint /api/cron/inactividad
+                                    responde 401 a todo el mundo.
 
 # Asistente virtual (chatbot). Opcional: sin estas variables no se muestra.
 # Migración 029 aplicada antes de activarlo (límites de uso). Ver lib/asistente/.

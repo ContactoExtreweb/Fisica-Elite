@@ -29,6 +29,7 @@ import {
   type MensajeAsistente,
 } from '@/lib/asistente/proveedor'
 import { claveAlumno, consumirTurno, huellaVisitante } from '@/lib/asistente/limites'
+import { ipDe } from '@/lib/limites'
 
 // Los modelos gratuitos a veces tardan; el tope de 25 s del proveedor cabe aquí.
 export const maxDuration = 30
@@ -129,11 +130,7 @@ export async function POST(request: Request) {
 
   // --- Quién es y cuota ---
   const { modo, userId, supabase } = await quienEs()
-  const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') ||
-    'sin-ip'
-  const clave = userId ? claveAlumno(userId) : huellaVisitante(ip)
+  const clave = userId ? claveAlumno(userId) : huellaVisitante(ipDe(request.headers))
 
   const cuota = await consumirTurno(clave, modo === 'alumno')
   if (cuota === 'persona') {

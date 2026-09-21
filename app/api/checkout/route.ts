@@ -19,6 +19,8 @@ import { NextResponse } from 'next/server'
 import { stripe, stripeConfigurado, MONEDA } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
 import { generarReferencia } from '@/lib/referencia'
+import { consumirLimite, huellaIp, ipDe } from '@/lib/limites'
+import { origenSeguro } from '@/lib/site'
 
 // Node runtime (el SDK de Stripe lo necesita; Edge no vale)
 export const runtime = 'nodejs'
@@ -41,6 +43,18 @@ export async function POST(request: Request) {
   // con algo, lo tratamos como spam y no creamos ningún pago.
   if (texto('website')) {
     return NextResponse.json({ error: 'No se pudo procesar la solicitud' }, { status: 400 })
+  }
+
+  // Freno por IP: 10 intentos a la hora y 30 al día. Cada llamada crea una
+  // sesión en Stripe; sin freno, un script puede inundarla. Generoso para una
+  // persona real (aunque comparta wifi). Si el contador falla NO se bloquea el
+  // pago: prefiero dejar pasar a perder una venta por un fallo interno.
+  const cupo = await consumirLimite(huellaIp('ck', ipDe(request.headers)), 10, 30)
+  if (cupo === 'excedido') {
+    return NextResponse.json(
+      { error: 'Demasiados intentos seguidos. Espera un rato y vuelve a probar.' },
+      { status: 429 }
+    )
   }
 
   // --- Datos del solicitante (validación en servidor) ---
@@ -96,10 +110,8 @@ export async function POST(request: Request) {
 
   const importeTotal = plan.precio_centimos * meses
 
-  const origin =
-    request.headers.get('origin') ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    'http://localhost:3000'
+  // Solo se fía del Origin si es este mismo sitio (ver lib/site.ts)
+  const origin = origenSeguro(request)
 
   // Referencia legible que verá el usuario y que el webhook guardará.
   const referencia = generarReferencia()

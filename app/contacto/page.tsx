@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import NavPublica from '@/components/NavPublica'
 import FooterPublico from '@/components/FooterPublico'
 import FormularioContacto from '@/components/FormularioContacto'
+import { contactoPublico } from '@/lib/legal'
 
 export const metadata: Metadata = {
   title: 'Contacto',
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
 }
 
 export default function ContactoPage() {
+  const contacto = contactoPublico()
+
   return (
     <>
       <NavPublica />
@@ -34,14 +37,18 @@ export default function ContactoPage() {
 
             <aside className="contacto-datos">
               <h3>Otras formas de contacto</h3>
-              <div className="contacto-dato">
-                <span className="contacto-dato-k">Correo</span>
-                <a href="mailto:info@fisicaelite.es">info@fisicaelite.es</a>
-              </div>
-              <div className="contacto-dato">
-                <span className="contacto-dato-k">Teléfono</span>
-                <a href="tel:+34600000000">600 00 00 00</a>
-              </div>
+              {contacto.email && (
+                <div className="contacto-dato">
+                  <span className="contacto-dato-k">Correo</span>
+                  <a href={`mailto:${contacto.email}`}>{contacto.email}</a>
+                </div>
+              )}
+              {contacto.telefono && contacto.telefonoHref && (
+                <div className="contacto-dato">
+                  <span className="contacto-dato-k">Teléfono</span>
+                  <a href={contacto.telefonoHref}>{contacto.telefono}</a>
+                </div>
+              )}
               <div className="contacto-dato">
                 <span className="contacto-dato-k">Dónde estamos</span>
                 <span>Cáceres, España</span>

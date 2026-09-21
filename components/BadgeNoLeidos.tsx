@@ -21,10 +21,13 @@ export default function BadgeNoLeidos({ inicial }: { inicial: number }) {
     }
   }, [])
 
-  useEffect(() => {
-    // Mantener sincronizado con el valor del servidor al navegar
+  // Mantener sincronizado con el valor del servidor al navegar. Se ajusta EN
+  // RENDER (no en un efecto): así no hay un fotograma con el número viejo.
+  const [inicialVisto, setInicialVisto] = useState(inicial)
+  if (inicial !== inicialVisto) {
+    setInicialVisto(inicial)
     setN(inicial)
-  }, [inicial])
+  }
 
   useEffect(() => {
     const supabase = createClient()

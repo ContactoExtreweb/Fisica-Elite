@@ -90,6 +90,18 @@ export async function guardarCuestionario(
 
   const mapaCat = new Map((cats ?? []).map((c) => [c.id, c]))
 
+  // Categorías cuyo tramo ha FIJADO el preparador (origen = 'admin', ver
+  // app/admin/alumnos/tramos-actions.ts): la autoevaluación del alumno no
+  // las pisa. Si no, "reasignable por admin" duraría hasta que el alumno
+  // repitiera el cuestionario.
+  const { data: fijadas } = await supabase
+    .from('alumno_tramos')
+    .select('categoria_id')
+    .eq('user_id', user.id)
+    .eq('origen', 'admin')
+    .in('categoria_id', categoriaIds)
+  const fijadasPorAdmin = new Set((fijadas ?? []).map((f) => f.categoria_id as string))
+
   // Para cada categoría, calcular el tramo y preparar el upsert
   const filas: {
     user_id: string
@@ -99,6 +111,7 @@ export async function guardarCuestionario(
   }[] = []
 
   for (const catId of categoriaIds) {
+    if (fijadasPorAdmin.has(catId)) continue
     const marcaRaw = formData.get(`marca_${catId}`)
     const cat = mapaCat.get(catId)
     if (!cat || marcaRaw === null || marcaRaw === '') continue
