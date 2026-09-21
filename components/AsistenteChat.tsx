@@ -80,6 +80,68 @@ export default function AsistenteChat() {
   const [enviando, setEnviando] = useState(false)
   const finRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // MÓVIL (mismo comportamiento que el chat de GuadiCar): el panel es una
+  // tarjeta flotante de tamaño FIJO, no una pantalla completa. Dos cosas lo
+  // hacen fiable en un móvil de verdad:
+  //  1) El fondo no se desplaza mientras el chat está abierto (se congela el
+  //     body en su posición y se restaura al cerrar).
+  //  2) Con el teclado abierto NO se redimensiona el panel (en iOS eso da
+  //     saltos): se DESLIZA hacia arriba lo que mide el teclado, una sola vez
+  //     al enfocar un campo, y baja al desenfocar. Sin listeners continuos
+  //     de resize/scroll.
+  useEffect(() => {
+    if (!abierto) return
+    const esMovil = () => window.matchMedia('(max-width: 640px)').matches
+    if (!esMovil()) return
+
+    const y = window.scrollY
+    const b = document.body.style
+    b.position = 'fixed'
+    b.top = `-${y}px`
+    b.left = '0'
+    b.right = '0'
+
+    const panel = panelRef.current
+    const vv = window.visualViewport
+    const subir = () => {
+      if (!panel || !vv) return
+      const teclado = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      panel.style.transform = teclado > 80 ? `translateY(-${teclado}px)` : ''
+      finRef.current?.scrollIntoView({ block: 'end' })
+    }
+    const bajar = () => {
+      if (panel) panel.style.transform = ''
+    }
+    let t1: number | undefined
+    let t2: number | undefined
+    const alEnfocar = () => {
+      t1 = window.setTimeout(subir, 350) // deja que el teclado termine de salir
+    }
+    const alDesenfocar = () => {
+      t2 = window.setTimeout(() => {
+        if (panel && !panel.contains(document.activeElement)) bajar()
+      }, 120)
+    }
+    panel?.addEventListener('focusin', alEnfocar)
+    panel?.addEventListener('focusout', alDesenfocar)
+    window.addEventListener('orientationchange', bajar)
+
+    return () => {
+      panel?.removeEventListener('focusin', alEnfocar)
+      panel?.removeEventListener('focusout', alDesenfocar)
+      window.removeEventListener('orientationchange', bajar)
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+      bajar()
+      b.position = ''
+      b.top = ''
+      b.left = ''
+      b.right = ''
+      window.scrollTo(0, y)
+    }
+  }, [abierto])
 
   // Siempre al último mensaje
   useEffect(() => {
@@ -175,23 +237,25 @@ export default function AsistenteChat() {
 
   return (
     <>
-      <button
-        type="button"
-        className="asi-fab"
-        data-zona={zonaAlumno ? 'alumno' : 'publico'}
-        onClick={abrir}
-        aria-label="Abrir el asistente virtual"
-        aria-expanded={abierto}
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M21 12a8 8 0 01-11.5 7.2L4 21l1.8-5.2A8 8 0 1121 12z" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M9 11h.01M12 11h.01M15 11h.01" strokeLinecap="round" strokeWidth="2.4" />
-        </svg>
-        <span>Asistente</span>
-      </button>
+      {/* El botón se esconde mientras el chat está abierto (el panel ocupa su sitio) */}
+      {!abierto && (
+        <button
+          type="button"
+          className="asi-fab"
+          data-zona={zonaAlumno ? 'alumno' : 'publico'}
+          onClick={abrir}
+          aria-label="Abrir el asistente virtual"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <path d="M21 12a8 8 0 01-11.5 7.2L4 21l1.8-5.2A8 8 0 1121 12z" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M9 11h.01M12 11h.01M15 11h.01" strokeLinecap="round" strokeWidth="2.4" />
+          </svg>
+          <span>Asistente</span>
+        </button>
+      )}
 
       {abierto && (
-        <div className="asi-panel" role="dialog" aria-label="Asistente virtual de Físicas Élite">
+        <div ref={panelRef} className="asi-panel" role="dialog" aria-label="Asistente virtual de Físicas Élite">
           <header className="asi-cab">
             <div className="asi-cab-txt">
               <strong>Asistente virtual</strong>
