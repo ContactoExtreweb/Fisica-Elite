@@ -9,6 +9,7 @@
 // Antes se calculaba "6 semanas desde tu última subida", lo que daba un
 // goteo continuo y unas semanas distintas para cada alumno.
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { hoyMadrid, sumarDias } from '@/lib/fechas'
 
 /** Cadencia que pidió el cliente. Se usa para proponerle al preparador
  *  la fecha de la siguiente ventana, no para decidir quién puede subir. */
@@ -41,14 +42,8 @@ function rel<T>(x: T | T[] | null | undefined): T | undefined {
   return Array.isArray(x) ? x[0] : x
 }
 
-export function hoyMadrid(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())
-}
-
-export function sumarDias(fechaISO: string, dias: number): string {
-  const [y, m, d] = fechaISO.split('-').map(Number)
-  return new Date(Date.UTC(y, m - 1, d + dias)).toISOString().slice(0, 10)
-}
+// Antes se definían aquí; ahora viven en lib/fechas.ts (una sola copia).
+export { hoyMadrid, sumarDias }
 
 /** Días entre dos fechas ISO (b - a). Negativo si b es anterior. */
 export function diasEntre(a: string, b: string): number {

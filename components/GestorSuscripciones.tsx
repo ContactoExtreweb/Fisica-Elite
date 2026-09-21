@@ -9,6 +9,7 @@ import {
   renovarSuscripcion,
   cancelarSuscripcion,
 } from '@/app/admin/alumnos/suscripciones-actions'
+import { hoyMadrid } from '@/lib/fechas'
 
 export type PlanOpcion = {
   id: string
@@ -61,7 +62,7 @@ export default function GestorSuscripciones({
   // Meses a renovar por suscripción
   const [mesesRenovar, setMesesRenovar] = useState<Record<string, number>>({})
 
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyMadrid()
   const planesEjercicio = planes.filter((p) => p.tipo === 'ejercicio')
   const planCompleto = planes.find((p) => p.tipo === 'completo')
   const planesOposicion = planes.filter((p) => p.tipo === 'oposicion')

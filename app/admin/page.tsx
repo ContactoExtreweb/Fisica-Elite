@@ -2,6 +2,7 @@
 // (El layout ya garantiza que solo llega aquí un admin.)
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { hoyMadrid, sumarDias } from '@/lib/fechas'
 
 const NOMBRE_ESPECIALIDAD: Record<string, string> = {
   policia_local: 'Policía Local',
@@ -50,9 +51,9 @@ export default async function AdminDashboardPage() {
   const supabase = await createClient()
   const { saludo, fecha } = saludoYFecha()
 
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyMadrid()
   const hace30 = fechaEnDias(-30).toISOString()
-  const en7dias = fechaEnDias(7).toISOString().slice(0, 10)
+  const en7dias = sumarDias(hoy, 7)
 
   const [
     { data: alumnos },

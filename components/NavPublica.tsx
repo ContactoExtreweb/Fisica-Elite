@@ -23,11 +23,21 @@ export default function NavPublica() {
   const pathname = usePathname()
   const contacto = contactoPublico()
 
-  // Bloquear el scroll del fondo cuando el menú está abierto
+  // Bloquear el scroll del fondo cuando el menú está abierto.
+  //
+  // ⚠️ En <html>, NO en <body>. <html> ya lleva overflow-x: hidden (globals.css);
+  // si además se pone overflow en <body>, el body pasa a ser un contenedor con
+  // scroll propio y la cabecera (position: sticky) deja de engancharse a la
+  // ventana: con la página algo scrolleada, al abrir el menú la cabecera se
+  // quedaba fuera de pantalla y no había cruz ni logo para cerrarlo. Es el
+  // mismo motivo por el que ModalConfirmar y VideoProtegido ya usan <html>.
   useEffect(() => {
-    document.body.style.overflow = abierto ? 'hidden' : ''
+    if (!abierto) return
+    const raiz = document.documentElement
+    const previo = raiz.style.overflow
+    raiz.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = ''
+      raiz.style.overflow = previo
     }
   }, [abierto])
 

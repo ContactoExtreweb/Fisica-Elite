@@ -7,6 +7,7 @@ import TablaAlumnos, { type AlumnoFila } from '@/components/TablaAlumnos'
 import PanelRecordatorios from '@/components/PanelRecordatorios'
 import { DIAS_INACTIVIDAD, diasDesde, pendienteDeAviso } from '@/lib/actividad'
 import { emailConfigurado, emailModoPruebas } from '@/lib/email'
+import { hoyMadrid } from '@/lib/fechas'
 
 // El botón "Enviar ahora" corre aquí: con la pausa entre correos puede
 // tardar unos segundos más que una acción normal.
@@ -14,7 +15,7 @@ export const maxDuration = 60
 
 export default async function AdminAlumnosPage() {
   const supabase = await createClient()
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyMadrid()
 
   const { data: alumnos, error } = await supabase
     .from('profiles')

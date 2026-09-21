@@ -15,6 +15,7 @@ import GestorSuscripciones, {
 import { abrirConversacionConAlumno } from '@/app/chat/actions'
 import { categoriasContratadas } from '@/lib/acceso'
 import TramosAlumno, { type FilaTramoAlumno } from '@/components/TramosAlumno'
+import { hoyMadrid } from '@/lib/fechas'
 
 const NOMBRE_ESP: Record<string, string> = {
   policia_local: 'Policía Local',
@@ -62,7 +63,7 @@ export default async function FichaAlumnoPage({
       .order('nombre'),
   ])
 
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyMadrid()
 
   const suscripciones: SuscripcionFila[] = (subsRaw ?? []).map((s) => {
     const plan = Array.isArray(s.planes) ? s.planes[0] : s.planes

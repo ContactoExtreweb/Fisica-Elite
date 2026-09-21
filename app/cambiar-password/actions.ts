@@ -36,10 +36,15 @@ export async function cambiarPassword(
   }
 
   // Ya no hace falta forzar el cambio: levantamos la barrera
-  await supabase
+  const { error: errBarrera } = await supabase
     .from('profiles')
     .update({ must_change_password: false })
     .eq('id', user!.id)
+  if (errBarrera) {
+    // La contraseña YA cambió; sin levantar la barrera, el acceso lo volvería a
+    // mandar aquí en bucle. Mejor decirlo que dejarlo dar vueltas.
+    return { error: 'La contraseña se cambió, pero no se pudo terminar el proceso. Inténtalo de nuevo.' }
+  }
 
   const { data: perfil } = await supabase
     .from('profiles')

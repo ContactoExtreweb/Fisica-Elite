@@ -1,9 +1,15 @@
 'use server'
 
 // Guarda un mensaje del formulario público de contacto.
-// Usa el cliente anónimo del servidor; la RLS permite el insert público.
+//
+// Inserta con el cliente ADMIN (service_role), no con el anónimo. Antes la
+// tabla tenía una política "cualquiera puede insertar", y como la clave anónima
+// viaja en el navegador, cualquiera podía saltarse este formulario (y su freno
+// por IP y sus topes de tamaño) y llenar la tabla llamando directamente a la
+// API de Supabase. Con la migración 031 esa política se elimina: el ÚNICO
+// camino para escribir un mensaje es este, ya validado y con límite de uso.
 import { headers } from 'next/headers'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { consumirLimite, huellaIp, ipDe } from '@/lib/limites'
 
 export type EstadoContacto = { ok?: boolean; error?: string }
@@ -48,7 +54,7 @@ export async function enviarContacto(
 
   const oposicion = OPOSICIONES.includes(oposicionRaw) ? oposicionRaw : null
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { error } = await supabase.from('mensajes_contacto').insert({
     nombre,
     email,

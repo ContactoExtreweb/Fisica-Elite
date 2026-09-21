@@ -111,14 +111,18 @@ export async function enviarMensaje(
   return { ok: true, mensaje: data }
 }
 
-/** Marca como leídos los mensajes de la conversación escritos por OTROS. */
-export async function marcarLeidos(conversacionId: string, miId: string) {
-  const { supabase } = await exigirUsuario()
+/**
+ * Marca como leídos los mensajes de la conversación escritos por OTROS.
+ * "Otros" se calcula con la SESIÓN, no con un id que mande el navegador (antes
+ * llegaba como argumento y cualquiera podía mandar el que quisiera).
+ */
+export async function marcarLeidos(conversacionId: string) {
+  const { supabase, user } = await exigirUsuario()
   await supabase
     .from('mensajes')
     .update({ leido: true })
     .eq('conversacion_id', conversacionId)
-    .neq('autor_id', miId)
+    .neq('autor_id', user.id)
     .eq('leido', false)
 }
 

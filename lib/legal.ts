@@ -74,10 +74,20 @@ export function contactoPublico(): {
  * los datos (mira sus condiciones: que no use las conversaciones para
  * entrenar sus modelos). Hasta entonces se ve resaltado como pendiente.
  */
+// Mistral tiene DOS tipos de endpoint: api.mistral.ai ("global": según su propia
+// documentación NO se compromete a ningún lugar de procesamiento) y api.eu.mistral.ai
+// (procesamiento en la UE). La política de privacidad solo dice "Unión Europea" si
+// la URL configurada es la regional de la UE; si no, sale resaltada como pendiente
+// y es imposible publicarla sin darse cuenta. (Se evalúa al construir; en el
+// navegador esta variable no existe, y ahí tampoco se usa.)
+const ASISTENTE_EN_UE = /^https:\/\/api\.eu\.mistral\.ai(\/|$)/.test(process.env.ASISTENTE_API_URL ?? '')
+
 export const ASISTENTE = {
   activo: process.env.NEXT_PUBLIC_ASISTENTE === 'on',
   proveedor: 'Mistral AI (Francia)',
-  donde: 'Unión Europea (Francia)',
+  donde: ASISTENTE_EN_UE
+    ? 'Unión Europea (endpoint regional de la UE de Mistral AI)'
+    : FALTA('REGIÓN DEL PROVEEDOR: usar el endpoint de la UE, api.eu.mistral.ai'),
   /** Su política de privacidad; null = sin enlace hasta rellenarla */
   web: 'https://legal.mistral.ai/terms/privacy-policy' as string | null,
 }

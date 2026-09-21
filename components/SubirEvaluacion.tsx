@@ -76,7 +76,7 @@ export default function SubirEvaluacion({
       onSuccess: async () => {
         // 3 · Registramos la prueba para que la vea el preparador
         setGuardando(true)
-        const res = await confirmarEvaluacion(categoriaId, inicio.guid, notas)
+        const res = await confirmarEvaluacion(categoriaId, inicio.guid, notas, inicio.sello)
         setSubiendo(false)
         setGuardando(false)
         if (res.error) {

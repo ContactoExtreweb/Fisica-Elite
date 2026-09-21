@@ -8,6 +8,7 @@
 import { revalidatePath } from 'next/cache'
 import { exigirUsuario } from '@/lib/autorizacion'
 import type { Parcial } from '@/lib/marcas'
+import { hoyMadrid } from '@/lib/fechas'
 
 export type EstadoMarca = { ok?: boolean; error?: string }
 
@@ -31,7 +32,7 @@ export async function guardarMarca(
   const metrica = String(formData.get('metrica') ?? 'repeticiones')
   const unidad = String(formData.get('unidad') ?? '')
 
-  const fecha = String(formData.get('fecha') ?? '') || new Date().toISOString().slice(0, 10)
+  const fecha = String(formData.get('fecha') ?? '') || hoyMadrid()
 
   // --- Valores según lo que mida la categoría ---
   let repeticiones: number | null = null

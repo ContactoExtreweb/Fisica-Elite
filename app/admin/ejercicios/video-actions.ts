@@ -9,8 +9,8 @@ import {
   crearVideoBunny,
   firmaSubidaTus,
   obtenerVideoBunny,
-  borrarVideoBunny,
 } from '@/lib/bunny'
+import { borrarVideoSiNadieLoUsa } from '@/lib/videos'
 
 export type InicioSubida =
   | { error: string }
@@ -41,16 +41,13 @@ export async function confirmarVideo(
   const { supabase } = await exigirAdmin()
   if (!ejercicioId || !guid) return { error: 'Datos incompletos' }
 
-  // Si el ejercicio ya tenía un vídeo, lo borramos de Bunny (reemplazo)
+  // Si el ejercicio ya tenía un vídeo, se borrará de Bunny (reemplazo), pero
+  // DESPUÉS de guardar el nuevo y solo si nadie más lo usa.
   const { data: previo } = await supabase
     .from('ejercicios')
     .select('video_id')
     .eq('id', ejercicioId)
     .single()
-
-  if (previo?.video_id && previo.video_id !== guid) {
-    await borrarVideoBunny(previo.video_id)
-  }
 
   // Duración si Bunny ya la conoce (puede tardar mientras procesa)
   const info = await obtenerVideoBunny(guid)
@@ -64,6 +61,10 @@ export async function confirmarVideo(
     .eq('id', ejercicioId)
 
   if (error) return { error: 'No se pudo asociar el vídeo al ejercicio' }
+
+  if (previo?.video_id && previo.video_id !== guid) {
+    await borrarVideoSiNadieLoUsa(supabase, previo.video_id)
+  }
 
   revalidatePath(`/admin/ejercicios/${ejercicioId}`)
   revalidatePath('/admin/ejercicios')
@@ -82,16 +83,15 @@ export async function quitarVideo(
     .eq('id', ejercicioId)
     .single()
 
-  if (data?.video_id) {
-    await borrarVideoBunny(data.video_id)
-  }
-
   const { error } = await supabase
     .from('ejercicios')
     .update({ video_id: null, video_duracion: null })
     .eq('id', ejercicioId)
 
   if (error) return { error: 'No se pudo quitar el vídeo' }
+
+  // Ya sin referencia en este ejercicio: fuera de Bunny si nadie más lo usa
+  await borrarVideoSiNadieLoUsa(supabase, data?.video_id)
 
   revalidatePath(`/admin/ejercicios/${ejercicioId}`)
   revalidatePath('/admin/ejercicios')

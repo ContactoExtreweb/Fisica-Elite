@@ -10,6 +10,7 @@
 import { useActionState, useState } from 'react'
 import { guardarMarca, type EstadoMarca } from '@/app/registro/actions'
 import { admiteParciales } from '@/lib/marcas'
+import { hoyMadrid } from '@/lib/fechas'
 
 export type CategoriaMarca = {
   id: string
@@ -52,7 +53,7 @@ export default function FormularioMarca({
   const unidad = cat?.unidad ?? 'reps'
   const conParciales = admiteParciales(metrica)
 
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyMadrid()
 
   const anadirParcial = () =>
     setParciales((p) => [...p, { metros: (p.length + 1) * 100, seg: '' }])

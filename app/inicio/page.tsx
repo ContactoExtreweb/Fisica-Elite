@@ -21,6 +21,7 @@ import { contarNoLeidos } from '@/lib/no-leidos'
 import { misSuscripciones, accesoHasta } from '@/lib/suscripciones'
 import { aHora, ahoraMadrid, horaCorta } from '@/lib/reservas'
 import type { RegistroFila } from '@/lib/marcas'
+import { hoyMadrid } from '@/lib/fechas'
 
 export const metadata = { title: 'Inicio' }
 
@@ -55,7 +56,7 @@ export default async function InicioPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyMadrid()
   const ahora = ahoraMadrid()
 
   const [

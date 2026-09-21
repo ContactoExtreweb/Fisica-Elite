@@ -6,24 +6,10 @@
 // Todo pasa por exigirAdmin(): solo el preparador toca esto.
 import { revalidatePath } from 'next/cache'
 import { exigirAdmin } from '@/lib/autorizacion'
+import { hoyMadrid, sumarMeses } from '@/lib/fechas'
 
 export type ResultadoSusc = { ok?: boolean; error?: string }
 
-/** Fecha de hoy en horario de Madrid (yyyy-mm-dd). */
-function hoyMadrid(): string {
-  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
-}
-
-/** Suma meses a una fecha ISO, cuidando los finales de mes. */
-function sumarMeses(iso: string, meses: number): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  const fecha = new Date(Date.UTC(y, m - 1, d))
-  const diaOriginal = fecha.getUTCDate()
-  fecha.setUTCMonth(fecha.getUTCMonth() + meses)
-  // Si el mes destino es más corto (31 ene + 1 mes), retrocede al último día
-  if (fecha.getUTCDate() !== diaOriginal) fecha.setUTCDate(0)
-  return fecha.toISOString().slice(0, 10)
-}
 
 /**
  * Añade una suscripción por cada plan seleccionado.

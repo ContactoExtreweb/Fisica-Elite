@@ -4,6 +4,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import CuestionarioInicial, { type CategoriaCuestionario } from '@/components/CuestionarioInicial'
+import { hoyMadrid } from '@/lib/fechas'
 
 export const metadata = { title: 'Bienvenido' }
 
@@ -30,7 +31,7 @@ export default async function BienvenidaPage({
 
   // Categorías CONTRATADAS: las que cubre algún plan activo del alumno.
   // Reutilizamos la lógica del modelo cargando sus suscripciones + planes.
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyMadrid()
   const { data: subs } = await supabase
     .from('suscripciones')
     .select('plan_id, estado, fecha_fin, planes(tipo, especialidad, plan_categorias(categoria_id))')

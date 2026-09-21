@@ -100,7 +100,7 @@ export default function VentanaChat({
   // Autoscroll y marcar leídos cuando cambian los mensajes
   useEffect(() => {
     bajarDelTodo()
-    marcarLeidos(conversacionId, miId)
+    marcarLeidos(conversacionId)
   }, [mensajes, conversacionId, miId, bajarDelTodo])
 
   // ENVÍO de disparo directo: cada mensaje se manda por su cuenta, sin

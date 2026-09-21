@@ -19,6 +19,7 @@ import type Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { esOposicionValida } from '@/lib/oposiciones'
+import { hoyMadrid, sumarMeses } from '@/lib/fechas'
 
 export const runtime = 'nodejs'
 
@@ -82,6 +83,12 @@ export async function POST(request: Request) {
           await crearSolicitudDesdeSesion(admin, session)
         }
       }
+    } else if (event.type === 'charge.refunded') {
+      // Devolución de un pago (desde nuestro botón o desde el panel de Stripe).
+      // Solo si es TOTAL: una parcial es una decisión del admin (descuento, gesto
+      // comercial) y no se toca el acceso.
+      const cargo = event.data.object as Stripe.Charge
+      if (cargo.refunded) await retirarAccesoPorDevolucion(admin, cargo)
     }
     // (Si algún día hay cobro recurrente, aquí irían invoice.paid,
     //  customer.subscription.deleted, etc.)
@@ -149,13 +156,6 @@ async function crearSolicitudDesdeSesion(
 
 
 // --- Pagos de alumnos que ya tienen cuenta ------------------------
-function hoyMadrid(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())
-}
-function sumarMeses(fechaISO: string, meses: number): string {
-  const [y, mo, d] = fechaISO.split('-').map(Number)
-  return new Date(Date.UTC(y, mo - 1 + meses, d)).toISOString().slice(0, 10)
-}
 
 // Renovar un plan o contratar otro desde /suscripcion. Acceso al instante.
 //
@@ -254,5 +254,106 @@ async function pagoDeAlumnoDesdeSesion(
     stripe_payment_intent: paymentIntent,
     notas: 'Contratado online por el alumno (Stripe)',
   })
+  if (error) throw error
+}
+
+
+// --- Devoluciones ---------------------------------------------------
+//
+// Cuando un pago se devuelve ENTERO (desde el botón «Rechazar y devolver» o a
+// mano en el panel de Stripe), el acceso que se pagó con él se retira:
+//
+//  · Solicitud de alta aún PENDIENTE  → pasa a 'rechazada' (así desaparece de la
+//    lista y nadie puede aprobar un alta cuyo dinero ya se devolvió).
+//  · Solicitud ya TRAMITADA           → a la suscripción de ese alumno y plan se le
+//    restan los meses de ESE pago. No se cancela entera: los meses de otros
+//    pagos (renovaciones, meses dados a mano) se respetan.
+//  · Renovación / plan nuevo de un alumno con cuenta → igual: se restan los
+//    meses de ese pago (los datos vienen en la metadata del pago).
+//
+// Si algo no se puede identificar con seguridad, NO se toca nada y queda en el
+// log: es mejor que el admin lo revise a quitarle acceso a quien no toca.
+// Requiere que el webhook de Stripe esté suscrito al evento charge.refunded.
+async function retirarAccesoPorDevolucion(
+  admin: ReturnType<typeof createAdminClient>,
+  cargo: Stripe.Charge
+) {
+  const pagoId = typeof cargo.payment_intent === 'string' ? cargo.payment_intent : null
+  if (!pagoId) return
+
+  let userId: string | null = null
+  let planId: string | null = null
+  let meses = 0
+
+  // 1 · ¿Fue una solicitud de alta?
+  const { data: sol, error: errSol } = await admin
+    .from('solicitudes_alta')
+    .select('id, estado, profile_creado, plan_id, meses_pagados')
+    .eq('stripe_payment_intent', pagoId)
+    .maybeSingle()
+  if (errSol) throw errSol
+
+  if (sol) {
+    if (sol.estado === 'pendiente') {
+      const { error } = await admin
+        .from('solicitudes_alta')
+        .update({ estado: 'rechazada' })
+        .eq('id', sol.id)
+      if (error) throw error
+      return
+    }
+    if (sol.estado !== 'procesada' || !sol.profile_creado) return // rechazada: ya está
+    userId = sol.profile_creado as string
+    planId = (sol.plan_id as string | null) ?? null
+    meses = Number(sol.meses_pagados) || 0
+  } else {
+    // 2 · ¿Renovación o plan nuevo de un alumno con cuenta? Lo dice la metadata.
+    const pago = await stripe.paymentIntents.retrieve(pagoId)
+    const m = pago.metadata ?? {}
+    if (!((m.tipo === 'renovacion' || m.tipo === 'nuevo_plan') && m.user_id)) {
+      console.warn('[devolución] pago sin solicitud ni datos de alumno, sin tocar:', pagoId)
+      return
+    }
+    userId = String(m.user_id)
+    planId = m.plan_id || null
+    meses = Number(m.meses) || 0
+  }
+
+  meses = Math.min(24, Math.max(0, Math.floor(meses)))
+  if (!userId || meses < 1) {
+    console.warn('[devolución] sin meses que restar, sin tocar:', pagoId)
+    return
+  }
+
+  // La suscripción que se alargó con ese pago: mismo alumno y plan, la más lejana.
+  // SIEMPRE por user_id: el cliente admin se salta la RLS.
+  let consulta = admin
+    .from('suscripciones')
+    .select('id, fecha_inicio, fecha_fin, meses, notas')
+    .eq('user_id', userId)
+    .neq('estado', 'cancelada')
+    .order('fecha_fin', { ascending: false })
+    .limit(1)
+  consulta = planId ? consulta.eq('plan_id', planId) : consulta.is('plan_id', null)
+  const { data: fila, error: errFila } = await consulta.maybeSingle()
+  if (errFila) throw errFila
+  if (!fila) {
+    console.warn('[devolución] no hay suscripción que ajustar para el pago', pagoId)
+    return
+  }
+
+  const nuevaFin = sumarMeses(fila.fecha_fin as string, -meses)
+  const mesesQuedan = Math.max(0, (Number(fila.meses) || 0) - meses)
+  const sinNadaPagado = mesesQuedan === 0 || nuevaFin <= (fila.fecha_inicio as string)
+  const traza = `${fila.notas ? fila.notas + '\n' : ''}Devolución total del pago ${pagoId} el ${hoyMadrid()}: −${meses} ${meses === 1 ? 'mes' : 'meses'}`
+
+  const { error } = await admin
+    .from('suscripciones')
+    .update(
+      sinNadaPagado
+        ? { estado: 'cancelada', meses: 0, notas: traza }
+        : { fecha_fin: nuevaFin, meses: mesesQuedan, notas: traza }
+    )
+    .eq('id', fila.id)
   if (error) throw error
 }

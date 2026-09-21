@@ -14,14 +14,16 @@ type Resultado = { ok: boolean; error?: string }
 const FECHA = /^\d{4}-\d{2}-\d{2}$/
 const HORA = /^\d{2}:\d{2}$/
 
-// Los 'raise exception' de las funciones ya vienen en castellano; solo
-// hay que limpiar los errores técnicos que no pasan por ahí.
-function mensaje(err: string): string {
-  if (err.includes('reservas_unica_activa')) return 'Ya tienes reservado ese turno'
-  if (err.includes('function') && err.includes('does not exist')) {
+// Los 'raise exception' de las funciones ya vienen en castellano (código
+// P0001) y se enseñan tal cual. Cualquier otro error de Postgres (nombres de
+// tablas, restricciones…) NO se le enseña al alumno: solo un mensaje genérico.
+function mensaje(err: { message: string; code?: string }): string {
+  if (err.message.includes('reservas_unica_activa')) return 'Ya tienes reservado ese turno'
+  if (err.message.includes('function') && err.message.includes('does not exist')) {
     return 'Las reservas no están activadas todavía (falta la migración 022)'
   }
-  return err
+  if (err.code === 'P0001') return err.message
+  return 'No se pudo completar la operación. Inténtalo de nuevo.'
 }
 
 export async function reservarTurno(fecha: string, hora: string): Promise<Resultado> {
@@ -29,7 +31,7 @@ export async function reservarTurno(fecha: string, hora: string): Promise<Result
   if (!FECHA.test(fecha) || !HORA.test(hora)) return { ok: false, error: 'Turno no válido' }
 
   const { error } = await supabase.rpc('reservar_clase', { p_fecha: fecha, p_hora: hora })
-  if (error) return { ok: false, error: mensaje(error.message) }
+  if (error) return { ok: false, error: mensaje(error) }
 
   revalidatePath('/reservas')
   revalidatePath('/admin/reservas')
@@ -41,7 +43,7 @@ export async function cancelarTurno(id: string): Promise<Resultado> {
   if (!id) return { ok: false, error: 'Reserva no válida' }
 
   const { error } = await supabase.rpc('cancelar_reserva', { p_id: id })
-  if (error) return { ok: false, error: mensaje(error.message) }
+  if (error) return { ok: false, error: mensaje(error) }
 
   revalidatePath('/reservas')
   revalidatePath('/admin/reservas')

@@ -12,6 +12,7 @@ import { exigirAdmin } from '@/lib/autorizacion'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generarPasswordSegura } from '@/lib/password'
 import { validarPassword } from '@/lib/validacion'
+import { hoyMadrid, sumarMeses } from '@/lib/fechas'
 
 export type EstadoAlta = {
   error?: string
@@ -27,18 +28,6 @@ const ESPECIALIDADES = [
   'aduanas',
 ] as const
 
-// Fechas en zona España (evita el desfase de toISOString en UTC)
-function hoyMadrid(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(
-    new Date()
-  ) // yyyy-mm-dd
-}
-
-function sumarMeses(fechaISO: string, meses: number): string {
-  const [y, m, d] = fechaISO.split('-').map(Number)
-  const dt = new Date(Date.UTC(y, m - 1 + meses, d))
-  return dt.toISOString().slice(0, 10)
-}
 
 export async function crearAlumno(
   _prev: EstadoAlta,

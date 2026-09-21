@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/server'
 import BotonLogout from '@/components/BotonLogout'
 import NavAlumno from '@/components/NavAlumno'
 import { contarNoLeidos } from '@/lib/no-leidos'
+import { hoyMadrid } from '@/lib/fechas'
 
 export const metadata = { title: 'Ejercicios' }
 
@@ -38,7 +39,7 @@ export default async function EjerciciosPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyMadrid()
 
   const [{ data: perfil }, { data: ejercicios }, { data: explicativos }, { data: subs }, noLeidos] =
     await Promise.all([

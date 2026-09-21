@@ -5,7 +5,7 @@
 //   BUNNY_STREAM_TOKEN_KEY   → Token authentication key (firma los embeds)
 // Ninguna sale jamás al navegador: el cliente solo recibe firmas temporales.
 import 'server-only'
-import { createHash } from 'crypto'
+import { createHash, createHmac, timingSafeEqual } from 'crypto'
 
 const API_BASE = 'https://video.bunnycdn.com'
 
@@ -32,6 +32,27 @@ export async function crearVideoBunny(titulo: string): Promise<string | null> {
   if (!res.ok) return null
   const data = await res.json()
   return data?.guid ?? null
+}
+
+/**
+ * SELLO que liga un vídeo recién creado con el alumno que pidió subirlo.
+ *
+ * Por qué existe: al confirmar una prueba, el navegador manda el id del
+ * vídeo (guid). Sin comprobar nada, un alumno podía mandar el guid de OTRO
+ * vídeo (el de un ejercicio de pago, que ve en la URL del reproductor) y
+ * luego "borrar su prueba pendiente", y el servidor borraba ese vídeo de
+ * Bunny. El sello lo firma el servidor al crear el vídeo (HMAC con la API key,
+ * que no sale del servidor) y se exige al confirmar: solo vale para SU vídeo.
+ */
+export function selloSubida(userId: string, videoGuid: string): string {
+  return createHmac('sha256', apiKey()).update(`subida:${userId}:${videoGuid}`).digest('hex')
+}
+
+export function selloSubidaValido(userId: string, videoGuid: string, sello: unknown): boolean {
+  if (typeof sello !== 'string') return false
+  const esperado = Buffer.from(selloSubida(userId, videoGuid))
+  const recibido = Buffer.from(sello)
+  return recibido.length === esperado.length && timingSafeEqual(recibido, esperado)
 }
 
 /** Firma temporal para que el NAVEGADOR suba directo a Bunny vía TUS. */

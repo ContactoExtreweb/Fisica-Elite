@@ -6,7 +6,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { exigirAdmin } from '@/lib/autorizacion'
-import { borrarVideoBunny } from '@/lib/bunny'
+import { borrarVideoSiNadieLoUsa } from '@/lib/videos'
 
 export type EstadoEjercicio = { error?: string; ok?: boolean }
 
@@ -58,19 +58,29 @@ export async function guardarEjercicio(
   }
 
   // Sincroniza la tabla de oposiciones del ejercicio (borra y re-inserta)
-  const sincronizarOpos = async (ejercicioId: string) => {
-    await supabase.from('ejercicio_oposiciones').delete().eq('ejercicio_id', ejercicioId)
+  // Devuelve false si falla: la oposición marcada decide quién ve el ejercicio,
+  // y perderla en silencio lo dejaría visible o invisible para quien no debe.
+  const sincronizarOpos = async (ejercicioId: string): Promise<boolean> => {
+    const { error: errBorrar } = await supabase
+      .from('ejercicio_oposiciones')
+      .delete()
+      .eq('ejercicio_id', ejercicioId)
+    if (errBorrar) return false
     if (oposiciones.length > 0) {
-      await supabase
+      const { error: errInsertar } = await supabase
         .from('ejercicio_oposiciones')
         .insert(oposiciones.map((esp) => ({ ejercicio_id: ejercicioId, especialidad: esp })))
+      if (errInsertar) return false
     }
+    return true
   }
 
   if (id) {
     const { error } = await supabase.from('ejercicios').update(datos).eq('id', id)
     if (error) return { error: 'No se pudo guardar el ejercicio' }
-    await sincronizarOpos(id)
+    if (!(await sincronizarOpos(id))) {
+      return { error: 'El ejercicio se guardó, pero no se pudieron guardar sus oposiciones. Vuelve a guardar.' }
+    }
     revalidatePath('/admin/ejercicios')
     revalidatePath(`/admin/ejercicios/${id}`)
     return { ok: true }
@@ -82,7 +92,11 @@ export async function guardarEjercicio(
     .select('id')
     .single()
   if (error) return { error: 'No se pudo crear el ejercicio' }
-  await sincronizarOpos(data.id)
+  if (!(await sincronizarOpos(data.id))) {
+    // Ya existe: se abre para que las oposiciones se puedan volver a marcar
+    revalidatePath('/admin/ejercicios')
+    redirect(`/admin/ejercicios/${data.id}`)
+  }
   revalidatePath('/admin/ejercicios')
   redirect(`/admin/ejercicios/${data.id}`)
 }
@@ -92,14 +106,15 @@ export async function borrarEjercicio(formData: FormData) {
   const id = String(formData.get('id') ?? '')
   if (!id) return
 
-  // Si tiene vídeo en Bunny, lo borramos también para no dejar huérfanos
   const { data: ej } = await supabase.from('ejercicios').select('video_id').eq('id', id).single()
-  if (ej?.video_id) {
-    await borrarVideoBunny(ej.video_id)
-  }
 
-  // FAQs, oposiciones y progreso se limpian en cascada
-  await supabase.from('ejercicios').delete().eq('id', id)
+  // FAQs, oposiciones y progreso se limpian en cascada. Primero la fila...
+  const { error } = await supabase.from('ejercicios').delete().eq('id', id)
+  if (error) return
+
+  // ...y después su vídeo de Bunny, para no dejar huérfanos, pero solo si
+  // ningún otro ejercicio (o prueba) lo comparte.
+  await borrarVideoSiNadieLoUsa(supabase, ej?.video_id)
   revalidatePath('/admin/ejercicios')
   redirect('/admin/ejercicios')
 }

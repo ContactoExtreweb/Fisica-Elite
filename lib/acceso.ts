@@ -7,6 +7,7 @@
 //   · plan 'oposicion'                 -> las categorías con ejercicios
 //                                         marcados para esa oposición
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { hoyMadrid } from '@/lib/fechas'
 
 export type CategoriaContratada = {
   id: string
@@ -21,7 +22,7 @@ export async function categoriasContratadas(
   supabase: SupabaseClient<any, 'public', any>,
   userId: string
 ): Promise<CategoriaContratada[]> {
-  const hoy = new Date().toISOString().slice(0, 10)
+  const hoy = hoyMadrid()
 
   const [{ data: subs }, { data: todas }] = await Promise.all([
     supabase

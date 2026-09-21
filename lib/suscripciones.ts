@@ -8,6 +8,7 @@
 // Todo sale de UNA consulta: el plan y sus categorías vienen embebidos.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { nombreOposicion } from '@/lib/oposiciones'
+import { hoyMadrid } from '@/lib/fechas'
 
 export type SuscripcionAlumno = {
   id: string
@@ -35,10 +36,6 @@ export type SuscripcionAlumno = {
   planIlegible: boolean
   /** Se puede renovar desde su cuenta: plan a la venta, con precio, y no dada de baja */
   renovable: boolean
-}
-
-function hoyMadrid(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())
 }
 
 // PostgREST devuelve las relaciones a-uno como objeto o como array según

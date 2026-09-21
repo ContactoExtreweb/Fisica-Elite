@@ -16,6 +16,7 @@
 // navegador solo le llega una firma temporal para ESE vídeo concreto.
 import { revalidatePath } from 'next/cache'
 import { exigirUsuario } from '@/lib/autorizacion'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { categoriasContratadas } from '@/lib/acceso'
 import {
   ventanasActivas,
@@ -28,6 +29,8 @@ import {
   crearVideoBunny,
   firmaSubidaTus,
   borrarVideoBunny,
+  selloSubida,
+  selloSubidaValido,
 } from '@/lib/bunny'
 
 /** Tope de evaluaciones sin revisar que puede tener a la vez. */
@@ -35,7 +38,7 @@ const MAX_PENDIENTES = 3
 
 export type InicioSubida =
   | { error: string }
-  | { guid: string; firma: string; expiracion: number; libraryId: string }
+  | { guid: string; firma: string; expiracion: number; libraryId: string; sello: string }
 
 /**
  * Comprueba acceso y categoría.
@@ -131,18 +134,27 @@ export async function iniciarSubidaEvaluacion(
   if (!guid) return { error: 'No se pudo preparar la subida. Inténtalo de nuevo.' }
 
   const { firma, expiracion, libraryId } = firmaSubidaTus(guid)
-  return { guid, firma, expiracion, libraryId }
+  // El sello liga ESTE vídeo con ESTE alumno (ver selloSubida en lib/bunny.ts)
+  return { guid, firma, expiracion, libraryId, sello: selloSubida(user.id, guid) }
 }
 
 export async function confirmarEvaluacion(
   categoriaId: string,
   guid: string,
-  notas: string
+  notas: string,
+  sello: string
 ): Promise<{ ok?: boolean; error?: string }> {
   if (!categoriaId || !guid) return { error: 'Datos incompletos' }
 
   const { error: noPuede, supabase, user } = await comprobarPuedeSubir(categoriaId)
   if (noPuede) return { error: noPuede }
+
+  // El guid tiene que ser de un vídeo que ESTE alumno pidió subir. Si no, no
+  // se registra NI se toca nada en Bunny: ese vídeo podría ser de otro (de un
+  // ejercicio de pago, por ejemplo).
+  if (!selloSubidaValido(user.id, guid, sello)) {
+    return { error: 'No se pudo verificar la subida. Vuelve a subir el vídeo.' }
+  }
 
   // La RLS ya exige user_id = auth.uid() al insertar; lo mandamos
   // explícito porque la columna no tiene default.
@@ -190,7 +202,18 @@ export async function borrarEvaluacionPendiente(
   const { error } = await supabase.from('evaluaciones').delete().eq('id', id)
   if (error) return { error: 'No se pudo borrar' }
 
-  if (ev.video_id) await borrarVideoBunny(ev.video_id)
+  // Cinturón y tirantes: aunque el vídeo esté en una prueba, jamás se borra de
+  // Bunny si además es el vídeo de un ejercicio. (Con el sello ya no debería
+  // pasar, pero pruebas antiguas o un fallo futuro no deben poder destruir
+  // contenido de pago.) Se mira con service_role: el alumno no ve esa tabla entera.
+  if (ev.video_id) {
+    const { data: esDeEjercicio } = await createAdminClient()
+      .from('ejercicios')
+      .select('id')
+      .eq('video_id', ev.video_id)
+      .limit(1)
+    if (!esDeEjercicio || esDeEjercicio.length === 0) await borrarVideoBunny(ev.video_id)
+  }
 
   revalidatePath('/evaluaciones')
   return { ok: true }

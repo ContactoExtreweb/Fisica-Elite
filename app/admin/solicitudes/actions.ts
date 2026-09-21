@@ -18,19 +18,13 @@ import { exigirAdmin } from '@/lib/autorizacion'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generarPasswordSegura } from '@/lib/password'
 import { stripe, stripeConfigurado } from '@/lib/stripe'
+import { hoyMadrid, sumarMeses } from '@/lib/fechas'
 
 export type Credenciales = { email: string; username: string; password: string }
 export type ResultadoProceso =
   | { ok: true; credenciales: Credenciales }
   | { ok: false; error: string }
 
-function hoyMadrid(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())
-}
-function sumarMeses(fechaISO: string, meses: number): string {
-  const [y, m, d] = fechaISO.split('-').map(Number)
-  return new Date(Date.UTC(y, m - 1 + meses, d)).toISOString().slice(0, 10)
-}
 
 export async function procesarSolicitud(
   solicitudId: string,
@@ -103,7 +97,7 @@ export async function procesarSolicitud(
   // quien pagó el plan de 15 € se lleva la plataforma entera.
   const inicio = hoyMadrid()
   const meses = Math.min(24, Math.max(1, sol.meses_pagados || 1))
-  await supabase.from('suscripciones').insert({
+  const { error: errSusc } = await supabase.from('suscripciones').insert({
     user_id: nuevoId,
     plan_id: sol.plan_id ?? null,
     metodo: 'tarjeta',
@@ -115,6 +109,18 @@ export async function procesarSolicitud(
     stripe_payment_intent: sol.stripe_payment_intent,
     notas: `Alta desde pago web (ref ${sol.referencia ?? '—'})`,
   })
+
+  // Antes este error se ignoraba: se creaba el alumno, se marcaba la solicitud
+  // como procesada y quien había PAGADO se quedaba sin acceso, en silencio.
+  // Ahora se deshace todo (el alumno aún no ha recibido credenciales) y la
+  // solicitud sigue pendiente para reintentarla.
+  if (errSusc) {
+    await adminClient.auth.admin.deleteUser(nuevoId) // rollback
+    return {
+      ok: false,
+      error: 'No se pudo registrar su acceso. No se ha creado el alumno; inténtalo de nuevo.',
+    }
+  }
 
   // 5 · Marcar la solicitud como procesada y enlazar el perfil
   await supabase

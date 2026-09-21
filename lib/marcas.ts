@@ -6,6 +6,7 @@
 //   · distancia_km  -> kilómetros
 //   · tiempo_seg    -> segundos
 // y al mostrar convertimos a la unidad de la categoría.
+import { hoyMadrid, sumarDias } from '@/lib/fechas'
 
 export type Metrica = 'repeticiones' | 'tiempo' | 'distancia' | 'peso'
 
@@ -80,11 +81,9 @@ export function fechaCorta(iso: string): string {
 
 /** "Hoy", "Ayer" o la fecha corta. */
 export function fechaRelativa(iso: string): string {
-  const hoy = new Date()
-  const ayer = new Date()
-  ayer.setDate(hoy.getDate() - 1)
-  const f = (d: Date) => d.toISOString().slice(0, 10)
-  if (iso === f(hoy)) return 'Hoy'
-  if (iso === f(ayer)) return 'Ayer'
+  // Fechas de Madrid, no UTC: entre las 00:00 y las 02:00 la fecha UTC va un día atrás
+  const hoy = hoyMadrid()
+  if (iso === hoy) return 'Hoy'
+  if (iso === sumarDias(hoy, -1)) return 'Ayer'
   return fechaCorta(iso)
 }

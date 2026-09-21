@@ -98,9 +98,13 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
    móvil y legales.
 3. **Lanzamiento:** dominio; verificar el dominio en Resend, poner `EMAIL_FROM`
    y **borrar `EMAIL_PRUEBAS_A`**; Stripe en modo real y webhook de producción
-   (`https://<dominio>/api/webhooks/stripe`, con su `whsec_` en Vercel); Supabase
+   (`https://<dominio>/api/webhooks/stripe`, con su `whsec_` en Vercel, **suscrito a
+   los eventos `checkout.session.completed` y `charge.refunded`**: sin el segundo, una
+   devolución hecha en Stripe no retira el acceso); Supabase
    Pro; `NEXT_PUBLIC_SITE_URL` con el dominio (sitemap y metadatos salen de ahí).
-4. **Asistente:** comprobar en Mistral que la región de datos es la UE, aceptar
+4. **Asistente:** usar el endpoint de la UE de Mistral (`https://api.eu.mistral.ai/v1`,
+   **no** `api.mistral.ai`: el global no se compromete a ningún lugar de
+   procesamiento; ver `lib/legal.ts`), comprobar que el modelo elegido existe ahí, aceptar
    su DPA y valorar pasar al plan de pago con tope de gasto (el gratuito es «para
    pruebas»). Rellenar la ficha de `ASISTENTE` en `lib/legal.ts` si cambia de
    proveedor.
@@ -116,7 +120,9 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
   sin las claves, la web es idéntica a antes y la política de privacidad no lo
   menciona.
 - **Modelo:** cualquier API tipo OpenAI, con `ASISTENTE_API_URL`,
-  `ASISTENTE_API_KEY` y `ASISTENTE_MODEL`. Hoy, Mistral (`ministral-14b-latest`;
+  `ASISTENTE_API_KEY` y `ASISTENTE_MODEL`. Hoy, Mistral por su endpoint de la UE
+  (`https://api.eu.mistral.ai/v1`; la política de privacidad solo dice «Unión Europea»
+  si la URL es esa) con `ministral-14b-latest` (verificar que existe en esa región;
   `mistral-small-latest` da 429 en el plan gratuito). En Vercel,
   `NEXT_PUBLIC_ASISTENTE` va como **Config** (no «Secret»: Vercel no deja poner
   `NEXT_PUBLIC_` en un secreto) y la clave como **Secret**.
@@ -135,7 +141,11 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
 
 - **`overflow-x: hidden` va solo en `<html>`, nunca también en `<body>`.** Con los
   dos, el body se vuelve un contenedor con scroll y el menú `position: sticky`
-  deja de quedarse fijo en escritorio.
+  deja de quedarse fijo en escritorio. **Lo mismo vale para bloquear el scroll**
+  (menús a pantalla completa, modales): `document.documentElement.style.overflow`,
+  jamás `document.body.style.overflow`. Con el body, al abrir el menú público con
+  la página algo scrolleada, la cabecera se iba fuera de pantalla y no había cruz
+  para cerrarlo.
 - **Rejillas y flex:** un hijo de `grid` o `flex` tiene `min-width: auto`, y un
   contenido ancho ensancha la columna por encima del móvil. Usa `minmax(0, 1fr)`
   y `min-width: 0`. Así se resolvió el desborde de `/registro`.
@@ -150,6 +160,19 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
 - **Nunca pegues ni fotografíes el `.env.local`.** Si una clave se ve, se rota.
 - **`alumno_tramos` no tiene política de DELETE**, para nadie. El admin reasigna
   con upsert (no se puede «dejar sin asignar»).
+- **Un vídeo de Bunny se borra solo con `borrarVideoSiNadieLoUsa`** (`lib/videos.ts`):
+  primero se quita la referencia en la BBDD y después se llama a esa función, que
+  no borra si otro ejercicio o prueba lo comparte. Nunca llames a `borrarVideoBunny`
+  a pelo desde una acción.
+- **Las subidas de pruebas de un alumno llevan un SELLO** (`selloSubida` en
+  `lib/bunny.ts`): el navegador manda el id del vídeo al confirmar, y sin sellar
+  se podía mandar el de un ejercicio de pago y luego borrarlo.
+- **Las fechas y los meses se calculan en `lib/fechas.ts`** (`hoyMadrid`,
+  `sumarMeses` con tope a fin de mes). No hagas copias locales: había seis, y
+  daban fechas distintas según por dónde se contratara el plan.
+- **Las tablas de escritura pública** (hoy ninguna) deben ir por el servidor con
+  límite de uso, no con una política RLS `with check (true)`: la clave anónima
+  viaja en el navegador y cualquiera puede llamar a la API directamente.
 - **La URL del sitio sale de `lib/site.ts`** (`NEXT_PUBLIC_SITE_URL`). No la
   escribas a mano en ningún archivo.
 
@@ -159,7 +182,10 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
 evaluación · 020 limpiar vídeos huérfanos · 021 ejercicios explicativos · 022
 reservas presenciales · 023 actividad y recordatorios · 024 el admin abre chats
 · 025 último ejercicio visto · 026 reseñas · 027 reseñas iniciales (opcional) ·
-028 dos reseñas más · 029 límites del asistente · 030 traza de reembolsos.
+028 dos reseñas más · 029 límites del asistente · 030 traza de reembolsos ·
+031 el formulario de contacto solo por el servidor (**aplicar DESPUÉS de
+desplegar el código**, no antes) · 032 fechas de acceso en horario de Madrid (cambia
+las funciones de acceso leyendo su definición; comprueba al final que salga `true`).
 
 ---
 
@@ -1152,9 +1178,9 @@ STRIPE_WEBHOOK_SECRET=            ← SECRETA (whsec_…), distinta en local y e
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 
 # Bunny Stream
-BUNNY_LIBRARY_ID=
-BUNNY_API_KEY=                    ← SECRETA
-BUNNY_TOKEN_AUTH_KEY=             ← SECRETA (firma de los embeds)
+BUNNY_STREAM_LIBRARY_ID=          ← (los nombres REALES son estos, con STREAM: lib/bunny.ts)
+BUNNY_STREAM_API_KEY=             ← SECRETA. También firma el sello de las subidas de pruebas
+BUNNY_STREAM_TOKEN_KEY=           ← SECRETA (firma de los embeds)
 
 # Resend
 RESEND_API_KEY=                   ← SECRETA
@@ -1172,7 +1198,7 @@ CRON_SECRET=                      ← SECRETA. Sin ella el endpoint /api/cron/in
 NEXT_PUBLIC_ASISTENTE=on          ← interruptor del botón y de lo que dice la privacidad
                                     (se incrusta en el build: redesplegar al cambiarla)
 ASISTENTE_API_URL=                ← base de una API tipo OpenAI, sin la ruta final
-                                    (p. ej. https://api.mistral.ai/v1)
+                                    (Mistral: https://api.eu.mistral.ai/v1, el de la UE)
 ASISTENTE_API_KEY=                ← SECRETA
 ASISTENTE_MODEL=                  ← nombre del modelo, tal como lo llama el proveedor
 

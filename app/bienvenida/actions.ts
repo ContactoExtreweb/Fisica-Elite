@@ -75,10 +75,11 @@ export async function guardarCuestionario(
   const categoriaIds = formData.getAll('categoria_id').map(String)
   if (categoriaIds.length === 0) {
     // Sin categorías contratadas: marcamos el cuestionario como hecho igualmente
-    await supabase
+    const { error: errPerfil } = await supabase
       .from('profiles')
       .update({ cuestionario_completado: true, ...fisicos })
       .eq('id', user.id)
+    if (errPerfil) return { error: 'No se pudo guardar. Inténtalo de nuevo.' }
     return { ok: true }
   }
 
@@ -147,10 +148,11 @@ export async function guardarCuestionario(
     if (error) return { error: 'No se pudo guardar tu evaluación. Inténtalo de nuevo.' }
   }
 
-  await supabase
+  const { error: errFin } = await supabase
     .from('profiles')
     .update({ cuestionario_completado: true, ...fisicos })
     .eq('id', user.id)
+  if (errFin) return { error: 'No se pudo guardar. Inténtalo de nuevo.' }
 
   revalidatePath('/inicio')
   revalidatePath('/ejercicios')
