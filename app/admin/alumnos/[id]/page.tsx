@@ -7,10 +7,12 @@ import HistorialMarcas from '@/components/HistorialMarcas'
 import type { RegistroFila } from '@/lib/marcas'
 import AlumnoEditor from '@/components/AlumnoEditor'
 import AlumnoAcciones from '@/components/AlumnoAcciones'
+import { DIAS_INACTIVIDAD, diasDesde, textoActividad } from '@/lib/actividad'
 import GestorSuscripciones, {
   type SuscripcionFila,
   type PlanOpcion,
 } from '@/components/GestorSuscripciones'
+import { abrirConversacionConAlumno } from '@/app/chat/actions'
 
 const NOMBRE_ESP: Record<string, string> = {
   policia_local: 'Policía Local',
@@ -36,7 +38,7 @@ export default async function FichaAlumnoPage({
   const { data: alumno } = await supabase
     .from('profiles')
     .select(
-      'id, nombre, apellidos, email, telefono, edad, especialidad, rol, username, created_at, peso_kg, altura_cm, facilidades, cuestionario_completado, presencial'
+      'id, nombre, apellidos, email, telefono, edad, especialidad, rol, username, created_at, peso_kg, altura_cm, facilidades, cuestionario_completado, presencial, ultima_actividad, aviso_inactividad_at, recordatorios_email'
     )
     .eq('id', id)
     .single()
@@ -108,6 +110,18 @@ export default async function FichaAlumnoPage({
           <div className="greeting">{alumno.email}</div>
           <h1 className="page-title">{nombre}</h1>
         </div>
+        {!esAdmin && (
+          <div className="topbar-actions">
+            <form action={abrirConversacionConAlumno.bind(null, alumno.id)}>
+              <button type="submit" className="admin-topbar-cta">
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Abrir chat
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       {/* Resumen de estado */}
@@ -126,6 +140,27 @@ export default async function FichaAlumnoPage({
             <span className="susc-pill activa">● Al día · hasta {fmtFecha(finAcceso)}</span>
           ) : (
             <span className="susc-pill inactiva">● Sin acceso</span>
+          )}
+        </div>
+        <div className="ficha-chip">
+          <span className="ficha-chip-label">Última actividad</span>
+          <span
+            className={`act-pill ${
+              accesoActivo &&
+              (diasDesde(alumno.ultima_actividad) ?? 0) >= DIAS_INACTIVIDAD
+                ? 'inactivo'
+                : ''
+            }`}
+          >
+            {textoActividad(diasDesde(alumno.ultima_actividad))}
+          </span>
+          {alumno.aviso_inactividad_at && (
+            <span className="ficha-chip-nota">
+              Aviso enviado el {fmtFecha(alumno.aviso_inactividad_at)}
+            </span>
+          )}
+          {alumno.recordatorios_email === false && (
+            <span className="ficha-chip-nota">Ha desactivado los recordatorios</span>
           )}
         </div>
         <div className="ficha-chip">
@@ -159,59 +194,71 @@ export default async function FichaAlumnoPage({
 
         {/* Gestión de sus accesos: añadir plan, renovar, baja individual */}
         <div className="admin-section" style={{ marginTop: 24 }}>
-          <GestorSuscripciones
-            alumnoId={alumno.id}
-            suscripciones={suscripciones}
-            planes={(planesRaw ?? []) as PlanOpcion[]}
-          />
+          <div className="admin-section-head">
+            <h3>Accesos</h3>
+            <div className="meta">Planes contratados</div>
+          </div>
+          <div className="admin-section-body">
+            <GestorSuscripciones
+              alumnoId={alumno.id}
+              suscripciones={suscripciones}
+              planes={(planesRaw ?? []) as PlanOpcion[]}
+            />
+          </div>
         </div>
 
         {/* Lo que el alumno contestó en el cuestionario inicial. El cliente
             lo pidió expresamente: peso y altura actualizables por el alumno
             "para que lo vean los entrenadores". Solo lectura: los edita él. */}
         <div className="admin-section" style={{ marginTop: 24 }}>
-          <h2 className="prog-sub" style={{ marginTop: 0 }}>
-            Datos físicos
-          </h2>
-          {alumno.cuestionario_completado ? (
-            <div className="ficha-fisicos">
-              <div className="ficha-fisico">
-                <span className="ficha-fisico-k">Peso</span>
-                <span className="ficha-fisico-v">
-                  {alumno.peso_kg ? `${alumno.peso_kg} kg` : '—'}
-                </span>
+          <div className="admin-section-head">
+            <h3>Datos físicos</h3>
+            <div className="meta">De su cuestionario inicial</div>
+          </div>
+          <div className="admin-section-body">
+            {alumno.cuestionario_completado ? (
+              <div className="ficha-fisicos">
+                <div className="ficha-fisico">
+                  <span className="ficha-fisico-k">Peso</span>
+                  <span className="ficha-fisico-v">
+                    {alumno.peso_kg ? `${alumno.peso_kg} kg` : '—'}
+                  </span>
+                </div>
+                <div className="ficha-fisico">
+                  <span className="ficha-fisico-k">Altura</span>
+                  <span className="ficha-fisico-v">
+                    {alumno.altura_cm ? `${alumno.altura_cm} cm` : '—'}
+                  </span>
+                </div>
+                <div className="ficha-fisico ancho">
+                  <span className="ficha-fisico-k">Qué tiene para entrenar en casa</span>
+                  <span className="ficha-fisico-v">
+                    {alumno.facilidades?.trim() || 'No lo ha indicado.'}
+                  </span>
+                </div>
               </div>
-              <div className="ficha-fisico">
-                <span className="ficha-fisico-k">Altura</span>
-                <span className="ficha-fisico-v">
-                  {alumno.altura_cm ? `${alumno.altura_cm} cm` : '—'}
-                </span>
+            ) : (
+              <div className="admin-tabla-vacia">
+                Todavía no ha hecho el cuestionario inicial.
               </div>
-              <div className="ficha-fisico ancho">
-                <span className="ficha-fisico-k">Qué tiene para entrenar en casa</span>
-                <span className="ficha-fisico-v">
-                  {alumno.facilidades?.trim() || 'No lo ha indicado.'}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="admin-tabla-vacia">
-              Todavía no ha hecho el cuestionario inicial.
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Marcas del alumno: lo que va apuntando en su entrenamiento */}
         <div className="admin-section" style={{ marginTop: 24 }}>
-          <h2 className="prog-sub" style={{ marginTop: 0 }}>
-            Marcas de {nombre.split(' ')[0]}
-          </h2>
-          <HistorialMarcas
-            registros={(registros ?? []) as RegistroFila[]}
-            categorias={cats ?? []}
-            soloLectura
-            vacioTexto="Este alumno todavía no ha apuntado ninguna marca."
-          />
+          <div className="admin-section-head">
+            <h3>Marcas de {nombre.split(' ')[0]}</h3>
+            <div className="meta">Últimas 40</div>
+          </div>
+          <div className="admin-section-body">
+            <HistorialMarcas
+              registros={(registros ?? []) as RegistroFila[]}
+              categorias={cats ?? []}
+              soloLectura
+              vacioTexto="Este alumno todavía no ha apuntado ninguna marca."
+            />
+          </div>
         </div>
         </>
       )}

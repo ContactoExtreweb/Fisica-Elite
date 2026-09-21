@@ -23,7 +23,7 @@ export default async function PerfilPage() {
   const [{ data: perfil }, suscripciones, noLeidos, modo] = await Promise.all([
     supabase
       .from('profiles')
-      .select('nombre, apellidos, peso_kg, altura_cm, facilidades')
+      .select('nombre, apellidos, peso_kg, altura_cm, facilidades, recordatorios_email')
       .eq('id', user.id)
       .single(),
     misSuscripciones(supabase, user.id),
@@ -76,7 +76,7 @@ export default async function PerfilPage() {
           </div>
           <div className="topbar-actions">
             <Link href="/inicio" className="btn-ghost-chat">
-              ← Mis ejercicios
+              ← Inicio
             </Link>
           </div>
         </div>
@@ -85,6 +85,7 @@ export default async function PerfilPage() {
           peso={perfil?.peso_kg ?? null}
           altura={perfil?.altura_cm ?? null}
           facilidades={perfil?.facilidades ?? null}
+          recordatorios={perfil?.recordatorios_email ?? true}
         />
 
         {/* Qué tiene contratado. Solo lectura: gestionar y renovar es

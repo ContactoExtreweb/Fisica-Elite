@@ -74,6 +74,26 @@ export function diaSemana(fechaISO: string): number {
   return dow === 0 ? 7 : dow
 }
 
+export type CeldaMes = { fecha: string; dia: number; fuera: boolean }
+
+/**
+ * Las celdas de un calendario mensual (y, m 1-12): semanas completas de
+ * lunes a domingo, con los días de fuera del mes marcados. Es solo la
+ * GEOMETRÍA de la rejilla; cada pantalla (alumno, admin) le añade encima
+ * sus propios datos por día (plazas libres, ocupación, bloqueos…).
+ */
+export function celdasMes(y: number, m: number): CeldaMes[] {
+  const mm = String(m).padStart(2, '0')
+  const primero = `${y}-${mm}-01`
+  const diasMes = new Date(Date.UTC(y, m, 0)).getUTCDate()
+  const inicio = sumarDias(primero, -(diaSemana(primero) - 1)) // el lunes de la primera semana
+  const total = Math.ceil((diaSemana(primero) - 1 + diasMes) / 7) * 7
+  return Array.from({ length: total }, (_, i) => {
+    const fecha = sumarDias(inicio, i)
+    return { fecha, dia: Number(fecha.slice(8, 10)), fuera: fecha.slice(0, 7) !== `${y}-${mm}` }
+  })
+}
+
 function fechaUTC(fechaISO: string): Date {
   const [y, m, d] = fechaISO.split('-').map(Number)
   return new Date(Date.UTC(y, m - 1, d))

@@ -6,7 +6,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import DatoLegal from '@/components/DatoLegal'
-import { DATOS, ENCARGADOS, DATOS_TRATADOS } from '@/lib/legal'
+import { DATOS, ENCARGADOS, DATOS_TRATADOS, ASISTENTE, estaPendiente } from '@/lib/legal'
 
 export const metadata: Metadata = {
   title: 'Política de privacidad',
@@ -96,6 +96,15 @@ export default function PrivacidadPage() {
             </span>
           </div>
           <div className="legal-tabla-fila">
+            <strong>Recordatorios de entrenamiento</strong>
+            <span>
+              Si tienes un plan activo y llevas más de una semana sin entrar, te mandamos un
+              correo para recordártelo. Solo miramos la fecha de tu última visita, no lo que
+              haces dentro. Puedes desactivarlos cuando quieras desde tu perfil.
+              <em> Base legal: interés legítimo en que aproveches el servicio que has contratado.</em>
+            </span>
+          </div>
+          <div className="legal-tabla-fila">
             <strong>Responder a tus consultas</strong>
             <span>
               Contestar a los mensajes que nos mandas por el formulario de
@@ -103,6 +112,17 @@ export default function PrivacidadPage() {
               <em> Base legal: tu consentimiento.</em>
             </span>
           </div>
+          {ASISTENTE.activo && (
+            <div className="legal-tabla-fila">
+              <strong>Asistente virtual</strong>
+              <span>
+                Contestar a las preguntas que escribes en el asistente virtual (una
+                inteligencia artificial, no una persona). Sus respuestas son
+                orientativas y no sustituyen a las de tu preparador.
+                <em> Base legal: tu consentimiento, al escribirle.</em>
+              </span>
+            </div>
+          )}
         </div>
         <p>
           No hacemos perfilado ni decisiones automatizadas con efectos
@@ -120,13 +140,21 @@ export default function PrivacidadPage() {
         <div className="legal-tabla">
           {ENCARGADOS.map((e) => (
             <div key={e.nombre} className="legal-tabla-fila">
-              <strong>{e.nombre}</strong>
+              <strong>
+                {estaPendiente(e.nombre) ? <mark className="legal-pendiente">{e.nombre}</mark> : e.nombre}
+              </strong>
               <span>
-                {e.para}. Alojamiento: {e.donde}.{' '}
-                <a href={e.web} target="_blank" rel="noopener noreferrer">
-                  Su política de privacidad
-                </a>
-                .
+                {e.para}. Alojamiento:{' '}
+                {estaPendiente(e.donde) ? <mark className="legal-pendiente">{e.donde}</mark> : e.donde}.
+                {e.web && (
+                  <>
+                    {' '}
+                    <a href={e.web} target="_blank" rel="noopener noreferrer">
+                      Su política de privacidad
+                    </a>
+                    .
+                  </>
+                )}
               </span>
             </div>
           ))}

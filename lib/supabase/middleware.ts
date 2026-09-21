@@ -18,6 +18,7 @@
 // archivo, comprueba las dos cosas antes de commitear.
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { actividadCaducada } from '@/lib/actividad'
 
 // Rutas públicas (visibles sin sesión), por PREFIJO: cubre también sus
 // subrutas (p. ej. '/pago' cubre '/pago/exito').
@@ -31,6 +32,8 @@ const RUTAS_PUBLICAS = [
   '/pago',
   '/api/checkout', // el formulario público de pago llama aquí (sin sesión)
   '/api/webhooks', // Stripe llama al webhook desde fuera, sin sesión
+  '/api/cron', // Vercel Cron llama sin sesión; lo protege CRON_SECRET en la propia ruta
+  '/api/asistente', // el asistente de la web pública lo usan visitantes sin sesión; la ruta limita el uso por su cuenta
   '/sobre-nosotros',
   '/instalaciones',
   '/contacto',
@@ -111,11 +114,30 @@ export async function updateSession(request: NextRequest) {
 
   // Con sesión válida: reglas según perfil.
   // La RLS permite a cada usuario leer su propio perfil.
+  //
+  // select('*') A PROPÓSITO: si se despliega código que pide una columna
+  // nueva antes de aplicar su migración, la consulta entera falla, `perfil`
+  // llega a null y las reglas de abajo dejan al admin sin /admin. Con '*'
+  // eso no puede pasar. Es una sola fila: el coste es el mismo.
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('rol, must_change_password, cuestionario_completado, presencial')
+    .select('*')
     .eq('id', user.id)
     .single()
+
+  // Actividad del alumno para los recordatorios por inactividad
+  // (lib/actividad.ts). Como mucho una escritura cada 6 h, y si falla se
+  // ignora: esto nunca puede bloquear la navegación.
+  if (perfil?.rol === 'alumno' && actividadCaducada(perfil.ultima_actividad)) {
+    try {
+      await supabase
+        .from('profiles')
+        .update({ ultima_actividad: new Date().toISOString() })
+        .eq('id', user.id)
+    } catch {
+      // Sin apuntar esta vez: se reintenta en la siguiente petición
+    }
+  }
 
   // 1. Primer acceso: no puede ir a ningún otro sitio hasta cambiarla
   if (perfil?.must_change_password && ruta !== '/cambiar-password') {

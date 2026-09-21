@@ -6,6 +6,11 @@ import { redirect } from 'next/navigation'
 import { exigirAdmin } from '@/lib/autorizacion'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generarPasswordSegura } from '@/lib/password'
+import {
+  ejecutarRecordatorios,
+  enviarEjemploInactividad,
+  type ResumenRecordatorios,
+} from '@/lib/recordatorios'
 
 const ESPECIALIDADES = ['policia_local', 'policia_nacional', 'guardia_civil', 'fuerzas_armadas', 'aduanas']
 
@@ -129,4 +134,32 @@ export async function marcarPresencial(
   revalidatePath(`/admin/alumnos/${alumnoId}`)
   revalidatePath('/admin/reservas')
   return { ok: true }
+}
+
+/**
+ * Manda ya los recordatorios por inactividad pendientes, sin esperar a la
+ * tarea diaria. Con el cliente del admin: la RLS ya le deja leer y
+ * actualizar todos los perfiles, así que no hace falta service_role.
+ */
+export async function enviarRecordatoriosAhora(): Promise<
+  { ok: true; resumen: ResumenRecordatorios } | { ok: false; error: string }
+> {
+  const { supabase } = await exigirAdmin()
+  try {
+    const resumen = await ejecutarRecordatorios(supabase)
+    revalidatePath('/admin/alumnos')
+    return { ok: true, resumen }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'No se pudieron enviar' }
+  }
+}
+
+/** Manda al propio admin el correo de inactividad con datos de ejemplo. */
+export async function enviarCorreoEjemplo(): Promise<
+  { ok: true; destino: string } | { ok: false; error: string }
+> {
+  const { user } = await exigirAdmin()
+  if (!user.email) return { ok: false, error: 'Tu cuenta no tiene email' }
+  const res = await enviarEjemploInactividad(user.email)
+  return res.ok ? { ok: true, destino: res.destino } : { ok: false, error: res.error }
 }

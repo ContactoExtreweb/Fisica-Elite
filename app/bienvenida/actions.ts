@@ -10,6 +10,30 @@ import { exigirUsuario } from '@/lib/autorizacion'
 export type EstadoCuestionario = { ok?: boolean; error?: string }
 
 /**
+ * Peso/altura/facilidades vienen del mismo formulario en dos sitios: el
+ * cuestionario inicial (bloque final, se puede omitir) y /perfil. Una
+ * sola validación para los dos, así no se pueden desincronizar.
+ */
+function datosFisicosDeFormulario(
+  formData: FormData
+): { error: string } | { peso_kg: number | null; altura_cm: number | null; facilidades: string | null } {
+  const num = (k: string) => {
+    const v = String(formData.get(k) ?? '').replace(',', '.').trim()
+    if (v === '') return null
+    const n = Number(v)
+    return isNaN(n) ? null : n
+  }
+  const peso_kg = num('peso_kg')
+  const altura_cm = num('altura_cm')
+  const facilidades = String(formData.get('facilidades') ?? '').trim() || null
+
+  if (peso_kg !== null && (peso_kg < 20 || peso_kg > 300)) return { error: 'Revisa el peso' }
+  if (altura_cm !== null && (altura_cm < 100 || altura_cm > 250)) return { error: 'Revisa la altura' }
+
+  return { peso_kg, altura_cm, facilidades }
+}
+
+/**
  * Devuelve el tramo que corresponde a una marca dentro de una categoría.
  *  · métrica de tiempo  → MENOS es mejor: cae en el tramo cuyo rango
  *    contiene la marca; el tramo "bajo" son tiempos altos.
@@ -41,11 +65,20 @@ export async function guardarCuestionario(
 ): Promise<EstadoCuestionario> {
   const { supabase, user } = await exigirUsuario()
 
+  // Datos físicos: el bloque final del cuestionario, opcional (se puede
+  // omitir). Si el alumno lo omitió, los campos no vienen en el
+  // formulario y esto sale todo en null — no rompe nada.
+  const fisicos = datosFisicosDeFormulario(formData)
+  if ('error' in fisicos) return fisicos
+
   // Categorías que vienen del formulario (una marca por categoría)
   const categoriaIds = formData.getAll('categoria_id').map(String)
   if (categoriaIds.length === 0) {
     // Sin categorías contratadas: marcamos el cuestionario como hecho igualmente
-    await supabase.from('profiles').update({ cuestionario_completado: true }).eq('id', user.id)
+    await supabase
+      .from('profiles')
+      .update({ cuestionario_completado: true, ...fisicos })
+      .eq('id', user.id)
     return { ok: true }
   }
 
@@ -101,9 +134,13 @@ export async function guardarCuestionario(
     if (error) return { error: 'No se pudo guardar tu evaluación. Inténtalo de nuevo.' }
   }
 
-  await supabase.from('profiles').update({ cuestionario_completado: true }).eq('id', user.id)
+  await supabase
+    .from('profiles')
+    .update({ cuestionario_completado: true, ...fisicos })
+    .eq('id', user.id)
 
   revalidatePath('/inicio')
+  revalidatePath('/ejercicios')
   revalidatePath('/bienvenida')
   return { ok: true }
 }
@@ -118,23 +155,20 @@ export async function guardarPerfil(
 ): Promise<EstadoPerfil> {
   const { supabase, user } = await exigirUsuario()
 
-  const num = (k: string) => {
-    const v = String(formData.get(k) ?? '').replace(',', '.').trim()
-    if (v === '') return null
-    const n = Number(v)
-    return isNaN(n) ? null : n
-  }
+  const fisicos = datosFisicosDeFormulario(formData)
+  if ('error' in fisicos) return fisicos
 
-  const peso = num('peso_kg')
-  const altura = num('altura_cm')
-  const facilidades = String(formData.get('facilidades') ?? '').trim() || null
-
-  if (peso !== null && (peso < 20 || peso > 300)) return { error: 'Revisa el peso' }
-  if (altura !== null && (altura < 100 || altura > 250)) return { error: 'Revisa la altura' }
+  // El interruptor de avisos solo viene del formulario del perfil. Un
+  // checkbox desmarcado no se envía, así que sin la marca oculta no se
+  // sabría si es "no" o "este formulario no lo tiene".
+  const avisos =
+    formData.get('avisos_en_form') === '1'
+      ? { recordatorios_email: formData.get('recordatorios_email') === 'on' }
+      : {}
 
   const { error } = await supabase
     .from('profiles')
-    .update({ peso_kg: peso, altura_cm: altura, facilidades })
+    .update({ ...fisicos, ...avisos })
     .eq('id', user.id)
 
   if (error) return { error: 'No se pudieron guardar tus datos' }

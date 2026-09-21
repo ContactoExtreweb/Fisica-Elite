@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { DIAS_INACTIVIDAD, textoActividad } from '@/lib/actividad'
 
 const NOMBRE_ESPECIALIDAD: Record<string, string> = {
   policia_local: 'Policía Local',
@@ -31,12 +32,15 @@ export type AlumnoFila = {
   telefono: string | null
   especialidad: string | null
   fechaFinVigente: string | null // null = sin acceso
+  diasSinEntrar: number | null
+  /** Con plan activo y DIAS_INACTIVIDAD días o más sin entrar */
+  inactivo: boolean
 }
 
 export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
   const [busqueda, setBusqueda] = useState('')
   const [especialidad, setEspecialidad] = useState('todas')
-  const [estado, setEstado] = useState('todos') // todos | activo | sin
+  const [estado, setEstado] = useState('todos') // todos | activo | sin | inactivos
 
   const filtrados = useMemo(() => {
     const t = busqueda.trim().toLowerCase()
@@ -56,6 +60,7 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
       }
       if (estado === 'activo' && !a.fechaFinVigente) return false
       if (estado === 'sin' && a.fechaFinVigente) return false
+      if (estado === 'inactivos' && !a.inactivo) return false
       return true
     })
   }, [alumnos, busqueda, especialidad, estado])
@@ -103,6 +108,7 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
           <option value="todos">Cualquier estado</option>
           <option value="activo">Con acceso</option>
           <option value="sin">Sin acceso</option>
+          <option value="inactivos">Inactivos con plan ({DIAS_INACTIVIDAD}+ días)</option>
         </select>
       </div>
 
@@ -111,22 +117,25 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
         {hayFiltros ? ' (filtrado)' : ''}
       </div>
 
-      <div className="admin-section">
-        {filtrados.length === 0 ? (
+      {filtrados.length === 0 ? (
+        <div className="admin-section">
           <div className="admin-tabla-vacia">
             {hayFiltros
               ? 'Ningún alumno coincide con los filtros.'
               : 'Aún no hay alumnos. Crea el primero con «Añadir alumno».'}
           </div>
-        ) : (
-          <>
-            {/* ESCRITORIO: tabla */}
+        </div>
+      ) : (
+        <>
+          {/* ESCRITORIO: tabla dentro de su tarjeta */}
+          <div className="admin-section alumnos-tabla-wrap">
             <table className="admin-table alumnos-tabla-desktop">
               <thead>
                 <tr>
                   <th>Alumno</th>
                   <th>Especialidad</th>
                   <th>Suscripción</th>
+                  <th>Actividad</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,14 +172,23 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
                         </span>
                       )}
                     </td>
+                    <td>
+                      <span className={`act-pill ${a.inactivo ? 'inactivo' : ''}`}>
+                        {textoActividad(a.diasSinEntrar)}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
 
-            {/* MÓVIL: tarjetas */}
-            <div className="alumnos-tarjetas">
-              {filtrados.map((a) => (
+          {/* MÓVIL: tarjetas sueltas sobre el fondo de la página (no
+              dentro de una tarjeta blanca), para que cada alumno se
+              distinga como su propio recuadro y no se confunda con el
+              contenedor. */}
+          <div className="alumnos-tarjetas">
+            {filtrados.map((a) => (
                 <Link key={a.id} href={`/admin/alumnos/${a.id}`} className="alumno-tarjeta">
                   <div className="alumno-tarjeta-cab">
                     <div className="avatar-small">{iniciales(a.nombre, a.apellidos)}</div>
@@ -202,13 +220,18 @@ export default function TablaAlumnos({ alumnos }: { alumnos: AlumnoFila[] }) {
                         </span>
                       )}
                     </div>
+                    <div className="alumno-tarjeta-dato">
+                      <span className="k">Actividad</span>
+                      <span className={`act-pill ${a.inactivo ? 'inactivo' : ''}`}>
+                        {textoActividad(a.diasSinEntrar)}
+                      </span>
+                    </div>
                   </div>
                 </Link>
               ))}
             </div>
-          </>
-        )}
-      </div>
+        </>
+      )}
     </>
   )
 }

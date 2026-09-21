@@ -32,7 +32,10 @@ export const DATOS = {
 
 /** ¿Está todo relleno? Sirve para avisar en pantalla. */
 export function hayDatosPendientes(): boolean {
-  return Object.values(DATOS).some((v) => typeof v === 'string' && v.includes('PENDIENTE'))
+  return (
+    Object.values(DATOS).some((v) => typeof v === 'string' && v.includes('PENDIENTE')) ||
+    asistentePendiente()
+  )
 }
 
 export function estaPendiente(valor: string | null): boolean {
@@ -40,11 +43,35 @@ export function estaPendiente(valor: string | null): boolean {
 }
 
 /**
+ * Asistente virtual (chatbot). Solo entra en las páginas legales cuando
+ * está activado (NEXT_PUBLIC_ASISTENTE=on, el mismo interruptor que pinta el
+ * botón en la web): si no se ve, no se cuenta en la política de privacidad.
+ *
+ * ⚠️ Al activarlo hay que rellenar QUÉ PROVEEDOR de IA se usa y DÓNDE trata
+ * los datos (mira sus condiciones: que no use las conversaciones para
+ * entrenar sus modelos). Hasta entonces se ve resaltado como pendiente.
+ */
+export const ASISTENTE = {
+  activo: process.env.NEXT_PUBLIC_ASISTENTE === 'on',
+  proveedor: 'Mistral AI (Francia)',
+  donde: 'Unión Europea (Francia)',
+  /** Su política de privacidad; null = sin enlace hasta rellenarla */
+  web: 'https://legal.mistral.ai/terms/privacy-policy' as string | null,
+}
+
+/** ¿Falta rellenar algo del asistente? (solo importa si está activado) */
+export function asistentePendiente(): boolean {
+  return ASISTENTE.activo && (estaPendiente(ASISTENTE.proveedor) || estaPendiente(ASISTENTE.donde))
+}
+
+type Encargado = { nombre: string; para: string; donde: string; web: string | null }
+
+/**
  * Encargados del tratamiento: las empresas que tocan datos de los
  * alumnos por cuenta nuestra. Hay que listarlos en la política de
  * privacidad, con dónde están alojados.
  */
-export const ENCARGADOS = [
+export const ENCARGADOS: Encargado[] = [
   {
     nombre: 'Supabase',
     para: 'Base de datos y cuentas de usuario',
@@ -69,6 +96,22 @@ export const ENCARGADOS = [
     donde: 'Unión Europea (Eslovenia)',
     web: 'https://bunny.net/privacy',
   },
+  {
+    nombre: 'Resend',
+    para: 'Envío de los correos de la plataforma, como los recordatorios de entrenamiento',
+    donde: 'Unión Europea (Irlanda)',
+    web: 'https://resend.com/legal/privacy-policy',
+  },
+  ...(ASISTENTE.activo
+    ? [
+        {
+          nombre: ASISTENTE.proveedor,
+          para: 'Generar las respuestas del asistente virtual. Recibe lo que escribes en el asistente y, si tienes abierta la ficha de un ejercicio, el texto de esa ficha (contenido de tu preparador), pero ningún dato de tu cuenta',
+          donde: ASISTENTE.donde,
+          web: ASISTENTE.web,
+        },
+      ]
+    : []),
 ]
 
 /**
@@ -92,6 +135,11 @@ export const DATOS_TRATADOS = [
       'Los vídeos que subes cada cierto tiempo mostrando tu ejecución, y los comentarios de corrección de tu preparador.',
   },
   {
+    grupo: 'Uso de la plataforma',
+    campos:
+      'La fecha de tu última visita, solo para avisarte si llevas tiempo sin entrenar. No registramos qué páginas visitas ni cuánto tiempo pasas en ellas.',
+  },
+  {
     grupo: 'Comunicaciones',
     campos: 'Los mensajes que intercambias con tu preparador por el chat de la plataforma.',
   },
@@ -100,4 +148,13 @@ export const DATOS_TRATADOS = [
     campos:
       'Los planes contratados y las fechas de acceso. El pago lo procesa Stripe: los datos de tu tarjeta no pasan por nuestros servidores ni los guardamos.',
   },
+  ...(ASISTENTE.activo
+    ? [
+        {
+          grupo: 'Asistente virtual',
+          campos:
+            'Lo que escribes en el asistente. No lo guardamos: se envía al proveedor de IA solo para generar la respuesta, sin ningún dato de tu cuenta (si tienes abierta la ficha de un ejercicio, se envía también el texto de esa ficha, que es contenido de tu preparador), y desaparece al cerrar o recargar la página. Para evitar abusos guardamos contadores de uso durante un máximo de dos días; en los visitantes sin cuenta, asociados a una huella cifrada de la dirección IP, no a la dirección en sí. Te pedimos que no escribas datos personales en el asistente.',
+        },
+      ]
+    : []),
 ]

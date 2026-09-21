@@ -22,7 +22,7 @@ export default async function BienvenidaPage({
   // Si ya completó el cuestionario, a su inicio — salvo que venga a repetirlo
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('cuestionario_completado, nombre')
+    .select('cuestionario_completado, nombre, peso_kg, altura_cm, facilidades')
     .eq('id', user.id)
     .single()
 
@@ -60,7 +60,7 @@ export default async function BienvenidaPage({
 
   // Si tiene acceso completo o por oposición, incluimos las categorías que
   // tengan ejercicios de esas oposiciones (o todas, si es completo).
-  let query = supabase
+  const query = supabase
     .from('categorias_ejercicio')
     .select('id, nombre, metrica, unidad, tramos(valor_max, orden)')
     .eq('activa', true)
@@ -68,7 +68,7 @@ export default async function BienvenidaPage({
 
   const { data: todasCats } = await query
 
-  let categoriasContratadas = (todasCats ?? []).filter((c) => {
+  const categoriasContratadas = (todasCats ?? []).filter((c) => {
     if (accesoCompleto) return true
     if (catIds.has(c.id)) return true
     // Para oposición, incluir si la categoría tiene algún ejercicio de esa oposición
@@ -98,7 +98,14 @@ export default async function BienvenidaPage({
 
   return (
     <main className="cuest-shell">
-      <CuestionarioInicial categorias={categorias} />
+      <CuestionarioInicial
+        categorias={categorias}
+        datosFisicos={{
+          peso_kg: perfil?.peso_kg ?? null,
+          altura_cm: perfil?.altura_cm ?? null,
+          facilidades: perfil?.facilidades ?? null,
+        }}
+      />
     </main>
   )
 }

@@ -1,6 +1,7 @@
 // Bandeja de conversaciones del preparador.
 import { createClient } from '@/lib/supabase/server'
 import BandejaChat, { type ItemBandeja } from '@/components/BandejaChat'
+import NuevaConversacion from '@/components/NuevaConversacion'
 
 function iniciales(nombre?: string | null, apellidos?: string | null) {
   return ((nombre ?? '').charAt(0) + (apellidos ?? '').charAt(0)).toUpperCase() || '??'
@@ -71,6 +72,9 @@ export default async function AdminChatPage() {
           <h1 className="page-title">
             Chat con <em>alumnos.</em>
           </h1>
+        </div>
+        <div className="topbar-actions">
+          <NuevaConversacion />
         </div>
       </div>
 

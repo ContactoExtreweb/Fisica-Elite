@@ -4,7 +4,17 @@ import Image from 'next/image'
 import Link from 'next/link'
 import NavPublica from '@/components/NavPublica'
 import FooterPublico from '@/components/FooterPublico'
+import ResenasPublicas from '@/components/ResenasPublicas'
+import PlanesEnlazados from '@/components/PlanesEnlazados'
 import { FICHAS, EMBLEMA } from '@/lib/oposiciones'
+import { createPublicClient } from '@/lib/supabase/publico'
+import { planesALaVenta } from '@/lib/planes'
+import { resenasVisibles } from '@/lib/resenas'
+
+// Planes y reseñas salen de la BBDD, pero cambian poco: la página se sirve
+// cacheada y se regenera cada minuto. Cuando el admin guarda un plan o una
+// reseña, sus acciones llaman a revalidatePath('/') y se ve al momento.
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: { absolute: 'Físicas Élite · Preparación física para oposiciones en Cáceres' },
@@ -55,7 +65,13 @@ const FOTOS_INICIO = [
   { src: '/instalaciones/instalaciones1.jpeg', alt: 'Zona de fuerza con máquinas y mancuernas' },
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = createPublicClient()
+  const [planes, resenas] = await Promise.all([
+    planesALaVenta(supabase),
+    resenasVisibles(supabase),
+  ])
+
   return (
     <>
       <NavPublica />
@@ -268,6 +284,31 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* OPINIONES — cargadas a mano desde /admin/resenas; se muestran las
+            primeras y el resto está en "Sobre nosotros" */}
+        <ResenasPublicas resenas={resenas} maximo={6} />
+
+        {/* PLANES — desde la BBDD: uno nuevo en /admin/planes sale aquí solo.
+            Cada tarjeta lleva a /precios, donde se elige y se paga. */}
+        {planes.length > 0 && (
+          <section className="sec-pub" id="planes">
+            <div className="sec-pub-cab">
+              <span className="sec-pub-eyebrow">Planes y precios</span>
+              <h2>Elige cómo quieres entrenar</h2>
+              <p>
+                Pagas los meses que quieras, sin cobros automáticos. Tu preparador
+                valida el alta y te da acceso personalmente.
+              </p>
+            </div>
+            <PlanesEnlazados planes={planes} cta="Ver detalles →" maxCategorias={4} centrada />
+            <div className="inicio-fotos-pie">
+              <Link href="/precios" className="cta-primary">
+                Ver todos los planes y precios
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* CTA FINAL */}
         <section className="cta-final">

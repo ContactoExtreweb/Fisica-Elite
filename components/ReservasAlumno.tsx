@@ -13,7 +13,7 @@ import { sumarDias } from '@/lib/evaluaciones'
 import {
   aHora,
   aMinutos,
-  diaSemana,
+  celdasMes,
   fmtFechaLarga,
   fmtMesAnio,
   type ConfigReservas,
@@ -38,20 +38,12 @@ type Celda = {
   mia: boolean
 }
 
-/** Las celdas del mes (y, m 1-12): semanas completas de lunes a domingo */
+/** La rejilla del mes (geometría, lib/reservas.ts) + los datos de cada día */
 function celdasDelMes(y: number, m: number, porFecha: Map<string, DiaTurnos>): Celda[] {
-  const mm = String(m).padStart(2, '0')
-  const primero = `${y}-${mm}-01`
-  const diasMes = new Date(Date.UTC(y, m, 0)).getUTCDate()
-  const inicio = sumarDias(primero, -(diaSemana(primero) - 1)) // el lunes de la primera semana
-  const total = Math.ceil((diaSemana(primero) - 1 + diasMes) / 7) * 7
-  return Array.from({ length: total }, (_, i) => {
-    const fecha = sumarDias(inicio, i)
-    const d = porFecha.get(fecha)
+  return celdasMes(y, m).map((c) => {
+    const d = porFecha.get(c.fecha)
     return {
-      fecha,
-      dia: Number(fecha.slice(8, 10)),
-      fuera: fecha.slice(0, 7) !== `${y}-${mm}`,
+      ...c,
       abierto: !!d,
       libres: d ? d.turnos.filter((t) => t.estado === 'libre').length : 0,
       mia: d ? d.turnos.some((t) => t.estado === 'mia') : false,

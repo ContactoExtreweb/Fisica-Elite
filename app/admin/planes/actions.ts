@@ -76,6 +76,7 @@ export async function guardarPlan(_prev: EstadoPlan, formData: FormData): Promis
   revalidatePath('/admin/planes')
   if (planId) revalidatePath(`/admin/planes/${planId}`)
   revalidatePath('/precios')
+  revalidatePath('/') // el Inicio enseña los planes y va cacheado
   return { ok: true, id: planId ?? undefined }
 }
 
@@ -87,5 +88,6 @@ export async function borrarPlan(id: string): Promise<{ ok?: boolean; error?: st
   if (error) return { error: 'No se pudo borrar el plan' }
   revalidatePath('/admin/planes')
   revalidatePath('/precios')
+  revalidatePath('/')
   return { ok: true }
 }

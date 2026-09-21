@@ -2,6 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import NavPublica from '@/components/NavPublica'
 import FooterPublico from '@/components/FooterPublico'
+import ResenasPublicas from '@/components/ResenasPublicas'
+import { createPublicClient } from '@/lib/supabase/publico'
+import { resenasVisibles } from '@/lib/resenas'
+
+// Reseñas desde la BBDD, cacheadas; el admin las refresca al guardar
+// (revalidatePath en sus acciones).
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'Sobre nosotros',
@@ -16,7 +23,9 @@ const VALORES = [
   { t: 'Cerca de ti', d: 'Presencial en Cáceres y online para que la distancia no sea una excusa.' },
 ]
 
-export default function SobreNosotrosPage() {
+export default async function SobreNosotrosPage() {
+  const resenas = await resenasVisibles(createPublicClient())
+
   return (
     <>
       <NavPublica />
@@ -77,6 +86,9 @@ export default function SobreNosotrosPage() {
             ))}
           </div>
         </section>
+
+        {/* "Lo que nos importa" ya lleva el fondo alterno: sin él aquí */}
+        <ResenasPublicas resenas={resenas} alt={false} />
 
         <section className="cta-final">
           <div className="cta-final-inner">

@@ -1,0 +1,203 @@
+// Todos los ejercicios del alumno, agrupados por categoría. Antes vivía
+// en /inicio; se separó porque /inicio pasó a ser un panel ("continúa
+// por donde lo dejaste" + el siguiente ejercicio), y esta es la lista
+// completa a la que ese panel enlaza.
+//
+// No filtramos aquí por plan ni por tramo: la RLS de `ejercicios` ya
+// devuelve ÚNICAMENTE lo que este alumno puede ver (plan contratado +
+// su tramo, o todos los tramos si se le desbloquearon).
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import BotonLogout from '@/components/BotonLogout'
+import NavAlumno from '@/components/NavAlumno'
+import { contarNoLeidos } from '@/lib/no-leidos'
+
+export const metadata = { title: 'Ejercicios' }
+
+type Fila = {
+  id: string
+  slug: string | null
+  titulo: string
+  descripcion: string | null
+  video_id: string | null
+  orden: number
+  categoria_id: string
+  categorias_ejercicio: { nombre: string; orden: number } | { nombre: string; orden: number }[] | null
+}
+
+function rel<T>(x: T | T[] | null | undefined): T | undefined {
+  if (!x) return undefined
+  return Array.isArray(x) ? x[0] : x
+}
+
+export default async function EjerciciosPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const hoy = new Date().toISOString().slice(0, 10)
+
+  const [{ data: perfil }, { data: ejercicios }, { data: explicativos }, { data: subs }, noLeidos] =
+    await Promise.all([
+      supabase.from('profiles').select('nombre, apellidos, presencial').eq('id', user.id).single(),
+      supabase
+        .from('ejercicios')
+        .select(
+          'id, slug, titulo, descripcion, video_id, orden, categoria_id, categorias_ejercicio(nombre, orden)'
+        )
+        .eq('publicado', true)
+        .eq('explicativo', false) // los explicativos tienen su sección: /explicaciones
+        .order('orden'),
+      // Cuántas explicaciones hay por categoría, para enlazarlas desde la
+      // cabecera de cada bloque. La RLS filtra igual que la consulta de arriba.
+      supabase.from('ejercicios').select('categoria_id').eq('publicado', true).eq('explicativo', true),
+      supabase
+        .from('suscripciones')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('estado', 'activa')
+        .gte('fecha_fin', hoy)
+        .limit(1),
+      contarNoLeidos(),
+    ])
+
+  const tieneAcceso = (subs ?? []).length > 0
+
+  // Alumno SOLO presencial (paga en mano, sin plan online): no tiene
+  // ejercicios que ver, su sitio es el calendario de reservas.
+  if (perfil?.presencial && !tieneAcceso) redirect('/reservas')
+  const lista = (ejercicios ?? []) as Fila[]
+
+  const explPorCat = new Map<string, number>()
+  for (const e of explicativos ?? []) {
+    explPorCat.set(e.categoria_id, (explPorCat.get(e.categoria_id) ?? 0) + 1)
+  }
+
+  // Agrupar por categoría, respetando su orden
+  const grupos = new Map<string, { id: string; nombre: string; orden: number; ejercicios: Fila[] }>()
+  for (const e of lista) {
+    const c = rel(e.categorias_ejercicio)
+    if (!grupos.has(e.categoria_id)) {
+      grupos.set(e.categoria_id, {
+        id: e.categoria_id,
+        nombre: c?.nombre ?? 'Ejercicios',
+        orden: c?.orden ?? 999,
+        ejercicios: [],
+      })
+    }
+    grupos.get(e.categoria_id)!.ejercicios.push(e)
+  }
+  const categorias = [...grupos.values()].sort((a, b) => a.orden - b.orden)
+
+  const nombreCompleto = [perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ') || 'Alumno'
+  const iniciales =
+    ((perfil?.nombre ?? '').charAt(0) + (perfil?.apellidos ?? '').charAt(0)).toUpperCase() || 'FE'
+
+  return (
+    <div className="app">
+      <aside className="sidebar">
+        <div>
+          <div className="brand">
+            FÍSICAS<span className="accent">.</span>ELITE
+          </div>
+          <div className="brand-sub">Área del alumno</div>
+        </div>
+        <NavAlumno noLeidos={noLeidos} presencial={!!perfil?.presencial} />
+        <div className="sidebar-foot">
+          <div className="avatar">{iniciales}</div>
+          <div>
+            <div className="who">{nombreCompleto}</div>
+            <BotonLogout variante="texto" />
+          </div>
+        </div>
+      </aside>
+
+      <main className="main">
+        <div className="topbar-movil">
+          <div className="topbar-movil-marca">
+            FÍSICAS<span className="accent">.</span>ELITE
+          </div>
+          <BotonLogout variante="icono" />
+        </div>
+        <div className="al-cab">
+          <div>
+            <div className="al-saludo">Tu contenido</div>
+            <h1 className="al-titulo">
+              Tus <em>ejercicios.</em>
+            </h1>
+          </div>
+          <Link href="/inicio" className="al-perfil-link">
+            ← Inicio
+          </Link>
+        </div>
+
+        {!tieneAcceso ? (
+          <div className="al-vacio">
+            <div className="al-vacio-icono">🔒</div>
+            <h2>Tu acceso no está activo</h2>
+            <p>
+              En cuanto tu preparador active tu suscripción, aquí verás todos los ejercicios de lo
+              que tengas contratado.
+            </p>
+            <Link href="/chat" className="cta-primary">
+              Hablar con mi preparador
+            </Link>
+          </div>
+        ) : categorias.length === 0 ? (
+          <div className="al-vacio">
+            <div className="al-vacio-icono">💪</div>
+            <h2>Aún no hay ejercicios para ti</h2>
+            <p>
+              Tu preparador está preparando el contenido de tu nivel. En cuanto lo publique,
+              aparecerá aquí.
+            </p>
+            <Link href="/chat" className="cta-primary">
+              Hablar con mi preparador
+            </Link>
+          </div>
+        ) : (
+          categorias.map((cat) => (
+            <section key={cat.id} className="al-cat">
+              <div className="al-cat-cab">
+                <h2>{cat.nombre}</h2>
+                <span className="al-cat-num">
+                  {cat.ejercicios.length} {cat.ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}
+                </span>
+                {(explPorCat.get(cat.id) ?? 0) > 0 && (
+                  <Link href={`/explicaciones?cat=${cat.id}`} className="al-cat-expl">
+                    {explPorCat.get(cat.id)}{' '}
+                    {explPorCat.get(cat.id) === 1 ? 'explicación' : 'explicaciones'} →
+                  </Link>
+                )}
+              </div>
+              <div className="al-grid">
+                {cat.ejercicios.map((e) => (
+                  <Link key={e.id} href={`/ejercicio/${e.slug ?? e.id}`} className="al-card">
+                    <div className="al-card-media">
+                      {e.video_id ? (
+                        <span className="al-card-play">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className="al-card-sinvideo">Sin vídeo</span>
+                      )}
+                    </div>
+                    <div className="al-card-cuerpo">
+                      <h3>{e.titulo}</h3>
+                      {e.descripcion && <p>{e.descripcion}</p>}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))
+        )}
+      </main>
+    </div>
+  )
+}

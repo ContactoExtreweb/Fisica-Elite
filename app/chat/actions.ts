@@ -36,6 +36,36 @@ export async function obtenerOCrearConversacion(): Promise<string> {
   return creada.id
 }
 
+/**
+ * El ADMIN abre (o recupera) la conversación con un alumno concreto, y
+ * entra directamente en ella. Hasta la migración 024 solo el alumno podía
+ * crear su propia conversación, así que el preparador no tenía forma de
+ * escribir el primero: tenía que esperar a que el alumno le hablara.
+ */
+export async function abrirConversacionConAlumno(alumnoId: string) {
+  const { supabase } = await exigirAdmin()
+  if (!alumnoId) throw new Error('Falta el alumno')
+
+  const { data: existente } = await supabase
+    .from('conversaciones')
+    .select('id')
+    .eq('user_id', alumnoId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (existente) redirect(`/admin/chat/${existente.id}`)
+
+  const { data: creada, error } = await supabase
+    .from('conversaciones')
+    .insert({ user_id: alumnoId })
+    .select('id')
+    .single()
+
+  if (error || !creada) throw new Error('No se pudo abrir la conversación')
+  redirect(`/admin/chat/${creada.id}`)
+}
+
 export type EstadoChat = { error?: string }
 
 /** Envía un mensaje. autor_id = quien escribe (lo valida también la RLS). */

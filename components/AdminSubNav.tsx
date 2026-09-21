@@ -11,6 +11,7 @@ const TABS = [
   { href: '/admin/ejercicios', txt: 'Ejercicios' },
   { href: '/admin/categorias', txt: 'Categorías y tramos' },
   { href: '/admin/planes', txt: 'Planes y precios' },
+  { href: '/admin/resenas', txt: 'Reseñas' },
 ]
 
 export default function AdminSubNav() {

@@ -1,7 +1,13 @@
 'use client'
 
-// Cuestionario inicial: una pregunta por categoría contratada.
-// El control se adapta a la métrica de la categoría:
+// Cuestionario inicial: una pregunta por categoría contratada, más un
+// bloque final de datos físicos (peso, altura, con qué cuenta para
+// entrenar) — así el preparador los tiene desde el primer día, en vez de
+// depender de que el alumno pase luego por /perfil a rellenarlos.
+// Ese bloque final se puede OMITIR: no es obligatorio para empezar a
+// entrenar, y se puede rellenar más tarde desde /perfil.
+//
+// El control de cada categoría se adapta a su métrica:
 //  · repeticiones / distancia / peso → SLIDER (más = mejor)
 //  · tiempo → campo numérico (menos = mejor; un slider no encaja bien)
 // El alumno NO ve qué tramo se le asigna (así se pidió): solo su marca.
@@ -16,6 +22,12 @@ export type CategoriaCuestionario = {
   topeSlider: number // valor_max del tramo más alto + 50% (calculado en servidor)
 }
 
+export type DatosFisicos = {
+  peso_kg: number | null
+  altura_cm: number | null
+  facilidades: string | null
+}
+
 // Pregunta según la métrica
 const PREGUNTA: Record<string, string> = {
   repeticiones: '¿Cuántas repeticiones seguidas haces, siendo realista y sin forzar al máximo?',
@@ -28,8 +40,11 @@ const inicial: EstadoCuestionario = {}
 
 export default function CuestionarioInicial({
   categorias,
+  datosFisicos,
 }: {
   categorias: CategoriaCuestionario[]
+  /** Ya rellenos si el alumno repite la evaluación */
+  datosFisicos: DatosFisicos
 }) {
   const [estado, accion, pendiente] = useActionState(guardarCuestionario, inicial)
 
@@ -39,8 +54,12 @@ export default function CuestionarioInicial({
       categorias.map((c) => [c.id, c.metrica === 'tiempo' ? 0 : Math.round(c.topeSlider / 2)])
     )
   )
-
   const set = (id: string, v: number) => setValores((s) => ({ ...s, [id]: v }))
+
+  // El bloque de datos físicos empieza omitido solo si YA los tenía
+  // rellenos de antes (repitiendo evaluación); si no, se enseña abierto.
+  const yaTeniaDatos = !!(datosFisicos.peso_kg || datosFisicos.altura_cm || datosFisicos.facilidades)
+  const [omitirDatos, setOmitirDatos] = useState(false)
 
   if (estado.ok) {
     return (
@@ -49,7 +68,7 @@ export default function CuestionarioInicial({
         <h2>¡Listo!</h2>
         <p>Hemos preparado tu entrenamiento a tu medida. Ya puedes empezar.</p>
         <a href="/inicio" className="cta-primary">
-          Ir a mis ejercicios
+          Ir a mi entrenamiento
         </a>
       </div>
     )
@@ -129,6 +148,72 @@ export default function CuestionarioInicial({
           </p>
         </div>
       )}
+
+      {/* Datos físicos: opcionales, con la misma pinta que las preguntas
+          de arriba para que se sienta parte del mismo cuestionario. */}
+      <div className="cuest-bloque cuest-bloque-fisicos">
+        <div className="cuest-num">{String(categorias.length + 1).padStart(2, '0')}</div>
+        <div className="cuest-cuerpo">
+          <div className="cuest-cat">Tus datos</div>
+          <p className="cuest-pregunta" style={{ marginBottom: omitirDatos ? 0 : 22 }}>
+            Peso, altura y con qué cuentas para entrenar en casa. Ayudan a tu preparador a
+            ajustar tu plan — si no lo sabes ahora, puedes omitirlo y rellenarlo luego desde tu
+            perfil.
+          </p>
+
+          {omitirDatos ? (
+            <button
+              type="button"
+              className="cuest-omitido"
+              onClick={() => setOmitirDatos(false)}
+            >
+              Omitido — lo rellenarás desde tu perfil. <span>Volver a rellenarlo →</span>
+            </button>
+          ) : (
+            <>
+              <div className="cuest-fisicos-fila">
+                <div className="cuest-tiempo">
+                  <input
+                    type="number"
+                    name="peso_kg"
+                    min={20}
+                    max={300}
+                    step="0.1"
+                    inputMode="decimal"
+                    placeholder="Ej. 72"
+                    defaultValue={datosFisicos.peso_kg ?? ''}
+                  />
+                  <span className="cuest-unidad">kg</span>
+                </div>
+                <div className="cuest-tiempo">
+                  <input
+                    type="number"
+                    name="altura_cm"
+                    min={100}
+                    max={250}
+                    inputMode="decimal"
+                    placeholder="Ej. 178"
+                    defaultValue={datosFisicos.altura_cm ?? ''}
+                  />
+                  <span className="cuest-unidad">cm</span>
+                </div>
+              </div>
+              <textarea
+                name="facilidades"
+                rows={2}
+                className="cuest-textarea"
+                placeholder="Ej. Barra de dominadas, un par de mancuernas, espacio para correr cerca…"
+                defaultValue={datosFisicos.facilidades ?? ''}
+              />
+              {!yaTeniaDatos && (
+                <button type="button" className="cuest-omitir" onClick={() => setOmitirDatos(true)}>
+                  Prefiero omitir esto por ahora
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       {estado.error && <p className="form-error">{estado.error}</p>}
 

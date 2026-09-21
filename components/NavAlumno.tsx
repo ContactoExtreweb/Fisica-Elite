@@ -2,8 +2,9 @@
 
 // Nav del sidebar del alumno.
 //
-// Secciones: Inicio · Explicaciones · Reservar clase (solo presenciales) ·
-// Mi progreso · Pruebas reales · Chat · Suscripción · Mi perfil.
+// Secciones: Inicio · Ejercicios · Explicaciones · Reservar clase (solo
+// presenciales) · Mi progreso · Pruebas reales · Chat · Suscripción ·
+// Mi perfil.
 //
 // Un alumno SOLO presencial (paga en mano, sin plan online) ve un menú
 // reducido: Reservar clase · Chat · Suscripción · Mi perfil. Nada de
@@ -20,6 +21,14 @@ const ICONO = {
   inicio: (
     <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
       <path d="M3 12L12 4l9 8M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  ejercicios: (
+    <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
     </svg>
   ),
   explicaciones: (
@@ -106,6 +115,7 @@ export default function NavAlumno({
     ? [reservas, chat, suscripcion, perfil]
     : [
         { href: '/inicio', label: 'Inicio', icono: ICONO.inicio },
+        { href: '/ejercicios', label: 'Ejercicios', icono: ICONO.ejercicios },
         { href: '/explicaciones', label: 'Explicaciones', icono: ICONO.explicaciones },
         ...(presencial ? [reservas] : []),
         { href: '/registro', label: 'Mi progreso', icono: ICONO.progreso },

@@ -151,8 +151,8 @@ export default async function ExplicacionesPage({
               Tu preparador irá subiendo vídeos con la técnica de cada movimiento. En cuanto
               publique alguno de tus categorías, aparecerá aquí.
             </p>
-            <Link href="/inicio" className="cta-primary">
-              Ir a mi entrenamiento
+            <Link href="/ejercicios" className="cta-primary">
+              Ir a mis ejercicios
             </Link>
           </div>
         ) : (

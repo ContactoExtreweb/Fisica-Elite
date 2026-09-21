@@ -1014,6 +1014,15 @@ BUNNY_TOKEN_AUTH_KEY=             ← SECRETA (firma de los embeds)
 # Resend
 RESEND_API_KEY=                   ← SECRETA
 
+# Asistente virtual (chatbot). Opcional: sin estas variables no se muestra.
+# Migración 029 aplicada antes de activarlo (límites de uso). Ver lib/asistente/.
+NEXT_PUBLIC_ASISTENTE=on          ← interruptor del botón y de lo que dice la privacidad
+                                    (se incrusta en el build: redesplegar al cambiarla)
+ASISTENTE_API_URL=                ← base de una API tipo OpenAI, sin la ruta final
+                                    (p. ej. https://api.mistral.ai/v1)
+ASISTENTE_API_KEY=                ← SECRETA
+ASISTENTE_MODEL=                  ← nombre del modelo, tal como lo llama el proveedor
+
 # App
 NEXT_PUBLIC_SITE_URL=             ← cambia al poner el dominio real
 ```

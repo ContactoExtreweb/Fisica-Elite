@@ -1,8 +1,12 @@
-// Lista de ejercicios v2: filtrable por categoría, muestra tramo,
-// oposiciones marcadas, vídeo y estado de publicación.
+// Lista de ejercicios v2, en tarjetas agrupadas por categoría (como las
+// ve el propio alumno en /inicio) en vez de una tabla plana: de un
+// vistazo se ve qué tiene vídeo, qué está sin publicar y a qué
+// oposiciones cuenta cada uno. Filtrable por categoría y por
+// explicativos.
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import AdminSubNav from '@/components/AdminSubNav'
+import FiltroEjercicios from '@/components/FiltroEjercicios'
 
 const ETIQ_CORTA: Record<string, string> = {
   policia_local: 'P. Local',
@@ -19,6 +23,20 @@ function rel<T>(x: T | T[] | null | undefined): T | undefined {
   return Array.isArray(x) ? x[0] : x
 }
 
+type Ejercicio = {
+  id: string
+  titulo: string
+  slug: string | null
+  publicado: boolean
+  explicativo: boolean
+  video_id: string | null
+  categoria_id: string
+  categorias_ejercicio: { nombre: string; orden: number } | { nombre: string; orden: number }[] | null
+  tramos: { nombre: string } | { nombre: string }[] | null
+  ejercicio_oposiciones: { especialidad: string }[] | null
+  ejercicio_faqs: { count: number }[] | null
+}
+
 export default async function AdminEjerciciosPage({
   searchParams,
 }: {
@@ -31,7 +49,7 @@ export default async function AdminEjerciciosPage({
   let consulta = supabase
     .from('ejercicios')
     .select(
-      'id, titulo, slug, publicado, explicativo, orden, video_id, categoria_id, tramo_id, categorias_ejercicio(nombre), tramos(nombre), ejercicio_oposiciones(especialidad), ejercicio_faqs(count)'
+      'id, titulo, slug, publicado, explicativo, orden, video_id, categoria_id, tramo_id, categorias_ejercicio(nombre, orden), tramos(nombre), ejercicio_oposiciones(especialidad), ejercicio_faqs(count)'
     )
     .order('orden')
     .order('titulo')
@@ -48,15 +66,71 @@ export default async function AdminEjerciciosPage({
     return <p className="form-error">Error cargando ejercicios: {error.message}</p>
   }
 
-  const lista = ejercicios ?? []
+  const lista = (ejercicios ?? []) as Ejercicio[]
 
-  // Enlaces de los chips: la categoría y "solo explicativos" se combinan
-  const href = (c?: string, expl?: boolean) => {
-    const p = new URLSearchParams()
-    if (c) p.set('cat', c)
-    if (expl) p.set('tipo', 'explicativos')
-    const q = p.toString()
-    return `/admin/ejercicios${q ? `?${q}` : ''}`
+  // Agrupados por categoría, en SU orden — salvo que ya se haya filtrado
+  // a una sola categoría, que entonces sobra el agrupado.
+  const grupos = new Map<string, { nombre: string; orden: number; items: Ejercicio[] }>()
+  for (const e of lista) {
+    const c = rel(e.categorias_ejercicio)
+    if (!grupos.has(e.categoria_id)) {
+      grupos.set(e.categoria_id, { nombre: c?.nombre ?? 'Sin categoría', orden: c?.orden ?? 999, items: [] })
+    }
+    grupos.get(e.categoria_id)!.items.push(e)
+  }
+  const seccionesAgrupadas = cat ? null : [...grupos.values()].sort((a, b) => a.orden - b.orden)
+
+  const tarjeta = (e: Ejercicio) => {
+    const nFaqs = e.ejercicio_faqs?.[0]?.count ?? 0
+    const tramoNombre = rel(e.tramos)?.nombre
+    const opos = (e.ejercicio_oposiciones ?? []).map((o) => o.especialidad)
+    return (
+      <Link key={e.id} href={`/admin/ejercicios/${e.id}`} className="ej-card">
+        <div className="ej-card-top">
+          {e.publicado ? (
+            <span className="status-pill">
+              <span className="dot" /> Publicado
+            </span>
+          ) : (
+            <span className="status-pill bad">
+              <span className="dot" /> Borrador
+            </span>
+          )}
+          {e.explicativo && <span className="ej-tag-expl">Explicativo</span>}
+        </div>
+
+        <div className="ej-card-media">
+          {e.video_id ? (
+            <span className="ej-card-play">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+          ) : (
+            <span className="ej-card-sinvideo">Sin vídeo</span>
+          )}
+        </div>
+
+        <div className="ej-card-body">
+          <h3>{e.titulo}</h3>
+          <div className="ej-card-meta">
+            {e.explicativo ? 'Todos los tramos' : tramoNombre ? `Tramo ${tramoNombre}` : 'Todos los tramos'}
+            {nFaqs > 0 && ` · ${nFaqs} pregunta${nFaqs === 1 ? '' : 's'}`}
+          </div>
+          <div className="ej-card-opos">
+            {opos.length === 0 ? (
+              <span className="tag-opos vacia">Sin oposición marcada</span>
+            ) : (
+              opos.map((o) => (
+                <span key={o} className="tag-opos">
+                  {ETIQ_CORTA[o] ?? o}
+                </span>
+              ))
+            )}
+          </div>
+        </div>
+      </Link>
+    )
   }
 
   return (
@@ -80,31 +154,10 @@ export default async function AdminEjerciciosPage({
 
       <AdminSubNav />
 
-      {/* Filtro por categoría + "solo explicativos" (se combinan) */}
-      <div className="chips-filtro">
-        <Link href={href(undefined, soloExpl)} className={`chip-filtro ${!cat ? 'activo' : ''}`}>
-          Todas
-        </Link>
-        {(categorias ?? []).map((c) => (
-          <Link
-            key={c.id}
-            href={href(c.id, soloExpl)}
-            className={`chip-filtro ${cat === c.id ? 'activo' : ''}`}
-          >
-            {c.nombre}
-          </Link>
-        ))}
-        <Link
-          href={href(cat, !soloExpl)}
-          className={`chip-filtro chip-filtro-expl ${soloExpl ? 'activo' : ''}`}
-          title="Solo los vídeos de técnica marcados como explicativos"
-        >
-          Solo explicativos
-        </Link>
-      </div>
+      <FiltroEjercicios categorias={categorias ?? []} catActual={cat} soloExplActual={soloExpl} />
 
-      <div className="admin-section">
-        {lista.length === 0 ? (
+      {lista.length === 0 ? (
+        <div className="admin-section">
           <div className="admin-tabla-vacia">
             {soloExpl
               ? 'No hay ejercicios explicativos todavía. Se marcan con el interruptor «Ejercicio explicativo» de la ficha.'
@@ -112,76 +165,22 @@ export default async function AdminEjerciciosPage({
                 ? 'No hay ejercicios en esta categoría todavía.'
                 : 'Aún no hay ejercicios. Crea el primero.'}
           </div>
-        ) : (
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Ejercicio</th>
-                <th>Categoría · Tramo</th>
-                <th>Oposiciones</th>
-                <th>Vídeo</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lista.map((e) => {
-                const nFaqs = e.ejercicio_faqs?.[0]?.count ?? 0
-                const catNombre = rel(e.categorias_ejercicio)?.nombre ?? '—'
-                const tramoNombre = rel(e.tramos)?.nombre
-                const opos = (e.ejercicio_oposiciones ?? []).map(
-                  (o: { especialidad: string }) => o.especialidad
-                )
-                return (
-                  <tr key={e.id}>
-                    <td>
-                      <Link href={`/admin/ejercicios/${e.id}`} className="name name-link">
-                        {e.titulo}
-                      </Link>
-                      <div className="sub">
-                        /{e.slug ?? '—'}
-                        {nFaqs > 0 && ` · ${nFaqs} pregunta${nFaqs === 1 ? '' : 's'}`}
-                      </div>
-                    </td>
-                    <td>
-                      {catNombre}
-                      <div className="sub">
-                        {e.explicativo
-                          ? 'Explicativo · todos los tramos'
-                          : tramoNombre
-                            ? `Tramo ${tramoNombre}`
-                            : 'Todos los tramos'}
-                      </div>
-                    </td>
-                    <td>
-                      {opos.length === 0 ? (
-                        <span className="tag-opos vacia">Sin marcar</span>
-                      ) : (
-                        opos.map((o: string) => (
-                          <span key={o} className="tag-opos">
-                            {ETIQ_CORTA[o] ?? o}
-                          </span>
-                        ))
-                      )}
-                    </td>
-                    <td>{e.video_id ? '✓' : '—'}</td>
-                    <td>
-                      {e.publicado ? (
-                        <span className="status-pill">
-                          <span className="dot"></span> Publicado
-                        </span>
-                      ) : (
-                        <span className="status-pill bad">
-                          <span className="dot"></span> Borrador
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+        </div>
+      ) : seccionesAgrupadas ? (
+        seccionesAgrupadas.map((g) => (
+          <section key={g.nombre} className="al-cat">
+            <div className="al-cat-cab">
+              <h2>{g.nombre}</h2>
+              <span className="al-cat-num">
+                {g.items.length} {g.items.length === 1 ? 'ejercicio' : 'ejercicios'}
+              </span>
+            </div>
+            <div className="ej-grid">{g.items.map(tarjeta)}</div>
+          </section>
+        ))
+      ) : (
+        <div className="ej-grid">{lista.map(tarjeta)}</div>
+      )}
     </>
   )
 }

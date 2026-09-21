@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Syne, Manrope, Instrument_Serif } from 'next/font/google'
 import './globals.css'
+import AsistenteChat from '@/components/AsistenteChat'
 
 // Las mismas fuentes del mockup, self-hosted por next/font
 // (sin peticiones a Google en producción, sin salto de layout).
@@ -53,7 +54,11 @@ export default function RootLayout({
       lang="es"
       className={`${syne.variable} ${manrope.variable} ${instrument.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Asistente virtual: se decide dentro por ruta y por NEXT_PUBLIC_ASISTENTE */}
+        <AsistenteChat />
+      </body>
     </html>
   )
 }

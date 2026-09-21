@@ -56,7 +56,12 @@ export default function NavPublica() {
               className="nav-pub-logo"
               priority
             />
-            FÍSICAS<span>.</span>ÉLITE
+            {/* En UN solo span: la marca es un flex con gap, y sin envolver el
+                texto cada trozo ("FÍSICAS", ".", "ÉLITE") se separaba con ese
+                hueco y el nombre salía ancho y partido. */}
+            <span className="nav-pub-nombre">
+              FÍSICAS<span>.</span>ÉLITE
+            </span>
           </Link>
 
           <nav className="nav-pub-links">

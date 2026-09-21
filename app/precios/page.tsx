@@ -4,8 +4,8 @@
 // Es una página PÚBLICA: se sirve con el cliente normal (anon). La RLS de
 // 'planes' solo deja leer los activos, así que un plan desactivado no se
 // puede ni ver ni comprar. No hace falta service_role para nada.
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import NavPublica from '@/components/NavPublica'
 import FormularioPrecios from '@/components/FormularioPrecios'
 import { planesALaVenta } from '@/lib/planes'
 
@@ -25,27 +25,25 @@ export default async function PreciosPage() {
   const planes = await planesALaVenta(supabase)
 
   return (
-    <div className="precios-pagina">
-      <header className="precios-header">
-        <Link href="/" className="brand">
-          FÍSICAS<span className="accent">.</span>ELITE
-        </Link>
-        <Link href="/login" className="precios-login-link">
-          Ya soy alumno →
-        </Link>
-      </header>
+    <>
+      {/* La misma barra que el resto de la web pública: desde aquí se
+          puede volver al inicio, a Oposiciones, etc., y "Acceder" cubre el
+          "Ya soy alumno" que había antes. */}
+      <NavPublica />
 
-      <div className="precios-hero">
-        <h1>
-          Empieza tu <em>preparación.</em>
-        </h1>
-        <p>
-          Elige el plan que necesitas y cuántos meses quieres. Tu preparador
-          validará el alta y te dará acceso personalmente.
-        </p>
+      <div className="precios-pagina">
+        <div className="precios-hero">
+          <h1>
+            Empieza tu <em>preparación.</em>
+          </h1>
+          <p>
+            Elige el plan que necesitas y cuántos meses quieres. Tu preparador
+            validará el alta y te dará acceso personalmente.
+          </p>
+        </div>
+
+        <FormularioPrecios planes={planes} />
       </div>
-
-      <FormularioPrecios planes={planes} />
-    </div>
+    </>
   )
 }

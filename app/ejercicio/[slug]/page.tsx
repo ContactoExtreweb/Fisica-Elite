@@ -53,6 +53,21 @@ export default async function FichaEjercicioAlumno({
     data: { user },
   } = await supabase.auth.getUser()
 
+  // "Continúa por donde lo dejaste" en /inicio: se apunta aquí, SOLO en
+  // ejercicios de entrenamiento (los explicativos son técnica suelta,
+  // no forman parte del recorrido). Best-effort: si falla, no rompe la
+  // ficha del ejercicio por algo que no es crítico.
+  if (!ejercicio.explicativo) {
+    try {
+      await supabase
+        .from('profiles')
+        .update({ ultimo_ejercicio_id: id, ultimo_ejercicio_visto_at: new Date().toISOString() })
+        .eq('id', user!.id)
+    } catch {
+      // se ignora: la migración 025 puede no estar aplicada aún
+    }
+  }
+
   // Datos para el sidebar completo (mismo shell que el resto del área)
   const [{ data: perfilSidebar }, noLeidos] = await Promise.all([
     supabase.from('profiles').select('nombre, apellidos, presencial').eq('id', user!.id).single(),
@@ -138,7 +153,7 @@ export default async function FichaEjercicioAlumno({
 
         <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginBottom: 24 }}>
           <Link
-            href={ejercicio.explicativo ? '/explicaciones' : '/inicio'}
+            href={ejercicio.explicativo ? '/explicaciones' : '/ejercicios'}
             style={{ color: 'var(--ink-muted)', fontWeight: 500 }}
           >
             {ejercicio.explicativo ? '← Volver a explicaciones' : '← Volver a mis ejercicios'}
