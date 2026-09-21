@@ -21,6 +21,7 @@ type Ejercicio = {
   orden: number
   publicado: boolean
   explicativo?: boolean
+  tambien_suelto?: boolean
 }
 
 type Categoria = { id: string; nombre: string }
@@ -45,6 +46,7 @@ export default function EjercicioForm({ ejercicio }: { ejercicio?: Ejercicio }) 
   const [tramoSel, setTramoSel] = useState(ejercicio?.tramo_id ?? '')
   const [explicativo, setExplicativo] = useState(ejercicio?.explicativo ?? false)
   const [opos, setOpos] = useState<string[]>([])
+  const [tambienSuelto, setTambienSuelto] = useState(ejercicio?.tambien_suelto ?? false)
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
@@ -214,12 +216,39 @@ export default function EjercicioForm({ ejercicio }: { ejercicio?: Ejercicio }) 
                 )
               })}
             </div>
-            <span className="ff-hint">Puede ser varias, o ninguna. El alumno solo lo ve en la temática marcada.</span>
+            <span className="ff-hint">
+              {opos.length === 0
+                ? 'Sin oposición marcada es contenido SUELTO: lo ven su plan de categoría y el pack completo.'
+                : 'Marcado para una oposición: lo ve quien tenga el plan de esa oposición.'}
+            </span>
             {/* Envío real de los valores marcados */}
             {opos.map((v) => (
               <input key={v} type="hidden" name="oposiciones" value={v} />
             ))}
           </div>
+
+          {/* Solo tiene sentido con alguna oposición marcada: sin ninguna, el
+              ejercicio ya es suelto. Ver migración 033. */}
+          {opos.length > 0 && (
+            <div className="ff-field">
+              <label>Planes sueltos</label>
+              <label className="ff-switch">
+                <input
+                  type="checkbox"
+                  name="tambien_suelto"
+                  checked={tambienSuelto}
+                  onChange={(e) => setTambienSuelto(e.target.checked)}
+                />
+                <span className="ff-switch-track"><span className="ff-switch-thumb" /></span>
+                <span className="ff-switch-txt">También en planes sueltos y pack completo</span>
+              </label>
+              <span className="ff-hint">
+                {tambienSuelto
+                  ? 'Lo ven los de la oposición marcada, los del plan de su categoría y los del pack completo.'
+                  : 'Solo lo ven los alumnos con el plan de la oposición marcada. El pack completo NO lo incluye.'}
+              </span>
+            </div>
+          )}
         </div>
       </section>
 

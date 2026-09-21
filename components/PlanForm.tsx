@@ -172,7 +172,9 @@ export default function PlanForm({
 
           {tipo === 'completo' && (
             <p className="ff-hint" style={{ marginTop: 0 }}>
-              Este plan da acceso a <strong>todos</strong> los ejercicios de la plataforma.
+              Este plan da acceso a todos los ejercicios <strong>sueltos</strong> de todas las
+              categorías. Los marcados para una oposición NO entran, salvo los que lleven la
+              casilla «También en planes sueltos y pack completo».
             </p>
           )}
 

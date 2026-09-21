@@ -42,11 +42,17 @@ export async function guardarEjercicio(
   // guarda SIEMPRE sin tramo: una explicación vale para todos.
   const explicativo = formData.get('explicativo') === 'on'
 
+  // Un ejercicio con oposición marcada es SOLO de esa oposición, salvo que el
+  // preparador lo meta también en los planes sueltos y el pack completo
+  // (migración 033). Sin oposición marcada ya es suelto, la casilla no aplica.
+  const tambien_suelto = oposiciones.length > 0 && formData.get('tambien_suelto') === 'on'
+
   const datos = {
     titulo,
     slug: texto('slug') || null, // el trigger de BBDD lo genera/normaliza
     categoria_id,
     explicativo,
+    tambien_suelto,
     tramo_id: explicativo ? null : texto('tramo_id') || null, // vacío = visible en todos los tramos
     descripcion: texto('descripcion') || null,
     tecnica: texto('tecnica') || null,

@@ -86,11 +86,15 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
 
 ### En espera (depende del cliente o de terceros)
 
-1. **Separar contenido de oposición del individual (9.4). SIGUE ABIERTO.**
-   `cubierto_por_plan` no se ha tocado: un plan `completo` da acceso a todo,
-   también a los ejercicios marcados para una oposición. Hoy no hay planes de
-   oposición a la venta, así que no hay fuga, pero la habrá en cuanto los haya.
-   Hay que decidirlo con el cliente (opciones A/B/C en 9.4) antes de tocar nada.
+1. **Separar contenido de oposición del individual (9.4): RESUELTO** (migración 033,
+   22/09/2026). Decisión del cliente: los planes de oposición son un producto aparte;
+   los sueltos van por categoría y el pack completo incluye todo lo suelto. Regla:
+   ejercicio **sin oposición marcada = suelto** (su plan de categoría + completo);
+   **con oposición marcada = solo ese plan de oposición**, salvo que lleve la casilla
+   «También en planes sueltos y pack completo» (`ejercicios.tambien_suelto`). Las
+   suscripciones antiguas sin plan siguen viéndolo todo. La misma migración obliga a
+   que las FAQ de un ejercicio solo las lea quien ve el ejercicio. **Falta** la prueba
+   con tres alumnos (punto 6) y revisar el texto del plan completo en el admin.
 2. **Datos del titular y de contacto en `lib/legal.ts` (`DATOS`).** Mientras
    estén como PENDIENTE, las páginas legales los enseñan resaltados en amarillo
    y **el teléfono y el correo públicos NO se muestran** (sale de
@@ -112,7 +116,8 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
    para los scripts de Next y permitir Bunny, Supabase y Stripe; una a medias
    rompería el vídeo o los pagos.
 6. **Prueba de seguridad del contenido de pago** con tres alumnos: uno con plan
-   suelto, uno con Completo y uno con oposición (ver 9.4).
+   suelto, uno con Completo y uno con oposición. Con un ejercicio suelto, uno «solo
+   oposición» y uno con la casilla de sueltos, cada alumno debe ver exactamente lo suyo.
 
 ### Asistente virtual (`lib/asistente/`, `app/api/asistente`, `components/AsistenteChat.tsx`)
 
@@ -185,7 +190,9 @@ reservas presenciales · 023 actividad y recordatorios · 024 el admin abre chat
 028 dos reseñas más · 029 límites del asistente · 030 traza de reembolsos ·
 031 el formulario de contacto solo por el servidor (**aplicar DESPUÉS de
 desplegar el código**, no antes) · 032 fechas de acceso en horario de Madrid (cambia
-las funciones de acceso leyendo su definición; comprueba al final que salga `true`).
+las funciones de acceso leyendo su definición; comprueba al final que salga `true`) ·
+033 separar contenido de oposición y suelto + FAQ solo para quien ve el ejercicio
+(**aplicar ANTES de desplegar el código**).
 
 ---
 
@@ -807,8 +814,8 @@ Tras una reunión con el cliente se cambió el modelo: **fuera los niveles
 ## 9. Qué FALTA — y esto es lo que hay que entregar
 
 > ⚠️ **Del 18 de agosto. Ya hecho:** 9.1, 9.2, 9.3, 9.5 (falta solo producción),
-> 9.6 (rebranding y web pública), 9.7 (Pruebas reales). **Sigue abierto:** 9.4 y
-> 9.8. El estado real está en la sección 0 bis.
+> 9.6 (rebranding y web pública), 9.7 (Pruebas reales), 9.4 (migración 033).
+> **Sigue abierto:** 9.8. El estado real está en la sección 0 bis.
 
 > Ordenado por prioridad real. Los puntos 9.1 a 9.4 son **correcciones
 > pendientes que el cliente ya ha señalado**: hay que hacerlas sí o sí.
@@ -863,6 +870,9 @@ Esto **está muy ligado a la Fase 5 (pagos)**: conviene hacerlas juntas,
 porque contratar un plan nuevo implica pasar por Stripe.
 
 ### 9.4 🔴 CRÍTICO: separar contenido de oposición del contenido individual
+
+> ✅ **Resuelto el 22/09/2026** con una variante de la opción A (ver 0 bis y la
+> migración 033). Lo de abajo se deja como historia de la decisión.
 
 **Este es el punto más importante que queda, y hay que resolverlo ANTES de
 montar los pagos.**

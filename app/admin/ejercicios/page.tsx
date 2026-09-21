@@ -29,6 +29,7 @@ type Ejercicio = {
   slug: string | null
   publicado: boolean
   explicativo: boolean
+  tambien_suelto: boolean | null
   video_id: string | null
   categoria_id: string
   categorias_ejercicio: { nombre: string; orden: number } | { nombre: string; orden: number }[] | null
@@ -49,7 +50,7 @@ export default async function AdminEjerciciosPage({
   let consulta = supabase
     .from('ejercicios')
     .select(
-      'id, titulo, slug, publicado, explicativo, orden, video_id, categoria_id, tramo_id, categorias_ejercicio(nombre, orden), tramos(nombre), ejercicio_oposiciones(especialidad), ejercicio_faqs(count)'
+      'id, titulo, slug, publicado, explicativo, tambien_suelto, orden, video_id, categoria_id, tramo_id, categorias_ejercicio(nombre, orden), tramos(nombre), ejercicio_oposiciones(especialidad), ejercicio_faqs(count)'
     )
     .order('orden')
     .order('titulo')
@@ -118,14 +119,24 @@ export default async function AdminEjerciciosPage({
             {nFaqs > 0 && ` · ${nFaqs} pregunta${nFaqs === 1 ? '' : 's'}`}
           </div>
           <div className="ej-card-opos">
+            {/* A qué planes pertenece (migración 033): suelto = su plan de
+                categoría y el pack completo; con oposición = solo ese plan,
+                salvo que lleve la casilla «también en sueltos». */}
             {opos.length === 0 ? (
-              <span className="tag-opos vacia">Sin oposición marcada</span>
+              <span className="tag-opos suelto">Suelto · categoría y completo</span>
             ) : (
-              opos.map((o) => (
-                <span key={o} className="tag-opos">
-                  {ETIQ_CORTA[o] ?? o}
-                </span>
-              ))
+              <>
+                {opos.map((o) => (
+                  <span key={o} className="tag-opos">
+                    {ETIQ_CORTA[o] ?? o}
+                  </span>
+                ))}
+                {e.tambien_suelto ? (
+                  <span className="tag-opos suelto">+ sueltos y completo</span>
+                ) : (
+                  <span className="tag-opos solo">Solo oposición</span>
+                )}
+              </>
             )}
           </div>
         </div>

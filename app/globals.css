@@ -4265,6 +4265,9 @@ img {
   margin: 2px 4px 2px 0;
 }
 .tag-opos.vacia { background: var(--bg-alt); color: var(--ink-muted); }
+/* Migración 033: suelto (planes de categoría y completo) o solo de oposición */
+.tag-opos.suelto { background: #E3F4E8; color: #1F7A3D; }
+.tag-opos.solo { background: #FBE6DC; color: #9A3412; }
 
 /* Selector de oposiciones en el formulario de ejercicio */
 .opos-checks { display: flex; flex-wrap: wrap; gap: 10px; }

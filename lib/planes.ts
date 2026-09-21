@@ -80,7 +80,7 @@ export async function planesALaVenta(
         let descripcionExtra: string | null = descripcion
 
         if (p.tipo === 'completo') {
-          cubre = descripcion ?? 'Todas las categorías de entrenamiento de la plataforma.'
+          cubre = descripcion ?? 'Todos los ejercicios de todas las categorías de entrenamiento.'
           descripcionExtra = null
         } else if (p.tipo === 'oposicion') {
           cubre =

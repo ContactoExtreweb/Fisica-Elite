@@ -2,7 +2,8 @@
 //
 // Reglas del modelo v2:
 //   · suscripción sin plan (compat v1) -> acceso completo
-//   · plan 'completo'                  -> todas las categorías activas
+//   · plan 'completo'                  -> todas las categorías activas (dentro
+//                                         de ellas solo ve lo SUELTO: migr. 033)
 //   · plan 'ejercicio'                 -> las categorías de ese plan
 //   · plan 'oposicion'                 -> las categorías con ejercicios
 //                                         marcados para esa oposición
