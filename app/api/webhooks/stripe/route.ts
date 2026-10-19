@@ -13,13 +13,15 @@
 //  6. Si guardar en BBDD falla, LANZAR el error: el catch borra el registro
 //     de idempotencia y responde 500, y Stripe reintenta. Tragarse el error
 //     deja el pago cobrado y el acceso sin dar, en silencio.
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { headers } from 'next/headers'
 import type Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { esOposicionValida } from '@/lib/oposiciones'
 import { hoyMadrid, sumarMeses } from '@/lib/fechas'
+import { avisarAdmins, avisoAdminSolicitud, avisoAdminRenovacion } from '@/lib/avisos'
+import { euros } from '@/lib/planes'
 
 export const runtime = 'nodejs'
 
@@ -78,9 +80,11 @@ export async function POST(request: Request) {
           // Alumno con cuenta que renueva un plan o contrata otro desde
           // /suscripcion: acceso al instante, sin solicitud.
           await pagoDeAlumnoDesdeSesion(admin, session)
+          after(() => avisarRenovacion(admin, session))
         } else {
           // Alta nueva: creamos la solicitud para que un admin la tramite.
           await crearSolicitudDesdeSesion(admin, session)
+          after(() => avisarSolicitudNueva(admin, session))
         }
       }
     } else if (event.type === 'charge.refunded') {
@@ -356,4 +360,62 @@ async function retirarAccesoPorDevolucion(
     )
     .eq('id', fila.id)
   if (error) throw error
+}
+
+// --- Avisos al preparador -------------------------------------------
+//
+// Van con after(): ya se ha respondido 2xx a Stripe, así que ni el correo ni
+// OneSignal pueden provocar un reintento del pago. Las dos funciones se tragan
+// sus propios errores por el mismo motivo.
+
+/** Alguien ha pagado un alta nueva y espera a que el preparador la tramite. */
+async function avisarSolicitudNueva(
+  admin: ReturnType<typeof createAdminClient>,
+  session: Stripe.Checkout.Session
+) {
+  try {
+    const m = session.metadata ?? {}
+    const quien =
+      [m.nombre, m.apellidos].filter(Boolean).join(' ').trim() ||
+      m.email ||
+      session.customer_email ||
+      'Alguien'
+    let plan: string | null = null
+    if (m.plan_id) {
+      const { data } = await admin.from('planes').select('nombre').eq('id', m.plan_id).maybeSingle()
+      plan = data?.nombre ?? null
+    }
+    const centimos = Number(m.importe_centimos)
+    const importe =
+      Number.isFinite(centimos) && centimos > 0 ? euros(Math.round(centimos)) : null
+    await avisarAdmins(avisoAdminSolicitud(quien, plan, importe))
+  } catch (e) {
+    console.error('[webhook] no se pudo avisar de la solicitud nueva', e)
+  }
+}
+
+/** Un alumno con cuenta ha renovado o contratado otro plan. */
+async function avisarRenovacion(
+  admin: ReturnType<typeof createAdminClient>,
+  session: Stripe.Checkout.Session
+) {
+  try {
+    const m = session.metadata ?? {}
+    const meses = Math.min(24, Math.max(1, Number(m.meses) || 1))
+    const { data: perfil } = await admin
+      .from('profiles')
+      .select('nombre, apellidos')
+      .eq('id', String(m.user_id))
+      .maybeSingle()
+    let plan: string | null = null
+    if (m.plan_id) {
+      const { data } = await admin.from('planes').select('nombre').eq('id', m.plan_id).maybeSingle()
+      plan = data?.nombre ?? null
+    }
+    const quien =
+      [perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ').trim() || 'Un alumno'
+    await avisarAdmins(avisoAdminRenovacion(quien, plan, meses))
+  } catch (e) {
+    console.error('[webhook] no se pudo avisar de la renovación', e)
+  }
 }

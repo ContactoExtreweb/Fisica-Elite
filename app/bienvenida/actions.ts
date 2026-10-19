@@ -178,7 +178,10 @@ export async function guardarPerfil(
   // sabría si es "no" o "este formulario no lo tiene".
   const avisos =
     formData.get('avisos_en_form') === '1'
-      ? { recordatorios_email: formData.get('recordatorios_email') === 'on' }
+      ? {
+          recordatorios_email: formData.get('recordatorios_email') === 'on',
+          avisos_email: formData.get('avisos_email') === 'on',
+        }
       : {}
 
   const { error } = await supabase

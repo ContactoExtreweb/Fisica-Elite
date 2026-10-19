@@ -14,10 +14,36 @@ export function hoyMadrid(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())
 }
 
+/** La hora de Madrid ahora mismo, 'HH:MM'. */
+export function horaMadrid(): string {
+  return new Intl.DateTimeFormat('es-ES', {
+    timeZone: 'Europe/Madrid',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date())
+}
+
 /** Suma días a una fecha ISO (negativo = restar). */
 export function sumarDias(fechaISO: string, dias: number): string {
   const [y, m, d] = fechaISO.split('-').map(Number)
   return new Date(Date.UTC(y, m - 1, d + dias)).toISOString().slice(0, 10)
+}
+
+/** 'yyyy-mm-dd' → "7 de octubre" (o "7 de octubre de 2027" si es de otro año). */
+export function fechaLarga(fechaISO: string, hoy = hoyMadrid()): string {
+  const [y, m, d] = fechaISO.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    ...(String(y) === hoy.slice(0, 4) ? {} : { year: 'numeric' }),
+    timeZone: 'UTC',
+  })
+}
+
+/** 'HH:MM:SS' o 'HH:MM' → "10:00" */
+export function horaCorta(hora: string): string {
+  return hora.slice(0, 5)
 }
 
 /**

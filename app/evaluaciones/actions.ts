@@ -15,6 +15,13 @@
 // La API key de Bunny no sale del servidor en ningún momento: al
 // navegador solo le llega una firma temporal para ESE vídeo concreto.
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
+import {
+  prepararAvisosAdmins,
+  entregarAvisos,
+  avisoAdminPrueba,
+  type AvisoListo,
+} from '@/lib/avisos'
 import { exigirUsuario } from '@/lib/autorizacion'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { categoriasContratadas } from '@/lib/acceso'
@@ -172,6 +179,12 @@ export async function confirmarEvaluacion(
     return { error: 'No se pudo registrar la prueba. Inténtalo de nuevo.' }
   }
 
+  // El preparador tiene que enterarse de que hay una prueba esperando
+  // corrección. Las consultas van dentro de la petición (usan la sesión del
+  // alumno); solo el envío se queda para after().
+  const avisos = await avisoDeSubida(supabase, user.id, categoriaId)
+  if (avisos.length > 0) after(() => entregarAvisos(avisos))
+
   revalidatePath('/evaluaciones')
   return { ok: true }
 }
@@ -217,4 +230,25 @@ export async function borrarEvaluacionPendiente(
 
   revalidatePath('/evaluaciones')
   return { ok: true }
+}
+
+/** Nombre del alumno y de la categoría, para el aviso al preparador. */
+async function avisoDeSubida(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+  categoriaId: string
+): Promise<AvisoListo[]> {
+  try {
+    const [{ data: perfil }, { data: cat }] = await Promise.all([
+      supabase.from('profiles').select('nombre, apellidos').eq('id', userId).single(),
+      supabase.from('categorias_ejercicio').select('nombre').eq('id', categoriaId).single(),
+    ])
+    const quien =
+      [perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ').trim() || 'Un alumno'
+    return await prepararAvisosAdmins(avisoAdminPrueba(quien, cat?.nombre ?? null))
+  } catch (e) {
+    console.error('[evaluaciones] no se pudo preparar el aviso', e)
+    return []
+  }
 }

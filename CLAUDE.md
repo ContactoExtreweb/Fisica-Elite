@@ -5,8 +5,8 @@
 > pegarlo entero en Claude y que entienda el proyecto sin necesitar nada más.
 >
 > **Escrito por:** Saúl Correyero Pañero (desarrollador hasta ahora), con
-> ayuda de Claude, el 18 de agosto de 2026. **Actualizado el 21 de septiembre
-> de 2026: ver la sección 0 bis, que es el estado real.**
+> ayuda de Claude, el 18 de agosto de 2026. **Actualizado el 19 de octubre de
+> 2026: ver la sección 0 bis, que es el estado real.**
 >
 > La fecha de entrega comprometida (1 de septiembre) ya pasó. Las secciones 8, 9
 > y 10 son del 18 de agosto y están **superadas** por la 0 bis.
@@ -28,7 +28,7 @@ decisiones tomadas y muchas trampas ya pisadas; repetirlas cuesta días.
 
 ---
 
-## 0 bis. ACTUALIZACIÓN DEL 21 DE SEPTIEMBRE DE 2026 — LEE ESTO PRIMERO
+## 0 bis. ACTUALIZACIÓN DEL 19 DE OCTUBRE DE 2026 — LEE ESTO PRIMERO
 
 > El resto de este manual se escribió el 18 de agosto. **Casi todo lo que
 > allí figura como pendiente ya está hecho**, y desde entonces se añadieron
@@ -37,8 +37,36 @@ decisiones tomadas y muchas trampas ya pisadas; repetirlas cuesta días.
 
 ### Estado en una frase
 
-El código está **terminado**. Lo que queda depende del cliente o de
-terceros (dominio, datos fiscales, cobros en real): ver «En espera».
+La plataforma está **entregada y aprobada por el cliente** (reunión del 17 de
+octubre de 2026). De esa reunión salieron cuatro encargos nuevos: ver
+«Encargos de la reunión del 17 de octubre». Lo demás sigue dependiendo del
+cliente o de terceros (dominio, datos fiscales, cobros en real).
+
+### Encargos de la reunión del 17 de octubre de 2026
+
+1. **Gráficas de evolución en «Mi progreso»** — ✅ HECHO (19/10/2026).
+   `components/EvolucionMarcas.tsx`: pestañas por categoría, línea con la mejor
+   marca, y mejor marca / nº de marcas / diferencia desde la primera. Sin
+   librería de gráficas: SVG estirado con los puntos colocados en % encima, para
+   no tener que medir el contenedor con JS ni escalar el texto en el móvil.
+2. **Tablas que vienen en CSV**, para que el alumno rellene lo que hoy rellena
+   en una hoja de cálculo, pero guiado — ⏸ **BLOQUEADO**: faltan los CSV de
+   ejemplo del cliente. Sin ver uno real no se puede decidir si cada fila es un
+   día, una semana o un ejercicio, ni qué celdas rellena el alumno.
+3. **Avisos por correo y notificaciones push** — ✅ HECHO (19/10/2026).
+   Quince avisos, al alumno y al preparador: ver «Avisos» abajo. **Falta** que
+   el cliente cree la cuenta de OneSignal y se pongan sus dos variables en
+   Vercel. De paso se taparon dos agujeros que no eran de avisos: los mensajes
+   del formulario de contacto no se veían en ninguna parte (ahora hay
+   `/admin/mensajes`, enlazado desde el Dashboard) y bloquear un turno no
+   cancelaba las reservas que ya había, así que el alumno se presentaba a una
+   clase que no existía.
+4. **Traducir la web y la app a euskera y catalán** — ⏳ PENDIENTE. Decisión ya
+   tomada con el cliente: se traduce **solo la interfaz**; el contenido que
+   escribe el preparador (ejercicios, técnica, FAQ, planes, reseñas) se queda en
+   castellano, para no obligarle a redactarlo todo tres veces. Es el encargo más
+   grande de los cuatro: ~169 archivos. El euskera lo tiene que revisar un
+   nativo antes de publicarlo.
 
 ### Hecho desde el 18 de agosto
 
@@ -94,7 +122,7 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
    «También en planes sueltos y pack completo» (`ejercicios.tambien_suelto`). Las
    suscripciones antiguas sin plan siguen viéndolo todo. La misma migración obliga a
    que las FAQ de un ejercicio solo las lea quien ve el ejercicio. **Falta** la prueba
-   con tres alumnos (punto 6) y revisar el texto del plan completo en el admin.
+   con tres alumnos (punto 7) y revisar el texto del plan completo en el admin.
 2. **Datos del titular y de contacto en `lib/legal.ts` (`DATOS`).** Mientras
    estén como PENDIENTE, las páginas legales los enseñan resaltados en amarillo
    y **el teléfono y el correo públicos NO se muestran** (sale de
@@ -106,18 +134,90 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
    los eventos `checkout.session.completed` y `charge.refunded`**: sin el segundo, una
    devolución hecha en Stripe no retira el acceso); Supabase
    Pro; `NEXT_PUBLIC_SITE_URL` con el dominio (sitemap y metadatos salen de ahí).
-4. **Asistente:** usar el endpoint de la UE de Mistral (`https://api.eu.mistral.ai/v1`,
+4. **Notificaciones push:** crear la cuenta de OneSignal (gratis), dar de alta el
+   sitio y poner en Vercel `NEXT_PUBLIC_ONESIGNAL_APP_ID` (Config) y
+   `ONESIGNAL_REST_API_KEY` (Secret). Hasta entonces la caja de «Avisos en el
+   móvil» de `/perfil` no se ve y los avisos salen solo por correo. **Ojo con dos
+   cosas:** en iPhone el push solo funciona si el alumno añade la web a la
+   pantalla de inicio (por eso existe `app/manifest.ts`), y OneSignal trata los
+   datos en **EE. UU.**, así que es el único encargado fuera de la UE del
+   proyecto: ya sale en la política de privacidad (`lib/legal.ts → PUSH_ACTIVO`),
+   pero conviene que el cliente lo sepa.
+5. **Asistente:** usar el endpoint de la UE de Mistral (`https://api.eu.mistral.ai/v1`,
    **no** `api.mistral.ai`: el global no se compromete a ningún lugar de
    procesamiento; ver `lib/legal.ts`), comprobar que el modelo elegido existe ahí, aceptar
    su DPA y valorar pasar al plan de pago con tope de gasto (el gratuito es «para
    pruebas»). Rellenar la ficha de `ASISTENTE` en `lib/legal.ts` si cambia de
    proveedor.
-5. **Content-Security-Policy:** no puesta a propósito. Hecha bien necesita nonces
+6. **Content-Security-Policy:** no puesta a propósito. Hecha bien necesita nonces
    para los scripts de Next y permitir Bunny, Supabase y Stripe; una a medias
    rompería el vídeo o los pagos.
-6. **Prueba de seguridad del contenido de pago** con tres alumnos: uno con plan
+7. **Prueba de seguridad del contenido de pago** con tres alumnos: uno con plan
    suelto, uno con Completo y uno con oposición. Con un ejercicio suelto, uno «solo
    oposición» y uno con la casilla de sueltos, cada alumno debe ver exactamente lo suyo.
+
+### Avisos (`lib/avisos.ts`, `lib/avisos-diarios.ts`)
+
+Todos los avisos de la plataforma salen de aquí, por **correo** (Resend) y por
+**notificación push** (OneSignal). Son quince.
+
+**Al alumno:**
+
+| Aviso | Lo dispara |
+|---|---|
+| Mensaje del preparador | `enviarMensaje` (`app/chat/actions.ts`), solo en el **primer** mensaje sin leer de esa parte (una ráfaga de tres = un aviso) |
+| Clase presencial de mañana | tarea diaria, reservas de `hoy + 1` |
+| Acceso que se acaba (7 días) | tarea diaria, `fecha_fin = hoy + 7`, y solo si no le queda acceso por otro plan |
+| Prueba real corregida | `corregirEvaluacion`, solo la primera vez (si estaba `pendiente`) |
+| Se abre el plazo de pruebas | tarea diaria, a quien tenga contratada esa categoría |
+| El plazo se cierra (3 días) | tarea diaria, solo a quien **no** haya subido su vídeo |
+| Su clase se ha cancelado | `cancelarReservaAdmin` y `bloquear` (`app/admin/reservas/actions.ts`) |
+| Bienvenida **con sus credenciales** | `procesarSolicitud` |
+| Solicitud rechazada (y devolución) | `rechazarSolicitud` y `rechazarYReembolsar` |
+| Lleva días sin entrar | tarea diaria (`lib/recordatorios.ts`, interruptor aparte) |
+
+**Al preparador** (antes no le llegaba nada):
+
+| Aviso | Lo dispara |
+|---|---|
+| Un alumno te escribe | `enviarMensaje`, misma regla del primer mensaje sin leer |
+| Un alumno sube su prueba real | `confirmarEvaluacion` (`app/evaluaciones/actions.ts`) |
+| **Solicitud de alta pagada** | el webhook de Stripe. Es el más importante: hay dinero cobrado y alguien esperando |
+| Mensaje del formulario de contacto | `enviarContacto`, con el texto dentro |
+| Una renovación cobrada | el webhook de Stripe |
+| Un alumno cancela su clase | `cancelarTurno` (`app/reservas/actions.ts`) |
+
+- **Consentimiento:** el correo, con `profiles.avisos_email` (migración 034).
+  El alumno lo cambia en `/perfil` y el preparador en el Dashboard. Es aparte
+  del de inactividad a propósito. El push, con el permiso del navegador.
+- **En los avisos NO va el contenido**: ni el texto del mensaje del chat ni el
+  de la corrección, solo «tienes algo nuevo» y el enlace. Se leen en pantallas
+  ajenas. Las dos excepciones son a propósito: el mensaje de contacto (es
+  público y es lo único que hay que leer) y la contraseña de la bienvenida.
+- **La contraseña del alta va DENTRO del correo de bienvenida**, por decisión
+  del cliente (19/10/2026). Es de un solo uso: `must_change_password` obliga a
+  cambiarla al entrar, y el correo lo dice.
+- **Avisar al preparador necesita `service_role`**: lo disparan acciones del
+  alumno, y un alumno no puede leer el perfil del preparador por RLS. Está
+  encapsulado en `prepararAvisosAdmins()`, que solo lee nombre y correo.
+- **Lo que se hace después de responder va con `after()` de `next/server`, y
+  dentro NO se toca Supabase**: el cliente de servidor va con las cookies de la
+  petición. Por eso los avisos se **preparan** (consultas) dentro de la acción y
+  solo el envío a Resend y OneSignal se deja para `after()`.
+- **El push no tiene tabla propia**: la suscripción vive en OneSignal, que
+  identifica a cada uno por su id de la plataforma (`OneSignal.login()` en
+  `components/AvisosPush.tsx` → `external_id` al mandar).
+- **Un aviso nunca puede romper la acción que lo dispara.** Si Resend u
+  OneSignal fallan, se escribe en el log y se sigue.
+- **El diseño de TODOS los correos está en `lib/email.ts → htmlCorreo`.** El de
+  inactividad también. No montes otra plantilla.
+- **Los avisos que van a mucha gente a la vez** (los plazos de pruebas) dejan
+  rastro en `avisos_enviados` (migración 035): Resend admite ~2 correos por
+  segundo y la tarea diaria solo tiene 60 s, así que si no caben todos se sigue
+  mañana por donde se quedó, sin repetirle el aviso a nadie.
+- **Probar sin esperar a mañana:**
+  `GET /api/cron/inactividad?simular=1` con la cabecera
+  `Authorization: Bearer <CRON_SECRET>` dice a quién se avisaría, sin mandar nada.
 
 ### Asistente virtual (`lib/asistente/`, `app/api/asistente`, `components/AsistenteChat.tsx`)
 
@@ -178,6 +278,24 @@ eslint sin errores en todo el proyecto, `.claude/` en `.gitignore`.
 - **Las tablas de escritura pública** (hoy ninguna) deben ir por el servidor con
   límite de uso, no con una política RLS `with check (true)`: la clave anónima
   viaja en el navegador y cualquiera puede llamar a la API directamente.
+- **Bloquear un turno NO cancela las reservas por sí solo.** En el calendario
+  del alumno «mía» gana a «bloqueado» (`lib/reservas.ts`), así que seguiría
+  viendo su reserva como buena. Por eso `bloquear` llama a `cancelarReservasDe`,
+  que cancela las futuras y avisa a cada alumno. Si tocas esa parte, no la
+  quites.
+- **En iPhone, el push web solo existe si la web está instalada** (añadida a la
+  pantalla de inicio). No es un fallo del código ni se puede saltar: es de Apple.
+  Por eso hay `app/manifest.ts` con `display: 'standalone'`, y por eso
+  `AvisosPush` enseña las instrucciones en vez del botón cuando detecta un iPhone
+  en una pestaña normal.
+- **`/OneSignalSDKWorker.js` y `/manifest.webmanifest` van en RUTAS_PUBLICAS.**
+  El `matcher` del proxy solo deja fuera imágenes y `_next`, así que sin eso el
+  navegador recibiría un 307 a `/login` al re-descargar el service worker y daría
+  la suscripción por rota.
+- **Lo que se hace después de responder va con `after()` de `next/server`, y
+  dentro NO se toca Supabase.** El cliente de servidor va con las cookies de la
+  petición. Por eso los avisos se preparan (consultas) dentro de la acción y solo
+  la llamada a Resend y OneSignal se deja para `after()`.
 - **La URL del sitio sale de `lib/site.ts`** (`NEXT_PUBLIC_SITE_URL`). No la
   escribas a mano en ningún archivo.
 
@@ -192,7 +310,10 @@ reservas presenciales · 023 actividad y recordatorios · 024 el admin abre chat
 desplegar el código**, no antes) · 032 fechas de acceso en horario de Madrid (cambia
 las funciones de acceso leyendo su definición; comprueba al final que salga `true`) ·
 033 separar contenido de oposición y suelto + FAQ solo para quien ve el ejercicio
-(**aplicar ANTES de desplegar el código**).
+(**aplicar ANTES de desplegar el código**) · 034 interruptor de los avisos por
+correo (`profiles.avisos_email`; **aplicar con el despliegue**: hasta que esté,
+los avisos nuevos no salen ni por correo ni por push) · 035 rastro de avisos ya
+enviados (`avisos_enviados`, para los avisos que van a mucha gente a la vez).
 
 ---
 
@@ -1211,6 +1332,12 @@ ASISTENTE_API_URL=                ← base de una API tipo OpenAI, sin la ruta f
                                     (Mistral: https://api.eu.mistral.ai/v1, el de la UE)
 ASISTENTE_API_KEY=                ← SECRETA
 ASISTENTE_MODEL=                  ← nombre del modelo, tal como lo llama el proveedor
+
+# Notificaciones push (OneSignal). Opcional: sin estas variables no se ve la
+# caja de "Avisos en el móvil" del perfil y los avisos salen solo por correo.
+NEXT_PUBLIC_ONESIGNAL_APP_ID=   ← el App ID del panel de OneSignal (es público,
+                                  va en el navegador). En Vercel, tipo Config.
+ONESIGNAL_REST_API_KEY=         ← SECRETA (OneSignal → Keys & IDs). En Vercel, Secret.
 
 # App
 NEXT_PUBLIC_SITE_URL=             ← cambia al poner el dominio real

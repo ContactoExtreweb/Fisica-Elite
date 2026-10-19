@@ -4,8 +4,17 @@
 // solo puede escribir en SU conversación; un admin, en cualquiera.
 // El envío en tiempo real lo hace Realtime al detectar el INSERT.
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { redirect } from 'next/navigation'
 import { exigirUsuario, exigirAdmin } from '@/lib/autorizacion'
+import {
+  prepararAviso,
+  prepararAvisosAdmins,
+  entregarAvisos,
+  avisoMensaje,
+  avisoAdminMensaje,
+  type AvisoListo,
+} from '@/lib/avisos'
 
 /**
  * Devuelve la conversación abierta del alumno o crea una si no tiene.
@@ -108,7 +117,70 @@ export async function enviarMensaje(
     .single()
 
   if (error || !data) return { ok: false, error: 'No se pudo enviar el mensaje' }
+
+  // Aviso a la otra parte (correo y push), en los dos sentidos. Las
+  // consultas van AQUÍ, dentro de la petición, porque usan la sesión; lo
+  // que se deja para after() es solo hablar con Resend y OneSignal, que es
+  // lo lento y no debe hacer esperar al chat.
+  const pendientes = await avisosDeMensaje(supabase, conversacionId, user.id)
+  if (pendientes.length > 0) after(() => entregarAvisos(pendientes))
+
   return { ok: true, mensaje: data }
+}
+
+/**
+ * Prepara el aviso de "mensaje nuevo" para la OTRA parte: si escribe el
+ * preparador, para el alumno; si escribe el alumno, para el preparador.
+ *
+ * Solo avisa con el PRIMER mensaje sin leer de esa parte: así una ráfaga de
+ * tres mensajes seguidos es un aviso y no tres.
+ */
+async function avisosDeMensaje(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  conversacionId: string,
+  autorId: string
+): Promise<AvisoListo[]> {
+  try {
+    const { data: conv } = await supabase
+      .from('conversaciones')
+      .select('user_id')
+      .eq('id', conversacionId)
+      .single()
+    if (!conv) return []
+    const alumnoId = conv.user_id as string
+    const escribeElAlumno = alumnoId === autorId
+
+    // ¿Había ya mensajes sin leer de esta misma parte? El que se acaba de
+    // insertar ya cuenta, así que más de uno = ya se avisó antes.
+    const consulta = supabase
+      .from('mensajes')
+      .select('id', { count: 'exact', head: true })
+      .eq('conversacion_id', conversacionId)
+      .eq('leido', false)
+    const { count } = await (escribeElAlumno
+      ? consulta.eq('autor_id', alumnoId)
+      : consulta.neq('autor_id', alumnoId))
+    if ((count ?? 0) > 1) return []
+
+    if (!escribeElAlumno) {
+      const uno = await prepararAviso(supabase, alumnoId, avisoMensaje)
+      return uno ? [uno] : []
+    }
+
+    // Escribe el alumno: al preparador le llega con su nombre.
+    const { data: perfil } = await supabase
+      .from('profiles')
+      .select('nombre, apellidos')
+      .eq('id', alumnoId)
+      .single()
+    const quien =
+      [perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ').trim() || 'Un alumno'
+    return await prepararAvisosAdmins(avisoAdminMensaje(quien))
+  } catch (e) {
+    console.error('[chat] no se pudo preparar el aviso', e)
+    return []
+  }
 }
 
 /**

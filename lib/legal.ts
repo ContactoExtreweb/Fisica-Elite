@@ -97,6 +97,17 @@ export function asistentePendiente(): boolean {
   return ASISTENTE.activo && (estaPendiente(ASISTENTE.proveedor) || estaPendiente(ASISTENTE.donde))
 }
 
+/**
+ * Notificaciones push (OneSignal). Igual que el asistente: solo aparecen en
+ * las páginas legales si están configuradas de verdad.
+ *
+ * ⚠️ OneSignal es una empresa de EE. UU. y trata los datos allí (en el plan
+ * gratuito no hay alojamiento en la UE). Es el único encargado fuera de la
+ * UE del proyecto, así que tiene que salir en la política de privacidad tal
+ * cual. Si algún día se cambia de proveedor, se toca aquí.
+ */
+export const PUSH_ACTIVO = Boolean(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID)
+
 type Encargado = { nombre: string; para: string; donde: string; web: string | null }
 
 /**
@@ -135,6 +146,16 @@ export const ENCARGADOS: Encargado[] = [
     donde: 'Unión Europea (Irlanda)',
     web: 'https://resend.com/legal/privacy-policy',
   },
+  ...(PUSH_ACTIVO
+    ? [
+        {
+          nombre: 'OneSignal',
+          para: 'Envío de las notificaciones al móvil o al navegador, solo si las activas. Recibe el identificador que te asigna tu navegador y tu identificador de alumno, no tu nombre ni tu correo',
+          donde: 'Estados Unidos (transferencia amparada en cláusulas contractuales tipo)',
+          web: 'https://onesignal.com/privacy_policy',
+        },
+      ]
+    : []),
   ...(ASISTENTE.activo
     ? [
         {
@@ -181,6 +202,15 @@ export const DATOS_TRATADOS = [
     campos:
       'Los planes contratados y las fechas de acceso. El pago lo procesa Stripe: los datos de tu tarjeta no pasan por nuestros servidores ni los guardamos.',
   },
+  ...(PUSH_ACTIVO
+    ? [
+        {
+          grupo: 'Notificaciones en el móvil',
+          campos:
+            'Si las activas, guardamos en OneSignal el identificador que te asigna tu navegador para poder mandártelas, junto a tu identificador de alumno. No se manda el contenido de los mensajes ni de las correcciones, solo un aviso de que hay algo nuevo. Puedes desactivarlas desde los ajustes de tu navegador en cualquier momento.',
+        },
+      ]
+    : []),
   ...(ASISTENTE.activo
     ? [
         {

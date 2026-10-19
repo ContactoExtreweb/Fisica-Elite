@@ -4,16 +4,73 @@
 // días, y guardar horario/aforo. Todas empiezan con exigirAdmin().
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 import { exigirAdmin } from '@/lib/autorizacion'
 import { aMinutos, aHora, DIAS } from '@/lib/reservas'
+import { hoyMadrid, horaMadrid } from '@/lib/fechas'
+import {
+  prepararAviso,
+  entregarAvisos,
+  avisoClaseCancelada,
+  type AvisoListo,
+} from '@/lib/avisos'
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/
 const HORA = /^\d{2}:\d{2}$/
 
-function refrescar(fecha?: string): never | void {
+function refrescar(fecha?: string, canceladas = 0): never | void {
   revalidatePath('/admin/reservas')
   revalidatePath('/reservas')
-  if (fecha) redirect(`/admin/reservas?fecha=${fecha}`)
+  if (fecha) {
+    const extra = canceladas > 0 ? `&canceladas=${canceladas}` : ''
+    redirect(`/admin/reservas?fecha=${fecha}${extra}`)
+  }
+}
+
+/**
+ * Cancela las reservas ACTIVAS y FUTURAS de un rango y deja preparado el
+ * aviso para cada alumno. Lo usan el bloqueo de un turno y el de un día
+ * entero: si no se cancelan, el alumno sigue viendo su reserva como buena
+ * (en el calendario "mía" gana a "bloqueado") y se planta allí para nada.
+ */
+async function cancelarReservasDe(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  fecha: string,
+  desde: string | null,
+  hasta: string | null,
+  motivo: string | null
+): Promise<AvisoListo[]> {
+  const avisos: AvisoListo[] = []
+  try {
+    let consulta = supabase
+      .from('reservas')
+      .select('id, user_id, fecha, hora')
+      .eq('fecha', fecha)
+      .eq('estado', 'activa')
+    if (desde && hasta) consulta = consulta.gte('hora', desde).lt('hora', hasta)
+    const { data } = await consulta
+
+    const hoy = hoyMadrid()
+    const ahora = horaMadrid()
+    for (const r of data ?? []) {
+      // Las clases que ya han pasado se quedan como están: cancelarlas no
+      // arregla nada y avisar de ellas solo confunde.
+      const futura = r.fecha > hoy || (r.fecha === hoy && String(r.hora).slice(0, 5) > ahora)
+      if (!futura) continue
+      const { error } = await supabase.rpc('cancelar_reserva', { p_id: r.id })
+      if (error) continue
+      const aviso = await prepararAviso(
+        supabase,
+        r.user_id,
+        avisoClaseCancelada(r.fecha, String(r.hora), motivo)
+      )
+      if (aviso) avisos.push(aviso)
+    }
+  } catch (e) {
+    console.error('[reservas] no se pudieron cancelar las reservas del bloqueo', e)
+  }
+  return avisos
 }
 
 /** Cancela cualquier reserva (la función de BBDD ya sabe que somos admin). */
@@ -22,7 +79,25 @@ export async function cancelarReservaAdmin(formData: FormData) {
   const id = String(formData.get('id') ?? '')
   const fecha = String(formData.get('fecha') ?? '')
   if (!id) return
-  await supabase.rpc('cancelar_reserva', { p_id: id })
+
+  // De quién y de cuándo era, antes de tocarla.
+  const { data: reserva } = await supabase
+    .from('reservas')
+    .select('user_id, fecha, hora')
+    .eq('id', id)
+    .maybeSingle()
+
+  const { error } = await supabase.rpc('cancelar_reserva', { p_id: id })
+  if (error) return
+
+  if (reserva) {
+    const aviso = await prepararAviso(
+      supabase,
+      reserva.user_id,
+      avisoClaseCancelada(reserva.fecha, String(reserva.hora), null)
+    )
+    if (aviso) after(() => entregarAvisos([aviso]))
+  }
   refrescar(FECHA.test(fecha) ? fecha : undefined)
 }
 
@@ -49,7 +124,13 @@ export async function bloquear(formData: FormData) {
   await supabase
     .from('bloqueos_reservas')
     .insert({ fecha, hora_inicio, hora_fin, motivo, created_by: user.id })
-  refrescar(fecha)
+
+  // Bloquear solo impide reservas NUEVAS. Las que ya había hay que
+  // cancelarlas y avisar, o el alumno se presenta a una clase que no existe.
+  const avisos = await cancelarReservasDe(supabase, fecha, hora_inicio, hora_fin, motivo)
+  if (avisos.length > 0) after(() => entregarAvisos(avisos))
+
+  refrescar(fecha, avisos.length)
 }
 
 export async function desbloquear(formData: FormData) {

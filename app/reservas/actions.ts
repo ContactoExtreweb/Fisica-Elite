@@ -7,7 +7,9 @@
 // pasada, antelación, tope diario y aforo con candado. Aquí solo se
 // valida la forma de los datos y se traduce el error.
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { exigirUsuario } from '@/lib/autorizacion'
+import { prepararAvisosAdmins, entregarAvisos, avisoAdminCancelacion } from '@/lib/avisos'
 
 type Resultado = { ok: boolean; error?: string }
 
@@ -39,11 +41,33 @@ export async function reservarTurno(fecha: string, hora: string): Promise<Result
 }
 
 export async function cancelarTurno(id: string): Promise<Resultado> {
-  const { supabase } = await exigirUsuario()
+  const { supabase, user } = await exigirUsuario()
   if (!id) return { ok: false, error: 'Reserva no válida' }
+
+  // Hay que leer el turno ANTES de cancelarlo: después ya no se sabe de
+  // cuándo era la clase que ha soltado.
+  const { data: reserva } = await supabase
+    .from('reservas')
+    .select('fecha, hora')
+    .eq('id', id)
+    .maybeSingle()
 
   const { error } = await supabase.rpc('cancelar_reserva', { p_id: id })
   if (error) return { ok: false, error: mensaje(error) }
+
+  if (reserva) {
+    const { data: perfil } = await supabase
+      .from('profiles')
+      .select('nombre, apellidos')
+      .eq('id', user.id)
+      .maybeSingle()
+    const quien =
+      [perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ').trim() || 'Un alumno'
+    const avisos = await prepararAvisosAdmins(
+      avisoAdminCancelacion(quien, reserva.fecha, reserva.hora)
+    )
+    if (avisos.length > 0) after(() => entregarAvisos(avisos))
+  }
 
   revalidatePath('/reservas')
   revalidatePath('/admin/reservas')

@@ -16,12 +16,15 @@ export default function PerfilForm({
   altura,
   facilidades,
   recordatorios,
+  avisos,
 }: {
   peso: number | null
   altura: number | null
   facilidades: string | null
   /** Recibir el correo si lleva días sin entrar */
   recordatorios: boolean
+  /** Recibir por correo los avisos de la plataforma (migración 034) */
+  avisos: boolean
 }) {
   const [estado, accion, pendiente] = useActionState(guardarPerfil, inicial)
 
@@ -92,19 +95,33 @@ export default function PerfilForm({
       <div className="cuest-bloque">
         <div className="cuest-num">02</div>
         <div className="cuest-cuerpo">
-          <div className="cuest-cat">Avisos</div>
-          <p className="cuest-pregunta">Un empujón cuando más falta hace. Solo si tienes un plan activo.</p>
+          <div className="cuest-cat">Avisos por correo</div>
+          <p className="cuest-pregunta">
+            Qué quieres que te llegue al email. Las notificaciones del móvil se activan
+            aparte, justo debajo de este formulario.
+          </p>
 
           <input type="hidden" name="avisos_en_form" value="1" />
-          <label className="ff-switch">
-            <input type="checkbox" name="recordatorios_email" defaultChecked={recordatorios} />
-            <span className="ff-switch-track">
-              <span className="ff-switch-thumb" />
-            </span>
-            <span className="ff-switch-txt">
-              Avisarme por email si llevo {DIAS_INACTIVIDAD} días sin entrar
-            </span>
-          </label>
+          <div className="cuest-avisos">
+            <label className="ff-switch">
+              <input type="checkbox" name="avisos_email" defaultChecked={avisos} />
+              <span className="ff-switch-track">
+                <span className="ff-switch-thumb" />
+              </span>
+              <span className="ff-switch-txt">
+                Avisarme de mensajes, clases, correcciones y del fin de mi acceso
+              </span>
+            </label>
+            <label className="ff-switch">
+              <input type="checkbox" name="recordatorios_email" defaultChecked={recordatorios} />
+              <span className="ff-switch-track">
+                <span className="ff-switch-thumb" />
+              </span>
+              <span className="ff-switch-txt">
+                Darme un toque si llevo {DIAS_INACTIVIDAD} días sin entrar
+              </span>
+            </label>
+          </div>
         </div>
       </div>
 

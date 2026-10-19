@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { hoyMadrid, sumarDias } from '@/lib/fechas'
+import AvisosPush from '@/components/AvisosPush'
+import AvisosAdmin from '@/components/AvisosAdmin'
 
 const NOMBRE_ESPECIALIDAD: Record<string, string> = {
   policia_local: 'Policía Local',
@@ -51,6 +53,18 @@ export default async function AdminDashboardPage() {
   const supabase = await createClient()
   const { saludo, fecha } = saludoYFecha()
 
+  // Para las notificaciones push: OneSignal identifica al preparador por su
+  // id, igual que a los alumnos. El layout ya ha comprobado que es admin.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const usuarioId = user?.id ?? ''
+  const { data: miPerfil } = await supabase
+    .from('profiles')
+    .select('avisos_email')
+    .eq('id', usuarioId)
+    .maybeSingle()
+
   const hoy = hoyMadrid()
   const hace30 = fechaEnDias(-30).toISOString()
   const en7dias = sumarDias(hoy, 7)
@@ -62,6 +76,7 @@ export default async function AdminDashboardPage() {
     { count: totalEjercicios },
     { count: altasUltimoMes },
     { data: proximasCaducar },
+    { count: contactosSinAtender },
   ] = await Promise.all([
     // Alumnos con su especialidad (para total y desglose por oposición)
     supabase.from('profiles').select('especialidad').eq('rol', 'alumno'),
@@ -92,6 +107,11 @@ export default async function AdminDashboardPage() {
       .gte('fecha_fin', hoy)
       .lte('fecha_fin', en7dias)
       .order('fecha_fin', { ascending: true }),
+    // Mensajes del formulario de contacto sin atender
+    supabase
+      .from('mensajes_contacto')
+      .select('id', { count: 'exact', head: true })
+      .eq('leido', false),
   ])
 
   const listaAlumnos = alumnos ?? []
@@ -244,7 +264,20 @@ export default async function AdminDashboardPage() {
           <Link href="/admin/alumnos/nuevo">Dar de alta un alumno →</Link>
           <Link href="/admin/ejercicios">Gestionar ejercicios →</Link>
           <Link href="/admin/solicitudes">Ver solicitudes →</Link>
+          <Link href="/admin/mensajes">
+            Mensajes de contacto
+            {(contactosSinAtender ?? 0) > 0 ? ` (${contactosSinAtender} sin atender)` : ''} →
+          </Link>
         </div>
+      </div>
+
+      <div className="admin-section">
+        <div className="admin-section-head">
+          <h3>Tus avisos</h3>
+        </div>
+        <AvisosAdmin activo={miPerfil?.avisos_email ?? true} />
+        {/* Si OneSignal no está configurado, esto no pinta nada. */}
+        <AvisosPush userId={usuarioId} />
       </div>
     </>
   )

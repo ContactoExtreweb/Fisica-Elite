@@ -31,9 +31,13 @@ function finDeMes(mes: string): string {
 export default async function AdminReservasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ fecha?: string; mes?: string }>
+  searchParams: Promise<{ fecha?: string; mes?: string; canceladas?: string }>
 }) {
-  const { fecha: fechaPedida, mes: mesPedido } = await searchParams
+  const { fecha: fechaPedida, mes: mesPedido, canceladas } = await searchParams
+  // Al bloquear un turno o un día se cancelan las reservas que hubiera y se
+  // avisa a esos alumnos: aquí se dice cuántas, que es una acción con
+  // consecuencias y el preparador tiene que verlo.
+  const canceladasN = Math.max(0, parseInt(canceladas ?? '', 10) || 0)
   const hoy = hoyMadrid()
   const fecha = fechaPedida && FECHA.test(fechaPedida) ? fechaPedida : hoy
   const mes = mesPedido && MES.test(mesPedido) ? mesPedido : fecha.slice(0, 7)
@@ -112,6 +116,14 @@ export default async function AdminReservasPage({
           </Link>
         </div>
       </div>
+
+      {canceladasN > 0 && (
+        <p className="rsv-aviso">
+          Se {canceladasN === 1 ? 'ha cancelado' : 'han cancelado'} <strong>{canceladasN}</strong>{' '}
+          {canceladasN === 1 ? 'reserva' : 'reservas'} de ese turno y se{' '}
+          {canceladasN === 1 ? 'ha avisado al alumno' : 'ha avisado a cada alumno'}.
+        </p>
+      )}
 
       <div className="rsv-panel">
         {/* Calendario mensual: pulsa un día para ver su agenda */}

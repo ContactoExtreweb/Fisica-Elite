@@ -5,7 +5,9 @@
 // La RLS de 'evaluaciones' (migración 014) solo deja ACTUALIZAR a los
 // admin, así que basta con el cliente normal: no hace falta service_role.
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { exigirAdmin } from '@/lib/autorizacion'
+import { prepararAviso, entregarAviso, avisoEvaluacion } from '@/lib/avisos'
 
 export type ResultadoCorreccion = { ok?: boolean; error?: string }
 
@@ -21,6 +23,14 @@ export async function corregirEvaluacion(
     return { error: 'Escribe la corrección antes de marcarla como revisada.' }
   }
 
+  // De quién es y cómo estaba ANTES: solo se avisa al alumno la primera vez
+  // que se corrige, no cada vez que el preparador retoca el texto.
+  const { data: antes } = await supabase
+    .from('evaluaciones')
+    .select('user_id, estado')
+    .eq('id', id)
+    .single()
+
   const { error } = await supabase
     .from('evaluaciones')
     .update({
@@ -31,6 +41,11 @@ export async function corregirEvaluacion(
     .eq('id', id)
 
   if (error) return { error: 'No se pudo guardar la corrección' }
+
+  if (antes?.estado === 'pendiente' && antes.user_id) {
+    const pendiente = await prepararAviso(supabase, antes.user_id, avisoEvaluacion)
+    if (pendiente) after(() => entregarAviso(pendiente))
+  }
 
   revalidatePath('/admin/evaluaciones')
   return { ok: true }

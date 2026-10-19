@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import BotonLogout from '@/components/BotonLogout'
 import NavAlumno from '@/components/NavAlumno'
 import PerfilForm from '@/components/PerfilForm'
+import AvisosPush from '@/components/AvisosPush'
 import ListaSuscripciones from '@/components/ListaSuscripciones'
 import { misSuscripciones, accesoHasta } from '@/lib/suscripciones'
 import { contarNoLeidos } from '@/lib/no-leidos'
@@ -23,7 +24,7 @@ export default async function PerfilPage() {
   const [{ data: perfil }, suscripciones, noLeidos, modo] = await Promise.all([
     supabase
       .from('profiles')
-      .select('nombre, apellidos, peso_kg, altura_cm, facilidades, recordatorios_email')
+      .select('nombre, apellidos, peso_kg, altura_cm, facilidades, recordatorios_email, avisos_email')
       .eq('id', user.id)
       .single(),
     misSuscripciones(supabase, user.id),
@@ -86,7 +87,12 @@ export default async function PerfilPage() {
           altura={perfil?.altura_cm ?? null}
           facilidades={perfil?.facilidades ?? null}
           recordatorios={perfil?.recordatorios_email ?? true}
+          avisos={perfil?.avisos_email ?? true}
         />
+
+        {/* Notificaciones del móvil. Si OneSignal no está configurado, no
+            pinta nada. */}
+        <AvisosPush userId={user.id} />
 
         {/* Qué tiene contratado. Solo lectura: gestionar y renovar es
             cosa de /suscripcion. */}

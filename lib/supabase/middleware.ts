@@ -41,6 +41,11 @@ const RUTAS_PUBLICAS = [
   '/legal',
   '/robots.txt', // los buscadores lo piden sin sesión
   '/sitemap.xml',
+  '/manifest.webmanifest', // para poder instalar la web (push en iPhone)
+  // El service worker de las notificaciones. El navegador lo re-descarga por
+  // su cuenta para comprobar si cambió, a veces sin sesión válida: si eso
+  // devolviera un 307 a /login, el navegador daría la suscripción por rota.
+  '/OneSignalSDKWorker.js',
 ]
 
 export async function updateSession(request: NextRequest) {

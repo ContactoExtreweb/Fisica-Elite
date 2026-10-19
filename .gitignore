@@ -42,3 +42,4 @@ next-env.d.ts
 
 # Configuración local de Claude Code (servidor de pruebas, permisos): no se sube
 .claude/
+.impeccable/

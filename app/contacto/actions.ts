@@ -9,6 +9,8 @@
 // API de Supabase. Con la migración 031 esa política se elimina: el ÚNICO
 // camino para escribir un mensaje es este, ya validado y con límite de uso.
 import { headers } from 'next/headers'
+import { after } from 'next/server'
+import { avisarAdmins, avisoAdminContacto } from '@/lib/avisos'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { consumirLimite, huellaIp, ipDe } from '@/lib/limites'
 
@@ -66,6 +68,21 @@ export async function enviarContacto(
   if (error) {
     return { error: 'No se pudo enviar el mensaje. Inténtalo de nuevo en un momento.' }
   }
+
+  // Que no se quede el contacto criando polvo en la tabla: el preparador lo
+  // recibe por correo (y por push) con el mensaje dentro. Va con after() para
+  // no hacer esperar a quien acaba de escribir.
+  after(() =>
+    avisarAdmins(
+      avisoAdminContacto({
+        nombre,
+        email,
+        telefono: telefono || null,
+        oposicion,
+        mensaje: mensaje.slice(0, 2000),
+      })
+    )
+  )
 
   return { ok: true }
 }

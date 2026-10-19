@@ -87,3 +87,52 @@ export function fechaRelativa(iso: string): string {
   if (iso === sumarDias(hoy, -1)) return 'Ayer'
   return fechaCorta(iso)
 }
+
+// ---------------- Para la gráfica de evolución ----------------
+
+/** Número con coma decimal y como mucho un decimal: 72,5 · 12 */
+function num(v: number): string {
+  return String(Math.round(v * 10) / 10).replace('.', ',')
+}
+
+/**
+ * ¿En esta métrica mejora quien SUBE el número?
+ * En tiempo no: mejora quien baja (tarda menos).
+ */
+export function masEsMejor(metrica: string): boolean {
+  return metrica !== 'tiempo'
+}
+
+/**
+ * El número que se dibuja en la gráfica, en la unidad en la que se guarda
+ * (km y segundos). null = esa marca no sirve para esta categoría.
+ */
+export function valorMarca(
+  r: Pick<RegistroFila, 'repeticiones' | 'peso_kg' | 'distancia_km' | 'tiempo_seg'>,
+  metrica: string
+): number | null {
+  switch (metrica) {
+    case 'tiempo':
+      return r.tiempo_seg
+    case 'distancia':
+      return r.distancia_km
+    case 'peso':
+      return r.peso_kg
+    default:
+      return r.repeticiones
+  }
+}
+
+/** Un valor suelto (o una diferencia) con su unidad. */
+export function formateaValor(v: number, metrica: string, unidad: string): string {
+  switch (metrica) {
+    case 'tiempo':
+      return formateaTiempo(v)
+    case 'distancia':
+      return formateaDistancia(v, unidad)
+    case 'peso':
+      return `${num(v)} kg`
+    default:
+      return `${num(v)} ${unidad || 'reps'}`
+  }
+}

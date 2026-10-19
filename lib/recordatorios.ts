@@ -15,10 +15,11 @@ import {
   emailConfigurado,
   emailModoPruebas,
   escaparHtml,
+  htmlCorreo,
   urlBase,
   type ResultadoEmail,
 } from '@/lib/email'
-import { LOGO_ADJUNTO, LOGO_CID } from '@/lib/email-logo'
+import { LOGO_ADJUNTO } from '@/lib/email-logo'
 import { DIAS_INACTIVIDAD, diasDesde, pendienteDeAviso } from '@/lib/actividad'
 import { hoyMadrid, sumarDias } from '@/lib/evaluaciones'
 
@@ -217,27 +218,20 @@ export function correoInactividad(
     `Te mandamos este aviso porque tienes un plan activo y llevas más de ${DIAS_INACTIVIDAD} días sin entrar. Puedes desactivar estos recordatorios desde tu perfil: ${urlPerfil}`,
   ].join('\n')
 
-  // HTML de correo: tablas y estilos en línea (Gmail y Outlook ignoran
-  // <style> y flexbox). Colores de la marca: negro verdoso, ocre, hueso.
+  // El diseño del correo es común a todos: lib/email.ts → htmlCorreo.
   const e = escaparHtml
-  const html = `<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(asunto)}</title></head>
-<body style="margin:0;padding:0;background:#F2EFE8;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2EFE8;padding:28px 12px;">
-<tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#FFFFF0;border-radius:14px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#030E0A;">
-<tr><td align="center" style="padding:30px 28px 16px;"><img src="cid:${LOGO_CID}" width="93" height="110" alt="Físicas Élite" style="display:block;border:0;outline:none;width:93px;height:110px;"></td></tr>
-<tr><td align="center" style="padding:0 0 4px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="48" height="3" style="background:#C09D39;font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>
-<tr><td style="padding:22px 28px 8px;font-size:22px;font-weight:700;line-height:1.3;">${e(saludo)}</td></tr>
-<tr><td style="padding:8px 28px;font-size:15px;line-height:1.6;color:#23302A;">Hace <strong>${c.dias} días</strong> que no entras en Físicas Élite. ${e(plan)}, así que tienes todo tu entrenamiento esperándote justo donde lo dejaste.</td></tr>
-<tr><td style="padding:8px 28px 4px;font-size:15px;line-height:1.6;color:#23302A;">La constancia es lo que marca la diferencia el día de la prueba. Aunque hoy solo tengas tiempo para una sesión corta, cuenta.</td></tr>
-<tr><td style="padding:22px 28px 8px;"><a href="${e(urlInicio)}" style="display:inline-block;background:#030E0A;color:#FFFFF0;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:100px;">Volver a entrenar</a></td></tr>
-<tr><td style="padding:14px 28px 28px;font-size:14px;line-height:1.6;color:#58635C;">Si te ha surgido algo o tienes dudas con el plan, escríbele a tu preparador por el chat de la plataforma.</td></tr>
-<tr><td style="padding:16px 28px 22px;border-top:1px solid #DED9C0;font-size:12px;line-height:1.5;color:#8A948D;">Te mandamos este aviso porque tienes un plan activo y llevas más de ${DIAS_INACTIVIDAD} días sin entrar. Puedes <a href="${e(urlPerfil)}" style="color:#7A5F1E;">desactivar estos recordatorios desde tu perfil</a>.</td></tr>
-</table>
-</td></tr>
-</table>
-</body></html>`
+  const html = htmlCorreo({
+    asunto,
+    saludo,
+    parrafos: [
+      `Hace <strong>${c.dias} días</strong> que no entras en Físicas Élite. ${e(plan)}, así que tienes todo tu entrenamiento esperándote justo donde lo dejaste.`,
+      'La constancia es lo que marca la diferencia el día de la prueba. Aunque hoy solo tengas tiempo para una sesión corta, cuenta.',
+    ],
+    boton: { texto: 'Volver a entrenar', url: urlInicio },
+    cierre:
+      'Si te ha surgido algo o tienes dudas con el plan, escríbele a tu preparador por el chat de la plataforma.',
+    pie: `Te mandamos este aviso porque tienes un plan activo y llevas más de ${DIAS_INACTIVIDAD} días sin entrar. Puedes <a href="${e(urlPerfil)}" style="color:#7A5F1E;">desactivar estos recordatorios desde tu perfil</a>.`,
+  })
 
   return { asunto, html, texto }
 }

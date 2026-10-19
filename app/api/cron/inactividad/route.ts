@@ -1,4 +1,11 @@
-// Tarea diaria: recordatorios por inactividad (ver lib/recordatorios.ts).
+// Tarea diaria de la plataforma. Hace tres cosas:
+//   · los avisos con fecha: la clase presencial de mañana y la suscripción
+//     que se acaba dentro de una semana (lib/avisos-diarios.ts);
+//   · los recordatorios por inactividad (lib/recordatorios.ts);
+//   · la limpieza de los contadores del asistente.
+// La ruta conserva el nombre "inactividad" porque es la que está dada de
+// alta en vercel.json y en el cron de Vercel: cambiarla obliga a tocar las
+// dos cosas sin ganar nada.
 //
 // La lanza Vercel Cron (vercel.json → "crons") una vez al día. Vercel
 // manda la cabecera "Authorization: Bearer <CRON_SECRET>" sola, siempre
@@ -17,6 +24,7 @@ import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ejecutarRecordatorios } from '@/lib/recordatorios'
+import { avisosDiarios, type ResumenDiario } from '@/lib/avisos-diarios'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -45,14 +53,31 @@ export async function GET(request: Request) {
     if (!simular) {
       const limite = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10)
       await supabase.from('asistente_uso').delete().lt('ventana', limite)
+
+      // Y el rastro de avisos ya enviados (migración 035) de hace más de 90
+      // días: los plazos a los que se refieren se cerraron hace mucho.
+      const viejo = new Date(Date.now() - 90 * 86_400_000).toISOString()
+      await supabase.from('avisos_enviados').delete().lt('created_at', viejo)
+    }
+
+    // Avisos de calendario (clase de mañana, acceso que se acaba). Van
+    // primero porque tienen fecha: si algo falla, que no sea esto lo que se
+    // quede sin mandar. Y en su propio try: un fallo aquí no puede dejar sin
+    // enviar los recordatorios de inactividad.
+    let avisos: ResumenDiario | { error: string }
+    try {
+      avisos = await avisosDiarios(supabase, { simular })
+    } catch (e) {
+      console.error('[cron avisos diarios] error', e)
+      avisos = { error: e instanceof Error ? e.message : 'Error en los avisos diarios' }
     }
 
     const resumen = await ejecutarRecordatorios(supabase, { simular })
     console.log(
       '[cron inactividad]',
-      JSON.stringify({ ...resumen, destinatarios: resumen.destinatarios.length })
+      JSON.stringify({ ...resumen, destinatarios: resumen.destinatarios.length, avisos })
     )
-    return NextResponse.json(resumen)
+    return NextResponse.json({ ...resumen, avisos })
   } catch (e) {
     console.error('[cron inactividad] error', e)
     return NextResponse.json({ error: 'Error ejecutando los recordatorios' }, { status: 500 })

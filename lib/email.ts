@@ -13,6 +13,7 @@
 //                      dirección de la propia cuenta, así que en pruebas
 //                      es obligatorio. En producción se BORRA.
 import 'server-only'
+import { LOGO_CID } from '@/lib/email-logo'
 
 const API = 'https://api.resend.com/emails'
 
@@ -42,6 +43,70 @@ export function urlBase(): string {
   const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL // la pone Vercel sola
   if (vercel) return `https://${vercel}`
   return 'http://localhost:3000'
+}
+
+/**
+ * El HTML de TODOS los correos de la plataforma, para que todos se vean
+ * igual y haya un solo sitio donde tocar el diseño.
+ *
+ * HTML de correo: tablas y estilos en línea (Gmail y Outlook ignoran
+ * <style> y flexbox). Colores de la marca: negro verdoso, ocre, hueso.
+ *
+ * ⚠️ `parrafos`, `cierre` y `pie` entran como HTML TAL CUAL (para poder
+ * meter un <strong> o un enlace). Lo que venga de un usuario se pasa
+ * antes por escaparHtml(). La versión en texto plano la monta cada
+ * correo por su cuenta.
+ */
+export function htmlCorreo(p: {
+  asunto: string
+  saludo: string
+  parrafos: string[]
+  boton?: { texto: string; url: string }
+  cierre?: string
+  pie?: string
+}): string {
+  const e = escaparHtml
+  const fila = (estilo: string, contenido: string) =>
+    `<tr><td style="${estilo}">${contenido}</td></tr>`
+
+  const cuerpo = [
+    fila(
+      'padding:22px 28px 8px;font-size:22px;font-weight:700;line-height:1.3;',
+      e(p.saludo)
+    ),
+    ...p.parrafos.map((t) =>
+      fila('padding:8px 28px;font-size:15px;line-height:1.6;color:#23302A;', t)
+    ),
+    p.boton
+      ? fila(
+          'padding:22px 28px 8px;',
+          `<a href="${e(p.boton.url)}" style="display:inline-block;background:#030E0A;color:#FFFFF0;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:100px;">${e(p.boton.texto)}</a>`
+        )
+      : '',
+    p.cierre
+      ? fila('padding:14px 28px 28px;font-size:14px;line-height:1.6;color:#58635C;', p.cierre)
+      : '',
+    p.pie
+      ? fila(
+          'padding:16px 28px 22px;border-top:1px solid #DED9C0;font-size:12px;line-height:1.5;color:#8A948D;',
+          p.pie
+        )
+      : '',
+  ].join('\n')
+
+  return `<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(p.asunto)}</title></head>
+<body style="margin:0;padding:0;background:#F2EFE8;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2EFE8;padding:28px 12px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#FFFFF0;border-radius:14px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#030E0A;">
+<tr><td align="center" style="padding:30px 28px 16px;"><img src="cid:${LOGO_CID}" width="93" height="110" alt="Físicas Élite" style="display:block;border:0;outline:none;width:93px;height:110px;"></td></tr>
+<tr><td align="center" style="padding:0 0 4px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="48" height="3" style="background:#C09D39;font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>
+${cuerpo}
+</table>
+</td></tr>
+</table>
+</body></html>`
 }
 
 /** Adjunto de Resend. Con content_id va EN LÍNEA: el HTML lo usa con cid: */

@@ -14,11 +14,13 @@
 // recién creado en Auth. Resultado: ninguna solicitud de pago web se podía
 // tramitar. El tramo del alumno lo asigna ahora el cuestionario inicial.
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { exigirAdmin } from '@/lib/autorizacion'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generarPasswordSegura } from '@/lib/password'
 import { stripe, stripeConfigurado } from '@/lib/stripe'
 import { hoyMadrid, sumarMeses } from '@/lib/fechas'
+import { entregarAviso, avisoSuelto, avisoBienvenida, avisoRechazo } from '@/lib/avisos'
 
 export type Credenciales = { email: string; username: string; password: string }
 export type ResultadoProceso =
@@ -128,6 +130,21 @@ export async function procesarSolicitud(
     .update({ estado: 'procesada', procesado_por: admin.id, profile_creado: nuevoId })
     .eq('id', solicitudId)
 
+  // 6 · Correo de bienvenida CON LA CONTRASEÑA (decisión del cliente, 19/10/2026).
+  // Es de un solo uso: must_change_password ya está en true, así que la
+  // plataforma le obliga a cambiarla en cuanto entre, y el correo se lo dice.
+  // Va con after() para no retrasar el modal de credenciales, y aunque el
+  // correo falle el alta es válida: el admin tiene las claves en pantalla.
+  after(() =>
+    entregarAviso(
+      avisoSuelto(
+        sol.email,
+        sol.nombre ?? '',
+        avisoBienvenida(nombreUsuario || sol.email, sol.email, password)
+      )
+    )
+  )
+
   // NO hacemos revalidatePath aquí: cualquier revalidación fuerza a Next a
   // recargar la página actual, lo que cerraría el modal de credenciales antes
   // de que se lea. La lista (y el badge) se refrescan en el cliente al cerrar
@@ -160,7 +177,7 @@ export async function rechazarYReembolsar(
 
   const { data: sol } = await supabase
     .from('solicitudes_alta')
-    .select('id, estado, stripe_payment_intent')
+    .select('id, estado, stripe_payment_intent, nombre, email')
     .eq('id', solicitudId)
     .single()
 
@@ -222,6 +239,12 @@ export async function rechazarYReembolsar(
       .eq('id', sol.id)
   }
 
+  // Quien ha pagado tiene derecho a saber que no se le tramita y que el
+  // dinero vuelve. No tiene cuenta todavía, así que solo puede ir por correo.
+  after(() =>
+    entregarAviso(avisoSuelto(sol.email, sol.nombre ?? '', avisoRechazo(true)))
+  )
+
   revalidatePath('/admin/solicitudes')
   return { ok: true }
 }
@@ -229,6 +252,21 @@ export async function rechazarYReembolsar(
 export async function rechazarSolicitud(solicitudId: string) {
   const { supabase } = await exigirAdmin()
   if (!solicitudId) return
+
+  const { data: sol } = await supabase
+    .from('solicitudes_alta')
+    .select('nombre, email, reembolsado_at')
+    .eq('id', solicitudId)
+    .maybeSingle()
+
   await supabase.from('solicitudes_alta').update({ estado: 'rechazada' }).eq('id', solicitudId)
+
+  if (sol?.email) {
+    after(() =>
+      entregarAviso(
+        avisoSuelto(sol.email, sol.nombre ?? '', avisoRechazo(!!sol.reembolsado_at))
+      )
+    )
+  }
   revalidatePath('/admin/solicitudes')
 }

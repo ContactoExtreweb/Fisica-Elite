@@ -47,6 +47,9 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     type: 'website',
   },
+  // El icono de la pantalla de inicio del iPhone cuando el alumno instala la
+  // web (hace falta para que le lleguen las notificaciones push: app/manifest.ts).
+  icons: { apple: '/icono-180.png' },
 }
 
 export default function RootLayout({

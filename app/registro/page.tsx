@@ -5,8 +5,14 @@ import BotonLogout from '@/components/BotonLogout'
 import NavAlumno from '@/components/NavAlumno'
 import FormularioMarca from '@/components/FormularioMarca'
 import HistorialMarcas from '@/components/HistorialMarcas'
+import EvolucionMarcas from '@/components/EvolucionMarcas'
 import { categoriasContratadas } from '@/lib/acceso'
 import type { RegistroFila } from '@/lib/marcas'
+
+// La gráfica mira hacia atrás más que el listado: una sola consulta sirve
+// para las dos cosas (la lista se queda en las 60 más recientes).
+const MARCAS_A_LEER = 150
+const MARCAS_EN_LISTA = 60
 
 export const metadata = { title: 'Mi progreso' }
 
@@ -26,8 +32,10 @@ export default async function RegistroPage() {
       .eq('user_id', user.id)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(60),
+      .limit(MARCAS_A_LEER),
   ])
+
+  const marcas = (registros ?? []) as RegistroFila[]
 
   const nombreCompleto =
     [perfil?.nombre, perfil?.apellidos].filter(Boolean).join(' ') || 'Alumno'
@@ -70,6 +78,8 @@ export default async function RegistroPage() {
           </div>
         </div>
 
+        <EvolucionMarcas registros={marcas} categorias={categorias} />
+
         <div className="prog-layout">
           <div>
             <FormularioMarca categorias={categorias} />
@@ -77,7 +87,7 @@ export default async function RegistroPage() {
           <div>
             <h2 className="prog-sub">Tus últimas marcas</h2>
             <HistorialMarcas
-              registros={(registros ?? []) as RegistroFila[]}
+              registros={marcas.slice(0, MARCAS_EN_LISTA)}
               categorias={categorias}
             />
           </div>
