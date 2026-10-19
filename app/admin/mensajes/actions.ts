@@ -18,6 +18,6 @@ export async function marcarMensaje(formData: FormData) {
     .update({ leido: formData.get('leido') === '1' })
     .eq('id', id)
 
-  revalidatePath('/admin/mensajes')
-  revalidatePath('/admin')
+  // 'layout': el número del menú lateral vive en el layout de /admin
+  revalidatePath('/admin', 'layout')
 }

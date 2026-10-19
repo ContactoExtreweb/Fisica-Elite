@@ -10631,3 +10631,37 @@ a.msg-dato:hover { border-color: var(--border-strong); color: var(--ink); }
   .msg-card { padding: 15px 14px; }
   .msg-cab { gap: 4px; }
 }
+
+
+/* ============================================
+   Botón «Enviarme un aviso de prueba» del Dashboard (.avprueba)
+   ⚠️ PEGADO AL FINAL de app/globals.css
+   ============================================ */
+
+.avprueba { margin-top: 16px; }
+.avprueba-boton {
+  padding: 9px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.avprueba-boton:hover { border-color: var(--ink-2); }
+.avprueba-boton:disabled { opacity: 0.55; cursor: default; }
+.avprueba-res {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 14px;
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.avprueba-res dt { font-weight: 700; color: var(--ink); }
+.avprueba-res dd { margin: 0; color: var(--ink-2); overflow-wrap: anywhere; }

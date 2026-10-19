@@ -26,10 +26,16 @@ export default async function AdminLayout({
 
   const noLeidos = await contarNoLeidos()
 
-  const { count: solicitudesPendientes } = await supabase
-    .from('solicitudes_alta')
-    .select('id', { count: 'exact', head: true })
-    .eq('estado', 'pendiente')
+  const [{ count: solicitudesPendientes }, { count: contactosPendientes }] = await Promise.all([
+    supabase
+      .from('solicitudes_alta')
+      .select('id', { count: 'exact', head: true })
+      .eq('estado', 'pendiente'),
+    supabase
+      .from('mensajes_contacto')
+      .select('id', { count: 'exact', head: true })
+      .eq('leido', false),
+  ])
 
   return (
     <div className="app">
@@ -41,7 +47,11 @@ export default async function AdminLayout({
           <div className="brand-sub admin">Panel · Preparador</div>
         </div>
 
-        <AdminNav noLeidos={noLeidos} solicitudesPendientes={solicitudesPendientes ?? 0} />
+        <AdminNav
+          noLeidos={noLeidos}
+          solicitudesPendientes={solicitudesPendientes ?? 0}
+          contactosPendientes={contactosPendientes ?? 0}
+        />
 
         <div className="sidebar-foot">
           <div className="avatar">FE</div>

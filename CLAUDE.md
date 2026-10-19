@@ -215,9 +215,18 @@ Todos los avisos de la plataforma salen de aquí, por **correo** (Resend) y por
   rastro en `avisos_enviados` (migración 035): Resend admite ~2 correos por
   segundo y la tarea diaria solo tiene 60 s, así que si no caben todos se sigue
   mañana por donde se quedó, sin repetirle el aviso a nadie.
+- **OneSignal responde 200 aunque el push no llegue a nadie**: deja el `id`
+  vacío y pone el motivo en `errors`. `enviarPush` mira el cuerpo, no solo el
+  código HTTP; si lo cambias, no vuelvas a fiarte solo de `res.ok`.
+- **Botón «Enviarme un aviso de prueba»** en el Dashboard: manda un aviso al
+  propio preparador y dice en pantalla qué ha pasado con el correo y con el
+  push (sin suscripción, clave mala, aceptado…). Es lo primero que hay que
+  mirar si «no llegan los avisos».
 - **Probar sin esperar a mañana:**
   `GET /api/cron/inactividad?simular=1` con la cabecera
   `Authorization: Bearer <CRON_SECRET>` dice a quién se avisaría, sin mandar nada.
+  El secreto es el de **Vercel**, que puede no ser el del `.env.local`. En
+  PowerShell hay que usar `curl.exe`: `curl` a secas es otro comando.
 
 ### Asistente virtual (`lib/asistente/`, `app/api/asistente`, `components/AsistenteChat.tsx`)
 

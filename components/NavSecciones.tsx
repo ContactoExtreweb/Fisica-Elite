@@ -52,6 +52,8 @@ export default function NavSecciones({ entradas }: { entradas: EntradaNav[] }) {
     return { extra: entradas.filter((e) => !dentro.has(e.href)), enBarra: dentro }
   }, [entradas])
 
+  const pendientesDentro = extra.reduce((n, e) => n + (e.badge ?? 0), 0)
+
   // Al navegar se cierra sola (incluido el botón "atrás" del navegador).
   // Se ajusta en el render, no en un efecto, para no encadenar renders.
   const [rutaVista, setRutaVista] = useState(pathname)
@@ -108,6 +110,11 @@ export default function NavSecciones({ entradas }: { entradas: EntradaNav[] }) {
                 <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
                 <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
               </svg>
+              {/* Si algo de lo que hay dentro tiene pendientes, que se vea desde
+                  fuera: si no, un mensaje de contacto nuevo quedaba escondido. */}
+              {pendientesDentro > 0 && (
+                <span className="nav-badge">{pendientesDentro > 99 ? '99+' : pendientesDentro}</span>
+              )}
             </span>
             Más
           </button>

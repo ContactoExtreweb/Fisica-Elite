@@ -30,6 +30,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import {
   enviarEmail,
   emailConfigurado,
+  emailModoPruebas,
   escaparHtml,
   htmlCorreo,
   urlBase,
@@ -133,7 +134,9 @@ export async function entregarAviso(listo: AvisoListo | null): Promise<void> {
           })
           .catch((e) => console.error('[avisos] correo', aviso.tipo, e))
       : Promise.resolve(),
-    enviarPush(userId, aviso).catch((e) => console.error('[avisos] push', aviso.tipo, e)),
+    enviarPush(userId, aviso).catch((e) => {
+      console.error('[avisos] push', aviso.tipo, e)
+    }),
   ])
 }
 
@@ -213,12 +216,19 @@ export function pushConfigurado(): boolean {
   return Boolean(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY)
 }
 
-async function enviarPush(userId: string, aviso: Aviso): Promise<void> {
+export type ResultadoPush =
+  | { estado: 'sin-configurar' }
+  | { estado: 'enviado'; id: string }
+  | { estado: 'sin-destinatario'; detalle: string }
+  | { estado: 'error'; detalle: string }
+
+async function enviarPush(userId: string, aviso: Aviso): Promise<ResultadoPush> {
   const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID
   const key = process.env.ONESIGNAL_REST_API_KEY
+  if (!appId || !key) return { estado: 'sin-configurar' }
   // Sin cuenta en la plataforma no hay a quién mandarle un push (p. ej. una
   // solicitud rechazada: esa persona todavía no es alumno).
-  if (!appId || !key || !userId) return
+  if (!userId) return { estado: 'sin-destinatario', detalle: 'no tiene cuenta' }
 
   const res = await fetch(ONESIGNAL_API, {
     method: 'POST',
@@ -235,11 +245,89 @@ async function enviarPush(userId: string, aviso: Aviso): Promise<void> {
     }),
     cache: 'no-store',
   })
-  if (!res.ok) {
-    // 400 "All included players are not subscribed" es lo normal cuando el
-    // alumno no ha activado las notificaciones: no es un error que arreglar.
-    const detalle = await res.text().catch(() => '')
-    console.error('[avisos] OneSignal', res.status, detalle.slice(0, 300))
+
+  // ⚠️ OneSignal responde 200 AUNQUE NO LLEGUE A NADIE: en ese caso el 'id'
+  // viene vacío y el motivo va en 'errors' (p. ej. que esa persona no tiene
+  // ninguna suscripción activa). Hay que mirar el cuerpo, no solo el código:
+  // mirando solo el código, un aviso que no llegaba a nadie pasaba por bueno.
+  const cuerpo = (await res.json().catch(() => null)) as { id?: string; errors?: unknown } | null
+  if (res.ok && cuerpo?.id && !cuerpo.errors) return { estado: 'enviado', id: cuerpo.id }
+
+  const detalle = JSON.stringify(cuerpo?.errors ?? cuerpo ?? null).slice(0, 300)
+  if (res.ok) {
+    // Lo normal cuando esa persona no ha activado las notificaciones.
+    console.warn('[avisos] OneSignal sin destinatario', aviso.tipo, detalle)
+    return { estado: 'sin-destinatario', detalle }
+  }
+  console.error('[avisos] OneSignal', res.status, aviso.tipo, detalle)
+  return { estado: 'error', detalle: `HTTP ${res.status} ${detalle}` }
+}
+
+/**
+ * Lo mismo que entregarAviso, pero ESPERANDO y contando qué ha pasado con
+ * cada canal, en castellano. Es para el botón «Enviarme un aviso de prueba»
+ * del panel: los avisos normales se mandan en segundo plano y, si fallan,
+ * solo queda en el log de Vercel.
+ */
+export async function entregarConDetalle(
+  listo: AvisoListo
+): Promise<{ correo: string; push: string }> {
+  const pruebas = emailModoPruebas()
+  const correo = !listo.email
+    ? 'No se manda: no tienes correo en tu perfil o tienes el interruptor apagado.'
+    : !emailConfigurado()
+      ? 'No se manda: el correo (Resend) no está configurado.'
+      : await enviarEmail({
+          para: listo.email,
+          asunto: listo.aviso.asunto,
+          html: listo.aviso.html,
+          texto: listo.aviso.texto,
+          adjuntos: [LOGO_ADJUNTO],
+        }).then((r) =>
+          r.ok
+            ? `Enviado${pruebas ? ` (modo pruebas: llega a ${pruebas})` : ` a ${listo.email}`}.`
+            : `Resend lo ha rechazado: ${r.error}`
+        )
+
+  const r = await enviarPush(listo.userId, listo.aviso).catch(
+    (e): ResultadoPush => ({ estado: 'error', detalle: e instanceof Error ? e.message : 'error' })
+  )
+  const push =
+    r.estado === 'sin-configurar'
+      ? 'OneSignal no está configurado: faltan NEXT_PUBLIC_ONESIGNAL_APP_ID u ONESIGNAL_REST_API_KEY en Vercel (y redesplegar).'
+      : r.estado === 'enviado'
+        ? 'OneSignal lo ha aceptado y lo ha mandado a tu navegador. Si no te ha salido en pantalla, el bloqueo está en el propio navegador o en Windows (notificaciones desactivadas o modo «No molestar»).'
+        : r.estado === 'sin-destinatario'
+          ? `OneSignal no tiene ninguna suscripción tuya activa, así que no ha llegado a ningún sitio. Activa las notificaciones aquí mismo, en este navegador. (Detalle: ${r.detalle})`
+          : `OneSignal ha rechazado la petición. Lo más probable es que la ONESIGNAL_REST_API_KEY de Vercel no sea la buena. (Detalle: ${r.detalle})`
+
+  return { correo, push }
+}
+
+/** El aviso que manda el botón de prueba. */
+export function avisoPrueba({ nombre, base }: Destinatario): Aviso {
+  const asunto = 'Aviso de prueba de Físicas Élite'
+  return {
+    tipo: 'admin-mensaje',
+    asunto,
+    html: htmlCorreo({
+      asunto,
+      saludo: saludoDe(nombre),
+      parrafos: ['Esto es un aviso de prueba. Si lo estás leyendo, los avisos por correo funcionan.'],
+      boton: { texto: 'Volver al panel', url: `${base}/admin` },
+    }),
+    texto: [
+      `${saludoDe(nombre)}:`,
+      '',
+      'Esto es un aviso de prueba. Si lo lees, los avisos por correo funcionan.',
+      '',
+      `${base}/admin`,
+    ].join('\n'),
+    push: {
+      titulo: 'Aviso de prueba',
+      cuerpo: 'Si ves esto, las notificaciones funcionan.',
+      ruta: '/admin',
+    },
   }
 }
 

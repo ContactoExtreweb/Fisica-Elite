@@ -48,6 +48,12 @@ const ICONO = {
       <path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  mensajes: (
+    <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
   chat: (
     <svg fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
       <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round" strokeLinejoin="round" />
@@ -58,9 +64,12 @@ const ICONO = {
 export default function AdminNav({
   noLeidos = 0,
   solicitudesPendientes = 0,
+  contactosPendientes = 0,
 }: {
   noLeidos?: number
   solicitudesPendientes?: number
+  /** Mensajes del formulario de contacto de la web sin atender */
+  contactosPendientes?: number
 }) {
   // exacto: false = basta con el prefijo (las subrutas también marcan).
   // El dashboard sí es exacto, si no se quedaría siempre encendido.
@@ -77,6 +86,13 @@ export default function AdminNav({
     { href: '/admin/ejercicios', label: 'Ejercicios', icono: ICONO.ejercicios, exacto: false },
     { href: '/admin/evaluaciones', label: 'Pruebas reales', icono: ICONO.evaluaciones, exacto: false },
     { href: '/admin/reservas', label: 'Reservas', icono: ICONO.reservas, exacto: false },
+    {
+      href: '/admin/mensajes',
+      label: 'Mensajes web',
+      icono: ICONO.mensajes,
+      exacto: false,
+      badge: contactosPendientes,
+    },
     {
       href: '/admin/chat',
       label: 'Chat',

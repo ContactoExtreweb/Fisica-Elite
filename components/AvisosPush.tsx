@@ -70,7 +70,9 @@ function leerEstado(os: OneSignalSDK): Estado {
   if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
     return 'bloqueadas'
   }
-  const suscrito = os.Notifications.permission && os.User.PushSubscription.optedIn !== false
+  // Estricto: con el permiso del navegador dado pero sin suscripción creada
+  // en OneSignal, antes salía «Activados» y no llegaba nada. Así sale el botón.
+  const suscrito = os.Notifications.permission && os.User.PushSubscription.optedIn === true
   return suscrito ? 'activas' : 'inactivas'
 }
 
@@ -93,10 +95,14 @@ async function iniciar(appId: string, userId: string): Promise<Estado> {
   }
 }
 
-const TEXTOS: Record<Estado, string> = {
+// Lo único que cambia entre alumno y preparador es de qué se le avisa.
+const QUE_AVISA = {
+  alumno: 'de los mensajes de tu preparador, de tus clases y de tus correcciones',
+  admin: 'de los mensajes de tus alumnos, las pruebas que suben, los pagos y los contactos de la web',
+}
+
+const TEXTOS: Record<Exclude<Estado, 'activas'>, string> = {
   cargando: 'Comprobando…',
-  activas:
-    'Activadas en este dispositivo. Te avisamos al momento de los mensajes de tu preparador, de tus clases y de tus correcciones.',
   inactivas:
     'Actívalas y te avisamos al momento, sin tener que entrar a mirar. Puedes quitarlas cuando quieras.',
   bloqueadas:
@@ -108,7 +114,13 @@ const TEXTOS: Record<Estado, string> = {
   error: 'No se han podido cargar las notificaciones. Inténtalo más tarde.',
 }
 
-export default function AvisosPush({ userId }: { userId: string }) {
+export default function AvisosPush({
+  userId,
+  para = 'alumno',
+}: {
+  userId: string
+  para?: 'alumno' | 'admin'
+}) {
   const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID
   const [estado, setEstado] = useState<Estado>('cargando')
   const [trabajando, setTrabajando] = useState(false)
@@ -154,7 +166,11 @@ export default function AvisosPush({ userId }: { userId: string }) {
           Avisos en el móvil
           {estado === 'activas' && <span className="push-ok">Activados</span>}
         </div>
-        <p className="push-sub">{TEXTOS[estado]}</p>
+        <p className="push-sub">
+          {estado === 'activas'
+            ? `Activadas en este dispositivo. Te avisamos al momento ${QUE_AVISA[para]}.`
+            : TEXTOS[estado]}
+        </p>
         {estado === 'inactivas' && (
           <button type="button" className="push-boton" onClick={activar} disabled={trabajando}>
             {trabajando ? 'Activando…' : 'Activar notificaciones'}

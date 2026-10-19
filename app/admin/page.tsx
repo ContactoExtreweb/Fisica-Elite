@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { hoyMadrid, sumarDias } from '@/lib/fechas'
 import AvisosPush from '@/components/AvisosPush'
 import AvisosAdmin from '@/components/AvisosAdmin'
+import ProbarAvisos from '@/components/ProbarAvisos'
 
 const NOMBRE_ESPECIALIDAD: Record<string, string> = {
   policia_local: 'Policía Local',
@@ -277,7 +278,8 @@ export default async function AdminDashboardPage() {
         </div>
         <AvisosAdmin activo={miPerfil?.avisos_email ?? true} />
         {/* Si OneSignal no está configurado, esto no pinta nada. */}
-        <AvisosPush userId={usuarioId} />
+        <AvisosPush userId={usuarioId} para="admin" />
+        <ProbarAvisos />
       </div>
     </>
   )
