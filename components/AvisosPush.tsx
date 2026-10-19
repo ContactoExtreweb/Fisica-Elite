@@ -17,7 +17,7 @@ import { useEffect, useState } from 'react'
 const SDK = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'
 
 type OneSignalSDK = {
-  init(o: { appId: string; allowLocalhostAsSecureOrigin?: boolean }): Promise<void>
+  init(o: { appId: string; allowLocalhostAsSecureOrigin?: boolean; autoResubscribe?: boolean }): Promise<void>
   login(externalId: string): Promise<void>
   Notifications: { permission: boolean }
   User: { PushSubscription: { optedIn?: boolean; optIn(): Promise<void> } }
@@ -51,7 +51,11 @@ function arrancar(appId: string): Promise<OneSignalSDK> {
     window.OneSignalDeferred = window.OneSignalDeferred || []
     window.OneSignalDeferred.push(async (OneSignal) => {
       try {
-        await OneSignal.init({ appId, allowLocalhostAsSecureOrigin: true })
+        // autoResubscribe: si el permiso del navegador ya está concedido pero no
+        // hay suscripción push real, la crea al arrancar. Sin esto (comprobado el
+        // 19/10/2026), OneSignal daba al usuario por suscrito con el token vacío
+        // y no le llegaba nada. Con «Custom Code» el ajuste del panel no cuenta.
+        await OneSignal.init({ appId, allowLocalhostAsSecureOrigin: true, autoResubscribe: true })
         resolver(OneSignal)
       } catch (e) {
         rechazar(e)
