@@ -60,9 +60,11 @@ function arrancar(appId: string): Promise<OneSignalSDK> {
         // hay suscripción push real, la crea al arrancar. Sin esto (comprobado el
         // 19/10/2026), OneSignal daba al usuario por suscrito con el token vacío
         // y no le llegaba nada. Con «Custom Code» el ajuste del panel no cuenta.
-        // autoPrompt: false → nunca sale la ventana «Subscribe / Later» de
-        // OneSignal (la pedía sola tras unas páginas, encima del admin). Se
-        // activan solo con NUESTRO botón, aunque el panel diga otra cosa.
+        // La ventana «Subscribe / Later» de OneSignal se controla en SU PANEL:
+        // la app está en modo «Typical site» y ahí el panel manda sobre este
+        // código. Está apagada en Settings → Web configuration → Permission
+        // prompt → Auto prompt (22/10/2026). autoPrompt: false solo cuenta si
+        // algún día se pasa a «Custom code». Se activan con NUESTRO botón.
         await OneSignal.init({
           appId,
           allowLocalhostAsSecureOrigin: true,
