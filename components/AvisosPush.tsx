@@ -17,7 +17,12 @@ import { useEffect, useState } from 'react'
 const SDK = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'
 
 type OneSignalSDK = {
-  init(o: { appId: string; allowLocalhostAsSecureOrigin?: boolean; autoResubscribe?: boolean }): Promise<void>
+  init(o: {
+    appId: string
+    allowLocalhostAsSecureOrigin?: boolean
+    autoResubscribe?: boolean
+    promptOptions?: { slidedown: { prompts: { type: 'push'; autoPrompt: boolean }[] } }
+  }): Promise<void>
   login(externalId: string): Promise<void>
   Notifications: { permission: boolean }
   User: { PushSubscription: { optedIn?: boolean; optIn(): Promise<void> } }
@@ -55,7 +60,15 @@ function arrancar(appId: string): Promise<OneSignalSDK> {
         // hay suscripción push real, la crea al arrancar. Sin esto (comprobado el
         // 19/10/2026), OneSignal daba al usuario por suscrito con el token vacío
         // y no le llegaba nada. Con «Custom Code» el ajuste del panel no cuenta.
-        await OneSignal.init({ appId, allowLocalhostAsSecureOrigin: true, autoResubscribe: true })
+        // autoPrompt: false → nunca sale la ventana «Subscribe / Later» de
+        // OneSignal (la pedía sola tras unas páginas, encima del admin). Se
+        // activan solo con NUESTRO botón, aunque el panel diga otra cosa.
+        await OneSignal.init({
+          appId,
+          allowLocalhostAsSecureOrigin: true,
+          autoResubscribe: true,
+          promptOptions: { slidedown: { prompts: [{ type: 'push', autoPrompt: false }] } },
+        })
         resolver(OneSignal)
       } catch (e) {
         rechazar(e)

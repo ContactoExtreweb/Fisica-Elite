@@ -274,6 +274,15 @@ Todos los avisos de la plataforma salen de aquí, por **correo** (Resend) y por
 - **Nunca pegues ni fotografíes el `.env.local`.** Si una clave se ve, se rota.
 - **`alumno_tramos` no tiene política de DELETE**, para nadie. El admin reasigna
   con upsert (no se puede «dejar sin asignar»).
+- **Bunny es PREPAGO** (recargas desde 10 $, mínimo 1 $/mes). Sin saldo desactiva la
+  cuenta y **puede borrar la librería** (pasó el 22/10/2026 al acabar la prueba gratuita).
+  Librería actual `786923`, configurada así (si hay que rehacerla, igual):
+  · Storage: **solo Frankfurt**, sin replicar (la privacidad dice «UE»; además cada región se cobra).
+  · Security: direct play **off**, block direct url **on**, embed token **on**, CDN token **on**,
+    dominios permitidos `fisicaelite.vercel.app` y `localhost` (**añadir el dominio real** al lanzar).
+  · Player: sin Full Screen, Picture-in-Picture ni AirPlay (sacan el vídeo fuera de la marca de
+    agua), español, color #C09D39.
+  · Encoding: gratuito, H.264, 480p/720p/1080p; keep original files y MP4 fallback **off**.
 - **Un vídeo de Bunny se borra solo con `borrarVideoSiNadieLoUsa`** (`lib/videos.ts`):
   primero se quita la referencia en la BBDD y después se llama a esa función, que
   no borra si otro ejercicio o prueba lo comparte. Nunca llames a `borrarVideoBunny`
